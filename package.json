@@ -1,0 +1,41 @@
+{
+  "name": "launchkit-cli",
+  "version": "0.1.0",
+  "description": "LaunchKit CLI — manage, update, and diagnose your LaunchKit SaaS project",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "launchkit-cli": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "tsc"
+  },
+  "keywords": [
+    "launchkit",
+    "saas",
+    "boilerplate",
+    "cli",
+    "nextjs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AstronautSaaS/launchkit-cli.git"
+  },
+  "homepage": "https://launchkit.dev",
+  "dependencies": {
+    "commander": "^13.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
