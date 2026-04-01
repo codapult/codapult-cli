@@ -116,4 +116,12 @@ deploy
   .action(deployDockerCommand);
 deploy.command('status').description('check deploy readiness').action(deployStatusCommand);
 
+// --- mcp ---
+program
+  .command('mcp-server')
+  .description('start MCP server for AI assistant integration (Cursor, Claude, Codex)')
+  .action(async () => {
+    await import('./mcp/server.js');
+  });
+
 program.parse();
