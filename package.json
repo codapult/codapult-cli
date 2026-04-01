@@ -1,11 +1,11 @@
 {
-  "name": "launchkit-cli",
+  "name": "@launchkit/cli",
   "version": "0.1.0",
   "description": "LaunchKit CLI — manage, update, and diagnose your LaunchKit SaaS project",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "launchkit-cli": "./dist/index.js"
+    "launchkit": "./dist/index.js"
   },
   "files": [
     "dist"

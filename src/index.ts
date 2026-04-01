@@ -7,7 +7,7 @@ import { doctorCommand } from './commands/doctor.js';
 import { configShowCommand } from './commands/config-show.js';
 
 const program = new Command()
-  .name('launchkit-cli')
+  .name('launchkit')
   .description('LaunchKit CLI — manage your SaaS project')
   .version('0.1.0');
 
