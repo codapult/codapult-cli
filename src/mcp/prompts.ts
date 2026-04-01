@@ -1,21 +1,42 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { findProjectRoot, readProjectFile } from '../utils/project.js';
+
+function loadProjectContext(): { schema: string; config: string } {
+  const root = findProjectRoot();
+  if (!root) return { schema: '', config: '' };
+  return {
+    schema: readProjectFile(root, 'src/lib/db/schema.ts') ?? '',
+    config: readProjectFile(root, 'src/config/app.ts') ?? '',
+  };
+}
+
+function extractTableNames(schema: string): string {
+  const matches = [...schema.matchAll(/export\s+const\s+\w+\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]/g)];
+  return matches.map(m => m[1]).join(', ');
+}
 
 export function registerPrompts(server: McpServer): void {
   server.registerPrompt(
     'launchkit_code_review',
     {
       title: 'LaunchKit Code Review',
-      description: 'Review code against LaunchKit conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first',
+      description: 'Review code against LaunchKit conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first. Auto-includes current project config.',
       argsSchema: {
         code: z.string().describe('The code to review'),
         focus: z.string().optional().describe('Focus area: "security" | "performance" | "conventions" | "typescript"'),
       },
     },
     ({ code, focus }) => {
+      const ctx = loadProjectContext();
       const focusInstruction = focus
         ? `Focus specifically on: ${focus}.`
         : 'Cover all aspects: security, performance, conventions, and TypeScript quality.';
+
+      const tables = extractTableNames(ctx.schema);
+      const projectContext = tables
+        ? `\n\nProject context:\n- Database tables: ${tables}\n- Config preview:\n\`\`\`typescript\n${ctx.config.slice(0, 600)}\n\`\`\``
+        : '';
 
       return {
         messages: [
@@ -34,6 +55,8 @@ LaunchKit conventions:
 - Error responses: always \`{ error: string }\`, never expose stack traces
 - Database: Drizzle ORM, snake_case tables/columns, text PKs, integer timestamps
 - Class merging: use \`cn()\` from \`@/lib/utils\`
+- AI: embedding/vector store use adapter pattern, RAG config from appConfig.ai
+- Org quotas: enforce via checkOrgQuota() for AI and API routes${projectContext}
 
 Code to review:
 
@@ -51,18 +74,25 @@ ${code}
     'launchkit_schema_design',
     {
       title: 'LaunchKit Schema Design',
-      description: 'Design a Drizzle ORM table following LaunchKit conventions (snake_case, text PK, integer timestamps, FK with onDelete)',
+      description: 'Design a Drizzle ORM table following LaunchKit conventions. Auto-includes current schema for context (existing tables, naming patterns).',
       argsSchema: {
         description: z.string().describe('What the table should store (e.g. "user bookmarks with URL, title, and tags")'),
       },
     },
-    ({ description }) => ({
-      messages: [
-        {
-          role: 'user' as const,
-          content: {
-            type: 'text' as const,
-            text: `Design a Drizzle ORM SQLite table for the following requirement:
+    ({ description }) => {
+      const ctx = loadProjectContext();
+      const tables = extractTableNames(ctx.schema);
+      const existingContext = tables
+        ? `\n\nExisting tables in this project: ${tables}\nEnsure your new table follows the same patterns and avoids name conflicts.`
+        : '';
+
+      return {
+        messages: [
+          {
+            role: 'user' as const,
+            content: {
+              type: 'text' as const,
+              text: `Design a Drizzle ORM SQLite table for the following requirement:
 
 "${description}"
 
@@ -78,10 +108,11 @@ Follow LaunchKit schema conventions:
 
 Also provide the Postgres equivalent using \`pgTable()\` with native types (\`timestamp\`, \`boolean\`).
 
-Output both the SQLite and Postgres table definitions.`,
+Output both the SQLite and Postgres table definitions.${existingContext}`,
+            },
           },
-        },
-      ],
-    }),
+        ],
+      };
+    },
   );
 }

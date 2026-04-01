@@ -7,6 +7,7 @@ import { registerPluginTools } from './tools/plugins.js';
 import { registerGenerateTools } from './tools/generate.js';
 import { registerDeployTools } from './tools/deploy.js';
 import { registerPrompts } from './prompts.js';
+import { registerResources } from './resources.js';
 
 const server = new McpServer({
   name: 'launchkit',
@@ -20,6 +21,7 @@ registerPluginTools(server);
 registerGenerateTools(server);
 registerDeployTools(server);
 registerPrompts(server);
+registerResources(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

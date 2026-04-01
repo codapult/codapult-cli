@@ -112,6 +112,34 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
   success(`Written to ${relative(root, outputPath)}`);
 }
 
+function generateMcpConfig(root: string): void {
+  const cursorDir = join(root, '.cursor');
+  const mcpPath = join(cursorDir, 'mcp.json');
+
+  if (existsSync(mcpPath)) {
+    dim('.cursor/mcp.json already exists — skipping');
+    return;
+  }
+
+  if (!existsSync(cursorDir)) {
+    const { mkdirSync } = require('node:fs') as typeof import('node:fs');
+    mkdirSync(cursorDir, { recursive: true });
+  }
+
+  const config = {
+    mcpServers: {
+      launchkit: {
+        command: 'node',
+        args: ['../launchkit-cli/dist/index.js', 'mcp-server'],
+        cwd: '.',
+      },
+    },
+  };
+
+  writeFileSync(mcpPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  success('Created .cursor/mcp.json — LaunchKit MCP server configured for Cursor');
+}
+
 function removeModules(root: string, config: ProjectConfig): void {
   for (const removal of MODULE_REMOVALS) {
     if (config[removal.key]) continue;
@@ -175,6 +203,9 @@ export async function setupCommand(): Promise<void> {
   }
 
   iface.close();
+
+  heading('Setting up MCP integration');
+  generateMcpConfig(root);
 
   heading('Done!');
   info('Next steps:');
