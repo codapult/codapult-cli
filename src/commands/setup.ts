@@ -128,16 +128,16 @@ function generateMcpConfig(root: string): void {
 
   const config = {
     mcpServers: {
-      launchkit: {
+      codapult: {
         command: 'node',
-        args: ['../launchkit-cli/dist/index.js', 'mcp-server'],
+        args: ['../codapult-cli/dist/index.js', 'mcp-server'],
         cwd: '.',
       },
     },
   };
 
   writeFileSync(mcpPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-  success('Created .cursor/mcp.json — LaunchKit MCP server configured for Cursor');
+  success('Created .cursor/mcp.json — Codapult MCP server configured for Cursor');
 }
 
 function removeModules(root: string, config: ProjectConfig): void {
@@ -158,17 +158,17 @@ function removeModules(root: string, config: ProjectConfig): void {
 export async function setupCommand(): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project. Run this from your project directory.');
+    fail('Not inside a Codapult project. Run this from your project directory.');
     process.exit(1);
   }
 
   const iface = rl();
 
-  heading('LaunchKit Setup');
+  heading('Codapult Setup');
   info('This wizard will configure your project.\n');
 
   const config: ProjectConfig = {
-    appName: await ask(iface, 'App name', 'LaunchKit'),
+    appName: await ask(iface, 'App name', 'Codapult'),
     appUrl: await ask(iface, 'App URL', 'http://localhost:3000'),
     authProvider: (await selectPrompt(iface, 'Auth provider:', ['better-auth', 'kinde'])) as ProjectConfig['authProvider'],
     paymentProvider: (await selectPrompt(iface, 'Payment provider:', ['stripe', 'lemonsqueezy'])) as ProjectConfig['paymentProvider'],

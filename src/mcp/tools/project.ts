@@ -7,16 +7,16 @@ import { findProjectRoot, readProjectFile } from '../../utils/project.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
 export function registerProjectTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_project_status',
+    'codapult_project_status',
     {
       title: 'Project Status',
-      description: 'Get LaunchKit project status: variant, adapters, installed plugins, enabled features, git status',
+      description: 'Get Codapult project status: variant, adapters, installed plugins, enabled features, git status',
       inputSchema: {},
     },
     async () => {
@@ -69,7 +69,7 @@ export function registerProjectTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_project_config',
+    'codapult_project_config',
     {
       title: 'Project Config',
       description: 'Read the app configuration from src/config/app.ts (brand, auth, features)',
@@ -83,7 +83,7 @@ export function registerProjectTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_run_checks',
+    'codapult_run_checks',
     {
       title: 'Run Checks',
       description: 'Run lint, typecheck, and/or test. Returns structured pass/fail results.',
@@ -119,7 +119,7 @@ export function registerProjectTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_doctor',
+    'codapult_doctor',
     {
       title: 'Doctor',
       description: 'Run project health checks: file structure, env vars, dependencies, TypeScript, git',

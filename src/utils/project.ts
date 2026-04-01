@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
 /**
- * Walk upward from cwd to find the LaunchKit project root
- * (directory containing package.json with launchkit-specific markers).
+ * Walk upward from cwd to find the Codapult project root
+ * (directory containing package.json with codapult-specific markers).
  */
 export function findProjectRoot(from: string = process.cwd()): string | null {
   let dir = resolve(from);
@@ -16,9 +16,9 @@ export function findProjectRoot(from: string = process.cwd()): string | null {
       try {
         const json = JSON.parse(content) as Record<string, unknown>;
         if (
-          json.name === 'launchkit' ||
+          json.name === 'codapult' ||
           existsSync(resolve(dir, 'src/config/app.ts')) ||
-          existsSync(resolve(dir, 'launchkit.plugins.ts'))
+          existsSync(resolve(dir, 'codapult.plugins.ts'))
         ) {
           return dir;
         }

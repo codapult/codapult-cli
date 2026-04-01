@@ -6,7 +6,7 @@ import { findProjectRoot } from '../../utils/project.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
@@ -30,10 +30,10 @@ function writeIfNew(filePath: string, content: string): { created: boolean; path
 
 export function registerGenerateTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_generate_page',
+    'codapult_generate_page',
     {
       title: 'Generate Page',
-      description: 'Create a new dashboard page following LaunchKit conventions (server component, auth, Card UI)',
+      description: 'Create a new dashboard page following Codapult conventions (server component, auth, Card UI)',
       inputSchema: { name: z.string().describe('Page name (e.g. "analytics", "team-settings")') },
     },
     async ({ name }) => {
@@ -42,7 +42,7 @@ export function registerGenerateTools(server: McpServer): void {
       const pascal = toPascal(name);
       const title = pascal.replace(/([A-Z])/g, ' $1').trim();
 
-      const page = `import { getAppSession } from '@/lib/auth';\nimport { redirect } from 'next/navigation';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\n\nexport const metadata = {\n  title: '${title} — LaunchKit',\n};\n\nexport default async function ${pascal}Page() {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  return (\n    <div className="space-y-6">\n      <div>\n        <h1 className="text-3xl font-bold tracking-tight">${title}</h1>\n        <p className="text-muted-foreground">Manage your ${kebab} settings</p>\n      </div>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>${title}</CardTitle>\n          <CardDescription>Your ${kebab} content goes here</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <p className="text-muted-foreground">Start building your ${kebab} page.</p>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
+      const page = `import { getAppSession } from '@/lib/auth';\nimport { redirect } from 'next/navigation';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\n\nexport const metadata = {\n  title: '${title} — Codapult',\n};\n\nexport default async function ${pascal}Page() {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  return (\n    <div className="space-y-6">\n      <div>\n        <h1 className="text-3xl font-bold tracking-tight">${title}</h1>\n        <p className="text-muted-foreground">Manage your ${kebab} settings</p>\n      </div>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>${title}</CardTitle>\n          <CardDescription>Your ${kebab} content goes here</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <p className="text-muted-foreground">Start building your ${kebab} page.</p>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
 
       const result = writeIfNew(resolve(root, `src/app/(dashboard)/dashboard/${kebab}/page.tsx`), page);
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
@@ -50,7 +50,7 @@ export function registerGenerateTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_generate_api',
+    'codapult_generate_api',
     {
       title: 'Generate API Route',
       description: 'Create a new API route with auth, rate limiting, and Zod validation',
@@ -70,7 +70,7 @@ export function registerGenerateTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_generate_action',
+    'codapult_generate_action',
     {
       title: 'Generate Server Action',
       description: 'Create a new server action with auth, rate limiting, and Zod validation',
@@ -90,7 +90,7 @@ export function registerGenerateTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_generate_plugin',
+    'codapult_generate_plugin',
     {
       title: 'Generate Plugin',
       description: 'Scaffold a new plugin repository with package.json, tsconfig, index.ts, and manifest',
@@ -101,7 +101,7 @@ export function registerGenerateTools(server: McpServer): void {
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const pascal = toPascal(name);
-      const pluginDir = resolve(root, '..', `launchkit-plugin-${kebab}`);
+      const pluginDir = resolve(root, '..', `codapult-plugin-${kebab}`);
 
       if (existsSync(pluginDir)) {
         return { content: [{ type: 'text' as const, text: `Directory already exists: ${pluginDir}` }], isError: true };
@@ -110,7 +110,7 @@ export function registerGenerateTools(server: McpServer): void {
       mkdirSync(resolve(pluginDir, 'src'), { recursive: true });
 
       writeFileSync(resolve(pluginDir, 'package.json'), JSON.stringify({
-        name: `@launchkit/plugin-${kebab}`, version: '0.1.0', description: `LaunchKit plugin: ${name}`,
+        name: `@codapult/plugin-${kebab}`, version: '0.1.0', description: `Codapult plugin: ${name}`,
         license: 'MIT', type: 'module', main: './src/index.ts',
         exports: { '.': './src/index.ts' },
         peerDependencies: { react: '>=19', next: '>=16' },
@@ -119,12 +119,12 @@ export function registerGenerateTools(server: McpServer): void {
       }, null, 2) + '\n', 'utf-8');
 
       writeFileSync(resolve(pluginDir, 'src/index.ts'),
-        `import type { LaunchKitPlugin } from '@/lib/plugins';\n\nconst ${camel}Plugin: LaunchKitPlugin = {\n  name: '${kebab}',\n  version: '0.1.0',\n  description: '${pascal} plugin for LaunchKit',\n  onInit() {},\n  navItems: [{ id: '${kebab}', label: '${pascal}', href: '/dashboard/${kebab}', icon: 'Puzzle', order: 50 }],\n  settingsPanels: [],\n  apiRoutes: [{ method: 'GET', path: '/status', async handler() { return Response.json({ status: 'ok', plugin: '${kebab}' }); } }],\n};\n\nexport default ${camel}Plugin;\n`, 'utf-8');
+        `import type { CodapultPlugin } from '@/lib/plugins';\n\nconst ${camel}Plugin: CodapultPlugin = {\n  name: '${kebab}',\n  version: '0.1.0',\n  description: '${pascal} plugin for Codapult',\n  onInit() {},\n  navItems: [{ id: '${kebab}', label: '${pascal}', href: '/dashboard/${kebab}', icon: 'Puzzle', order: 50 }],\n  settingsPanels: [],\n  apiRoutes: [{ method: 'GET', path: '/status', async handler() { return Response.json({ status: 'ok', plugin: '${kebab}' }); } }],\n};\n\nexport default ${camel}Plugin;\n`, 'utf-8');
 
-      writeFileSync(resolve(pluginDir, 'launchkit-plugin.json'), JSON.stringify({
-        name: kebab, package: `@launchkit/plugin-${kebab}`, version: '0.1.0',
-        description: `${pascal} plugin for LaunchKit`,
-        install: { transpilePackages: [`@launchkit/plugin-${kebab}`], pages: {}, env: {} },
+      writeFileSync(resolve(pluginDir, 'codapult-plugin.json'), JSON.stringify({
+        name: kebab, package: `@codapult/plugin-${kebab}`, version: '0.1.0',
+        description: `${pascal} plugin for Codapult`,
+        install: { transpilePackages: [`@codapult/plugin-${kebab}`], pages: {}, env: {} },
       }, null, 2) + '\n', 'utf-8');
 
       writeFileSync(resolve(pluginDir, '.gitignore'), 'node_modules\ndist\n', 'utf-8');

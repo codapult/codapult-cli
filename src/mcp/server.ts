@@ -10,7 +10,7 @@ import { registerPrompts } from './prompts.js';
 import { registerResources } from './resources.js';
 
 const server = new McpServer({
-  name: 'launchkit',
+  name: 'codapult',
   version: '0.1.0',
 });
 

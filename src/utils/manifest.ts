@@ -27,7 +27,7 @@ export interface PluginManifest {
   };
 }
 
-const MANIFEST_FILENAME = 'launchkit-plugin.json';
+const MANIFEST_FILENAME = 'codapult-plugin.json';
 
 export function resolveManifest(
   projectRoot: string,
@@ -41,8 +41,8 @@ export function resolveManifest(
 
   const parentDir = resolve(projectRoot, '..');
   candidates.push(
-    join(parentDir, `launchkit-plugin-${nameOrPath}`),
-    join(parentDir, `launchkit-${nameOrPath}`),
+    join(parentDir, `codapult-plugin-${nameOrPath}`),
+    join(parentDir, `codapult-${nameOrPath}`),
     join(parentDir, nameOrPath),
   );
 

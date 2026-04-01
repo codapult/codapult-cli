@@ -2,8 +2,8 @@ import { execSync } from 'node:child_process';
 import { findProjectRoot } from '../utils/project.js';
 import { heading, success, fail, warn, info, dim, confirm, label } from '../utils/ui.js';
 
-const UPSTREAM_REMOTE = 'launchkit-upstream';
-const UPSTREAM_URL = 'https://github.com/AstronautSaaS/launchkit.git';
+const UPSTREAM_REMOTE = 'codapult-upstream';
+const UPSTREAM_URL = 'https://github.com/AstronautSaaS/codapult.git';
 
 interface UpdateOptions {
   dryRun?: boolean;
@@ -89,7 +89,7 @@ function classifyConflicts(cwd: string): { safe: string[]; caution: string[]; co
 export async function updateCommand(version: string | undefined, options: UpdateOptions): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
@@ -115,7 +115,7 @@ export async function updateCommand(version: string | undefined, options: Update
     return;
   }
 
-  heading('LaunchKit Update');
+  heading('Codapult Update');
 
   const current = getCurrentVersion(root);
   label('Current version', current);

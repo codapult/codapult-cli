@@ -12,8 +12,8 @@ import { envCheckCommand, envSyncCommand } from './commands/env.js';
 import { deployVercelCommand, deployDockerCommand, deployStatusCommand } from './commands/deploy.js';
 
 const program = new Command()
-  .name('launchkit')
-  .description('LaunchKit CLI — manage your SaaS project')
+  .name('codapult')
+  .description('Codapult CLI — manage your SaaS project')
   .version('0.1.0');
 
 program
@@ -23,7 +23,7 @@ program
 
 program
   .command('update [version]')
-  .description('update from upstream LaunchKit releases')
+  .description('update from upstream Codapult releases')
   .option('--dry-run', 'show what would change without applying')
   .option('--list', 'list available versions')
   .action(updateCommand);
@@ -41,7 +41,7 @@ program
 // --- plugins ---
 const plugins = program
   .command('plugins')
-  .description('manage LaunchKit plugins');
+  .description('manage Codapult plugins');
 
 plugins
   .command('add <name>')

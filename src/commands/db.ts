@@ -27,7 +27,7 @@ function getDbProvider(root: string): string {
 
 export async function dbPushCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Database Push');
   const provider = getDbProvider(root);
@@ -37,7 +37,7 @@ export async function dbPushCommand(): Promise<void> {
 
 export async function dbGenerateCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Generate Migration');
   const provider = getDbProvider(root);
@@ -52,7 +52,7 @@ export async function dbGenerateCommand(): Promise<void> {
 
 export async function dbSeedCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Seed Database');
   run('pnpm db:seed', root);
@@ -60,7 +60,7 @@ export async function dbSeedCommand(): Promise<void> {
 
 export async function dbStudioCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Drizzle Studio');
   const provider = getDbProvider(root);
@@ -76,7 +76,7 @@ export async function dbStudioCommand(): Promise<void> {
 
 export async function dbStatusCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Database Status');
 

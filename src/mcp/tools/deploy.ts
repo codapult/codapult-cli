@@ -5,13 +5,13 @@ import { findProjectRoot } from '../../utils/project.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
 export function registerDeployTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_deploy_status',
+    'codapult_deploy_status',
     {
       title: 'Deploy Readiness',
       description: 'Check deployment readiness: Dockerfile, vercel.json, Helm, Terraform, Pulumi, standalone output, Node engine',
@@ -26,7 +26,7 @@ export function registerDeployTools(server: McpServer): void {
         { name: 'vercel.json', path: 'vercel.json' },
         { name: 'Terraform (AWS)', path: 'infra/terraform/main.tf' },
         { name: 'Pulumi (AWS)', path: 'infra/pulumi/index.ts' },
-        { name: 'Helm chart', path: 'infra/helm/launchkit/Chart.yaml' },
+        { name: 'Helm chart', path: 'infra/helm/codapult/Chart.yaml' },
         { name: '.env.local', path: '.env.local' },
       ].map(({ name, path }) => ({
         name,

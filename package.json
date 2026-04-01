@@ -1,11 +1,11 @@
 {
-  "name": "@launchkit/cli",
+  "name": "@codapult/cli",
   "version": "0.1.0",
-  "description": "LaunchKit CLI — manage, update, and diagnose your LaunchKit SaaS project",
+  "description": "Codapult CLI — manage, update, and diagnose your Codapult SaaS project",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "launchkit": "./dist/index.js"
+    "codapult": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -16,7 +16,7 @@
     "prepublishOnly": "tsc"
   },
   "keywords": [
-    "launchkit",
+    "codapult",
     "saas",
     "boilerplate",
     "cli",
@@ -24,9 +24,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/AstronautSaaS/launchkit-cli.git"
+    "url": "https://github.com/AstronautSaaS/codapult-cli.git"
   },
-  "homepage": "https://launchkit.dev",
+  "homepage": "https://codapult.dev",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^13.1.0",

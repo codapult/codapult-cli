@@ -36,11 +36,11 @@ function tryExec(cmd: string, cwd: string): string | null {
 export async function doctorCommand(): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
-  heading('LaunchKit Doctor');
+  heading('Codapult Doctor');
   label('Project root', root);
   console.log();
 
@@ -55,7 +55,7 @@ export async function doctorCommand(): Promise<void> {
   if (!checkExists(root, 'src/lib/auth/index.ts', 'Auth adapter')) issues++;
   if (!checkExists(root, 'src/lib/payments/index.ts', 'Payments adapter')) issues++;
   if (!checkExists(root, 'next.config.ts', 'Next.js config')) issues++;
-  if (!checkExists(root, 'launchkit.plugins.ts', 'Plugin registry')) warnings++;
+  if (!checkExists(root, 'codapult.plugins.ts', 'Plugin registry')) warnings++;
   console.log();
 
   // --- Environment ---
@@ -63,7 +63,7 @@ export async function doctorCommand(): Promise<void> {
 
   const envPath = resolve(root, '.env.local');
   if (!existsSync(envPath)) {
-    fail('.env.local not found — run `launchkit setup`');
+    fail('.env.local not found — run `codapult setup`');
     issues++;
   } else {
     success('.env.local exists');
@@ -125,10 +125,10 @@ export async function doctorCommand(): Promise<void> {
   info('Git');
 
   const gitRemotes = tryExec('git remote -v', root);
-  if (gitRemotes?.includes('launchkit-upstream')) {
+  if (gitRemotes?.includes('codapult-upstream')) {
     success('Upstream remote configured');
   } else {
-    dim('No upstream remote — run `launchkit update` to set up');
+    dim('No upstream remote — run `codapult update` to set up');
   }
 
   const gitStatus = tryExec('git status --porcelain', root);

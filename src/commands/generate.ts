@@ -30,12 +30,12 @@ function writeIfNotExists(filePath: string, content: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit generate page <name>
+// codapult generate page <name>
 // ---------------------------------------------------------------------------
 
 export async function generatePageCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   const kebab = toKebab(name);
   const pascal = toPascal(name);
@@ -49,7 +49,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata = {
-  title: '${title} — LaunchKit',
+  title: '${title} — Codapult',
 };
 
 export default async function ${pascal}Page() {
@@ -88,12 +88,12 @@ export default async function ${pascal}Page() {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit generate api <name>
+// codapult generate api <name>
 // ---------------------------------------------------------------------------
 
 export async function generateApiCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -170,12 +170,12 @@ export async function POST(req: Request) {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit generate action <name>
+// codapult generate action <name>
 // ---------------------------------------------------------------------------
 
 export async function generateActionCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -226,17 +226,17 @@ export async function ${camel}Action(input: unknown): Promise<{ success: boolean
 }
 
 // ---------------------------------------------------------------------------
-// launchkit generate plugin <name>
+// codapult generate plugin <name>
 // ---------------------------------------------------------------------------
 
 export async function generatePluginCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
   const pascal = toPascal(name);
-  const pluginDir = resolve(root, '..', `launchkit-plugin-${kebab}`);
+  const pluginDir = resolve(root, '..', `codapult-plugin-${kebab}`);
 
   heading(`Generating plugin scaffold: ${kebab}`);
 
@@ -247,9 +247,9 @@ export async function generatePluginCommand(name: string): Promise<void> {
 
   // package.json
   const pkg = JSON.stringify({
-    name: `@launchkit/plugin-${kebab}`,
+    name: `@codapult/plugin-${kebab}`,
     version: '0.1.0',
-    description: `LaunchKit plugin: ${name}`,
+    description: `Codapult plugin: ${name}`,
     license: 'MIT',
     type: 'module',
     main: './src/index.ts',
@@ -273,7 +273,7 @@ export async function generatePluginCommand(name: string): Promise<void> {
       skipLibCheck: true,
       declaration: true,
       outDir: './dist',
-      paths: { '@/*': ['../../launchkit/src/*'] },
+      paths: { '@/*': ['../../codapult/src/*'] },
     },
     include: ['src'],
   }, null, 2) + '\n';
@@ -281,12 +281,12 @@ export async function generatePluginCommand(name: string): Promise<void> {
   success('tsconfig.json');
 
   // src/index.ts
-  const indexTs = `import type { LaunchKitPlugin } from '@/lib/plugins';
+  const indexTs = `import type { CodapultPlugin } from '@/lib/plugins';
 
-const ${camel}Plugin: LaunchKitPlugin = {
+const ${camel}Plugin: CodapultPlugin = {
   name: '${kebab}',
   version: '0.1.0',
-  description: '${pascal} plugin for LaunchKit',
+  description: '${pascal} plugin for Codapult',
 
   onInit() {
     // Plugin initialization logic
@@ -320,37 +320,37 @@ export default ${camel}Plugin;
   writeIfNotExists(resolve(pluginDir, 'src/index.ts'), indexTs);
   success('src/index.ts');
 
-  // launchkit-plugin.json manifest
+  // codapult-plugin.json manifest
   const manifest = JSON.stringify({
     name: kebab,
-    package: `@launchkit/plugin-${kebab}`,
+    package: `@codapult/plugin-${kebab}`,
     version: '0.1.0',
-    description: `${pascal} plugin for LaunchKit`,
+    description: `${pascal} plugin for Codapult`,
     install: {
-      transpilePackages: [`@launchkit/plugin-${kebab}`],
+      transpilePackages: [`@codapult/plugin-${kebab}`],
       pages: {
         [`src/app/(dashboard)/dashboard/${kebab}/page.tsx`]:
-          `@launchkit/plugin-${kebab}/pages/${kebab}-page`,
+          `@codapult/plugin-${kebab}/pages/${kebab}-page`,
       },
       env: {},
     },
   }, null, 2) + '\n';
-  writeIfNotExists(resolve(pluginDir, 'launchkit-plugin.json'), manifest);
-  success('launchkit-plugin.json');
+  writeIfNotExists(resolve(pluginDir, 'codapult-plugin.json'), manifest);
+  success('codapult-plugin.json');
 
   // .gitignore
   writeIfNotExists(resolve(pluginDir, '.gitignore'), 'node_modules\ndist\n');
   success('.gitignore');
 
   // README
-  const readme = `# @launchkit/plugin-${kebab}
+  const readme = `# @codapult/plugin-${kebab}
 
-${pascal} plugin for LaunchKit.
+${pascal} plugin for Codapult.
 
 ## Installation
 
 \`\`\`bash
-npx @launchkit/cli plugins add ${kebab}
+npx @codapult/cli plugins add ${kebab}
 \`\`\`
 
 ## Development
@@ -365,6 +365,6 @@ pnpm tsc --noEmit
 
   console.log();
   info(`Plugin scaffold created at: ${pluginDir}`);
-  dim(`Install with: npx @launchkit/cli plugins add ${kebab}`);
+  dim(`Install with: npx @codapult/cli plugins add ${kebab}`);
   console.log();
 }

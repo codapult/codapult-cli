@@ -18,10 +18,10 @@ function extractTableNames(schema: string): string {
 
 export function registerPrompts(server: McpServer): void {
   server.registerPrompt(
-    'launchkit_code_review',
+    'codapult_code_review',
     {
-      title: 'LaunchKit Code Review',
-      description: 'Review code against LaunchKit conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first. Auto-includes current project config.',
+      title: 'Codapult Code Review',
+      description: 'Review code against Codapult conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first. Auto-includes current project config.',
       argsSchema: {
         code: z.string().describe('The code to review'),
         focus: z.string().optional().describe('Focus area: "security" | "performance" | "conventions" | "typescript"'),
@@ -44,9 +44,9 @@ export function registerPrompts(server: McpServer): void {
             role: 'user' as const,
             content: {
               type: 'text' as const,
-              text: `Review the following code against LaunchKit conventions. ${focusInstruction}
+              text: `Review the following code against Codapult conventions. ${focusInstruction}
 
-LaunchKit conventions:
+Codapult conventions:
 - API routes: auth check (getAppSession) → rate limiting (checkRateLimit) → Zod validation → business logic → NextResponse.json
 - Server actions: 'use server' directive, auth check, rate limiting, Zod parse, revalidatePath
 - TypeScript: strict mode, no \`any\`, prefer \`satisfies\` over \`as\`, \`unknown\` + type guards
@@ -71,10 +71,10 @@ ${code}
   );
 
   server.registerPrompt(
-    'launchkit_schema_design',
+    'codapult_schema_design',
     {
-      title: 'LaunchKit Schema Design',
-      description: 'Design a Drizzle ORM table following LaunchKit conventions. Auto-includes current schema for context (existing tables, naming patterns).',
+      title: 'Codapult Schema Design',
+      description: 'Design a Drizzle ORM table following Codapult conventions. Auto-includes current schema for context (existing tables, naming patterns).',
       argsSchema: {
         description: z.string().describe('What the table should store (e.g. "user bookmarks with URL, title, and tags")'),
       },
@@ -96,7 +96,7 @@ ${code}
 
 "${description}"
 
-Follow LaunchKit schema conventions:
+Follow Codapult schema conventions:
 - Use \`sqliteTable()\` from \`drizzle-orm/sqlite-core\`
 - Table name: singular snake_case (e.g. \`bookmark\`, \`user_preference\`)
 - Primary key: \`text('id').primaryKey()\` (nanoid/UUID, not auto-increment)

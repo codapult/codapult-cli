@@ -25,13 +25,13 @@ function execQuiet(cmd: string, cwd: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit plugins add <name>
+// codapult plugins add <name>
 // ---------------------------------------------------------------------------
 
 export async function pluginsAddCommand(name: string): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
@@ -40,9 +40,9 @@ export async function pluginsAddCommand(name: string): Promise<void> {
   const result = resolveManifest(root, name);
   if (!result) {
     fail(`Plugin "${name}" not found.`);
-    dim('Searched for launchkit-plugin.json in:');
-    dim(`  ../launchkit-plugin-${name}/`);
-    dim(`  ../launchkit-${name}/`);
+    dim('Searched for codapult-plugin.json in:');
+    dim(`  ../codapult-plugin-${name}/`);
+    dim(`  ../codapult-${name}/`);
     dim(`  ../${name}/`);
     process.exit(1);
   }
@@ -156,13 +156,13 @@ export async function pluginsAddCommand(name: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit plugins remove <name>
+// codapult plugins remove <name>
 // ---------------------------------------------------------------------------
 
 export async function pluginsRemoveCommand(name: string): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
@@ -176,7 +176,7 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
     warn(`Manifest for "${name}" not found — performing basic cleanup.`);
     manifest = {
       name,
-      package: `@launchkit/plugin-${name}`,
+      package: `@codapult/plugin-${name}`,
       version: '0.0.0',
       description: '',
       install: {},
@@ -255,13 +255,13 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit plugins list
+// codapult plugins list
 // ---------------------------------------------------------------------------
 
 export async function pluginsListCommand(): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
@@ -270,7 +270,7 @@ export async function pluginsListCommand(): Promise<void> {
   const pluginsDir = resolve(root, 'src/plugins');
   if (!existsSync(pluginsDir)) {
     dim('No plugins installed.');
-    dim('Use: launchkit plugins add <name>');
+    dim('Use: codapult plugins add <name>');
     console.log();
     return;
   }
@@ -281,7 +281,7 @@ export async function pluginsListCommand(): Promise<void> {
 
   if (files.length === 0) {
     dim('No plugins installed.');
-    dim('Use: launchkit plugins add <name>');
+    dim('Use: codapult plugins add <name>');
     console.log();
     return;
   }

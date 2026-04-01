@@ -6,7 +6,7 @@ import { findProjectRoot, readProjectFile } from '../../utils/project.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
@@ -67,7 +67,7 @@ function parseSchema(content: string): TableInfo[] {
 
 export function registerDbTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_db_get_tables',
+    'codapult_db_get_tables',
     {
       title: 'Get Database Tables',
       description: 'List all tables in the database schema with column counts',
@@ -90,7 +90,7 @@ export function registerDbTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_db_get_table_info',
+    'codapult_db_get_table_info',
     {
       title: 'Get Table Info',
       description: 'Get detailed column info for a specific database table (columns, types, constraints)',
@@ -118,7 +118,7 @@ export function registerDbTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_db_status',
+    'codapult_db_status',
     {
       title: 'Database Status',
       description: 'Get database provider, table count, and migration count',

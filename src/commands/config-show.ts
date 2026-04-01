@@ -28,11 +28,11 @@ function extractEnvValue(envContent: string, key: string): string | null {
 export async function configShowCommand(): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
-    fail('Not inside a LaunchKit project.');
+    fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
-  heading('LaunchKit Configuration');
+  heading('Codapult Configuration');
   label('Project root', root);
 
   // --- Package info ---
@@ -93,7 +93,7 @@ export async function configShowCommand(): Promise<void> {
       label('  OAuth providers', providers.join(', ') || 'none');
     }
   } else {
-    dim('src/config/app.ts not found — run `launchkit setup`');
+    dim('src/config/app.ts not found — run `codapult setup`');
   }
   console.log();
 

@@ -6,7 +6,7 @@ import { findProjectRoot, readProjectFile } from '../../utils/project.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
@@ -48,7 +48,7 @@ function parseEnvFile(content: string): EnvEntry[] {
 
 export function registerEnvTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_env_schema',
+    'codapult_env_schema',
     {
       title: 'Env Schema',
       description: 'Get all environment variables from .env.example with descriptions and default values',
@@ -65,7 +65,7 @@ export function registerEnvTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_env_read',
+    'codapult_env_read',
     {
       title: 'Read Env',
       description: 'Read current .env.local values with validation status against .env.example',
@@ -100,7 +100,7 @@ export function registerEnvTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_env_update',
+    'codapult_env_update',
     {
       title: 'Update Env Variable',
       description: 'Update or add a single environment variable in .env.local',

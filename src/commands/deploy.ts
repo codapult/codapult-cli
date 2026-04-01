@@ -14,12 +14,12 @@ function hasCommand(cmd: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit deploy vercel
+// codapult deploy vercel
 // ---------------------------------------------------------------------------
 
 export async function deployVercelCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Deploy to Vercel');
 
@@ -83,12 +83,12 @@ export async function deployVercelCommand(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit deploy docker
+// codapult deploy docker
 // ---------------------------------------------------------------------------
 
 export async function deployDockerCommand(opts: { tag?: string }): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Deploy with Docker');
 
@@ -116,7 +116,7 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
 
   // 4. Read package.json for name
   const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<string, unknown>;
-  const appName = (pkg.name as string) || 'launchkit';
+  const appName = (pkg.name as string) || 'codapult';
   const tag = opts.tag || 'latest';
   const imageName = `${appName}:${tag}`;
 
@@ -158,12 +158,12 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
 }
 
 // ---------------------------------------------------------------------------
-// launchkit deploy status
+// codapult deploy status
 // ---------------------------------------------------------------------------
 
 export async function deployStatusCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Deploy Readiness');
 
@@ -173,7 +173,7 @@ export async function deployStatusCommand(): Promise<void> {
     { name: 'vercel.json', path: 'vercel.json' },
     { name: 'Terraform (AWS)', path: 'infra/terraform/main.tf' },
     { name: 'Pulumi (AWS)', path: 'infra/pulumi/index.ts' },
-    { name: 'Helm chart', path: 'infra/helm/launchkit/Chart.yaml' },
+    { name: 'Helm chart', path: 'infra/helm/codapult/Chart.yaml' },
     { name: '.env.local', path: '.env.local' },
   ];
 
@@ -207,7 +207,7 @@ export async function deployStatusCommand(): Promise<void> {
 
   console.log();
   dim('Deploy targets:');
-  dim('  launchkit deploy vercel   — Vercel (recommended)');
-  dim('  launchkit deploy docker   — Docker build + run');
+  dim('  codapult deploy vercel   — Vercel (recommended)');
+  dim('  codapult deploy docker   — Docker build + run');
   console.log();
 }

@@ -12,16 +12,16 @@ import {
 
 function getRoot(): string {
   const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a LaunchKit project');
+  if (!root) throw new Error('Not inside a Codapult project');
   return root;
 }
 
 export function registerPluginTools(server: McpServer): void {
   server.registerTool(
-    'launchkit_plugins_list',
+    'codapult_plugins_list',
     {
       title: 'List Plugins',
-      description: 'List installed LaunchKit plugins with package names and versions',
+      description: 'List installed Codapult plugins with package names and versions',
       inputSchema: {},
     },
     async () => {
@@ -52,10 +52,10 @@ export function registerPluginTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_plugins_add',
+    'codapult_plugins_add',
     {
       title: 'Add Plugin',
-      description: 'Install a LaunchKit plugin by name. Patches schema, config, pages, and env automatically.',
+      description: 'Install a Codapult plugin by name. Patches schema, config, pages, and env automatically.',
       inputSchema: {
         name: z.string().describe('Plugin name (e.g. "ai-kit", "video-player")'),
       },
@@ -114,10 +114,10 @@ export function registerPluginTools(server: McpServer): void {
   );
 
   server.registerTool(
-    'launchkit_plugins_remove',
+    'codapult_plugins_remove',
     {
       title: 'Remove Plugin',
-      description: 'Uninstall a LaunchKit plugin by name. Reverts all patches.',
+      description: 'Uninstall a Codapult plugin by name. Reverts all patches.',
       inputSchema: {
         name: z.string().describe('Plugin name to remove'),
       },
@@ -126,7 +126,7 @@ export function registerPluginTools(server: McpServer): void {
       const root = getRoot();
       const result = resolveManifest(root, name);
       const manifest = result?.manifest ?? {
-        name, package: `@launchkit/plugin-${name}`, version: '0.0.0', description: '', install: {},
+        name, package: `@codapult/plugin-${name}`, version: '0.0.0', description: '', install: {},
       };
       const pluginDir = result?.pluginDir ?? '';
       const steps: string[] = [];

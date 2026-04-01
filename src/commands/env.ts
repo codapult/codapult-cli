@@ -40,12 +40,12 @@ function parseEnvFile(content: string): EnvEntry[] {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit env check
+// codapult env check
 // ---------------------------------------------------------------------------
 
 export async function envCheckCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Environment Check');
 
@@ -109,12 +109,12 @@ export async function envCheckCommand(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// launchkit env sync
+// codapult env sync
 // ---------------------------------------------------------------------------
 
 export async function envSyncCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a LaunchKit project.'); process.exit(1); }
+  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
 
   heading('Sync .env.local with .env.example');
 
