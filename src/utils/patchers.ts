@@ -48,9 +48,17 @@ export function patchSchemaImports(
       if (!existing.includes(imp)) existing.push(imp);
     }
   } else {
+    // Only remove import if no remaining plugin table blocks use it
+    const contentWithoutThisPlugin = removeMarkedBlock(content, pluginName);
     for (const imp of imports) {
       const idx = existing.indexOf(imp);
-      if (idx !== -1) existing.splice(idx, 1);
+      if (idx === -1) continue;
+      // Check if the symbol is used outside the import line itself
+      const usagePattern = new RegExp(`\\b${imp}\\b`);
+      const contentAfterImport = contentWithoutThisPlugin.replace(importLine[0], '');
+      if (!usagePattern.test(contentAfterImport)) {
+        existing.splice(idx, 1);
+      }
     }
   }
 
@@ -108,9 +116,6 @@ export function patchDbReExports(
   if (!existsSync(dbIndexPath)) return;
   let content = readFileSync(dbIndexPath, 'utf-8');
 
-  const exportLine = `export { ${symbols.join(', ')} } from './schema';`;
-  const markedBlock = `${MARKER_START(pluginName)}\n${exportLine}\n${MARKER_END(pluginName)}`;
-
   if (action === 'remove') {
     content = removeMarkedBlock(content, pluginName);
     writeFileSync(dbIndexPath, content, 'utf-8');
@@ -118,7 +123,36 @@ export function patchDbReExports(
   }
 
   if (hasMarker(content, pluginName)) return;
-  content = content.trimEnd() + '\n\n' + markedBlock + '\n';
+
+  // Collect symbols already re-exported from './schema' by other plugins
+  const existingExportMatch = content.match(
+    /export\s*\{([^}]+)\}\s*from\s*['"]\.\/schema['"];?/,
+  );
+  const alreadyExported = new Set<string>();
+  if (existingExportMatch) {
+    existingExportMatch[1].split(',').map((s) => s.trim()).filter(Boolean).forEach((s) => alreadyExported.add(s));
+  }
+
+  // Only add symbols not already exported
+  const newSymbols = symbols.filter((s) => !alreadyExported.has(s));
+  const commentLine = `${MARKER_START(pluginName)}\n// db re-exports handled by first plugin that needed them\n${MARKER_END(pluginName)}`;
+
+  if (newSymbols.length === 0) {
+    // All needed symbols already exported — add an empty marker so remove knows this plugin was here
+    content = content.trimEnd() + '\n\n' + commentLine + '\n';
+  } else if (existingExportMatch) {
+    // Merge into the existing export line
+    const merged = [...alreadyExported, ...newSymbols];
+    const newExportLine = `export { ${merged.join(', ')} } from './schema';`;
+    content = content.replace(existingExportMatch[0], newExportLine);
+    content = content.trimEnd() + '\n\n' + commentLine + '\n';
+  } else {
+    // No existing export — create a new one
+    const exportLine = `export { ${symbols.join(', ')} } from './schema';`;
+    const markedBlock = `${MARKER_START(pluginName)}\n${exportLine}\n${MARKER_END(pluginName)}`;
+    content = content.trimEnd() + '\n\n' + markedBlock + '\n';
+  }
+
   writeFileSync(dbIndexPath, content, 'utf-8');
 }
 
@@ -141,13 +175,24 @@ export function patchNextConfig(
 
   if (action === 'add') {
     if (transpile.length > 0) {
-      const transpileEntries = transpile.map((p) => `    '${p}',`).join('\n');
-      const markedTranspile = `  ${MARKER_START(pluginName)}\n  transpilePackages: [\n${transpileEntries}\n  ],\n  ${MARKER_END(pluginName)}`;
-
-      if (!hasMarker(content, pluginName)) {
+      const existingTranspile = content.match(/transpilePackages:\s*\[/);
+      if (existingTranspile) {
+        // Append entries to existing array (with per-entry plugin markers)
+        for (const pkg of transpile) {
+          if (!content.includes(`'${pkg}'`)) {
+            content = content.replace(
+              /transpilePackages:\s*\[/,
+              `transpilePackages: [\n    '${pkg}', // plugin:${pluginName}`,
+            );
+          }
+        }
+      } else {
+        // Create a new transpilePackages array
+        const transpileEntries = transpile.map((p) => `    '${p}', // plugin:${pluginName}`).join('\n');
+        const newBlock = `  transpilePackages: [\n${transpileEntries}\n  ],`;
         content = content.replace(
           /const nextConfig:\s*NextConfig\s*=\s*\{/,
-          `const nextConfig: NextConfig = {\n${markedTranspile}`,
+          `const nextConfig: NextConfig = {\n${newBlock}`,
         );
       }
     }
@@ -156,15 +201,21 @@ export function patchNextConfig(
       if (!content.includes(`'${pkg}'`)) {
         content = content.replace(
           /serverExternalPackages:\s*\[/,
-          `serverExternalPackages: [\n    '${pkg}',`,
+          `serverExternalPackages: [\n    '${pkg}', // plugin:${pluginName}`,
         );
       }
     }
   } else {
+    // Remove lines with per-entry markers for this plugin
+    const entryPattern = new RegExp(`^[ \\t]*'[^']*',?\\s*//\\s*plugin:${pluginName}\\s*\\n`, 'gm');
+    content = content.replace(entryPattern, '');
+    // Also remove old-style marker blocks for backward compatibility
     content = removeMarkedBlock(content, pluginName);
     for (const pkg of externals) {
-      content = content.replace(new RegExp(`\\s*'${pkg.replace('/', '\\/')}',?`, 'g'), '');
+      content = content.replace(new RegExp(`\\s*'${pkg.replace('/', '\\/')}',?\\s*(//[^\n]*)?`, 'g'), '');
     }
+    // Clean up empty transpilePackages array
+    content = content.replace(/\s*transpilePackages:\s*\[\s*\],?\s*\n/g, '\n');
   }
 
   writeFileSync(configPath, content, 'utf-8');
