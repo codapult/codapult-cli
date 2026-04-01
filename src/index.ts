@@ -5,6 +5,7 @@ import { setupCommand } from './commands/setup.js';
 import { updateCommand } from './commands/update.js';
 import { doctorCommand } from './commands/doctor.js';
 import { configShowCommand } from './commands/config-show.js';
+import { pluginsAddCommand, pluginsRemoveCommand, pluginsListCommand } from './commands/plugins.js';
 
 const program = new Command()
   .name('launchkit')
@@ -32,5 +33,24 @@ program
   .command('config')
   .description('show current project configuration')
   .action(configShowCommand);
+
+const plugins = program
+  .command('plugins')
+  .description('manage LaunchKit plugins');
+
+plugins
+  .command('add <name>')
+  .description('install a plugin from a local directory')
+  .action(pluginsAddCommand);
+
+plugins
+  .command('remove <name>')
+  .description('uninstall a plugin')
+  .action(pluginsRemoveCommand);
+
+plugins
+  .command('list')
+  .description('list installed plugins')
+  .action(pluginsListCommand);
 
 program.parse();
