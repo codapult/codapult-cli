@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import pc from 'picocolors';
 import { setupCommand } from './commands/setup.js';
 import { updateCommand } from './commands/update.js';
 import { doctorCommand } from './commands/doctor.js';
@@ -14,9 +15,15 @@ import { deployVercelCommand, deployDockerCommand, deployStatusCommand } from '.
 const program = new Command()
   .name('codapult')
   .description('Codapult CLI — manage your SaaS project')
-  .version('0.1.0');
+  .version('0.1.0')
+  .configureHelp({
+    styleTitle: (str) => pc.bold(pc.cyan(str)),
+    styleCommandText: (str) => pc.yellow(str),
+    styleOptionText: (str) => pc.green(str),
+  });
 
 program
+  .commandsGroup('Project')
   .command('setup')
   .description('interactive project setup wizard')
   .action(setupCommand);
@@ -38,8 +45,8 @@ program
   .description('show current project configuration')
   .action(configShowCommand);
 
-// --- plugins ---
 const plugins = program
+  .commandsGroup('Plugins')
   .command('plugins')
   .description('manage Codapult plugins');
 
@@ -58,8 +65,8 @@ plugins
   .description('list installed plugins')
   .action(pluginsListCommand);
 
-// --- generate ---
 const generate = program
+  .commandsGroup('Code Generation')
   .command('generate')
   .alias('g')
   .description('scaffold new code from templates');
@@ -84,8 +91,8 @@ generate
   .description('scaffold a new plugin repository')
   .action(generatePluginCommand);
 
-// --- db ---
 const db = program
+  .commandsGroup('Infrastructure')
   .command('db')
   .description('database management (Drizzle ORM)');
 
@@ -95,7 +102,6 @@ db.command('seed').description('seed sample data').action(dbSeedCommand);
 db.command('studio').description('open Drizzle Studio').action(dbStudioCommand);
 db.command('status').description('show schema info and migration count').action(dbStatusCommand);
 
-// --- env ---
 const env = program
   .command('env')
   .description('environment variable management');
@@ -103,7 +109,6 @@ const env = program
 env.command('check').description('validate .env.local against .env.example').action(envCheckCommand);
 env.command('sync').description('add missing variables from .env.example').action(envSyncCommand);
 
-// --- deploy ---
 const deploy = program
   .command('deploy')
   .description('deployment helpers');
@@ -116,8 +121,8 @@ deploy
   .action(deployDockerCommand);
 deploy.command('status').description('check deploy readiness').action(deployStatusCommand);
 
-// --- mcp ---
 program
+  .commandsGroup('AI Integration')
   .command('mcp-server')
   .description('start MCP server for AI assistant integration (Cursor, Claude, Codex)')
   .action(async () => {
