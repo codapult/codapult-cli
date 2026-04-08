@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
@@ -19,7 +19,10 @@ function hasCommand(cmd: string): boolean {
 
 export async function deployVercelCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   heading('Deploy to Vercel');
 
@@ -88,7 +91,10 @@ export async function deployVercelCommand(): Promise<void> {
 
 export async function deployDockerCommand(opts: { tag?: string }): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   heading('Deploy with Docker');
 
@@ -115,7 +121,10 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
   }
 
   // 4. Read package.json for name
-  const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<string, unknown>;
+  const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
+    string,
+    unknown
+  >;
   const appName = (pkg.name as string) || 'codapult';
   const tag = opts.tag || 'latest';
   const imageName = `${appName}:${tag}`;
@@ -163,7 +172,10 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
 
 export async function deployStatusCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   heading('Deploy Readiness');
 
@@ -197,7 +209,10 @@ export async function deployStatusCommand(): Promise<void> {
   }
 
   // Check engines
-  const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<string, unknown>;
+  const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
+    string,
+    unknown
+  >;
   const engines = pkg.engines as Record<string, string> | undefined;
   if (engines?.node) {
     success(`Node engine: ${engines.node}`);

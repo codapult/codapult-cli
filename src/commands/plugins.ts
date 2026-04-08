@@ -80,7 +80,10 @@ export async function pluginsAddCommand(name: string): Promise<void> {
   }
 
   // 5. Patch next.config.ts
-  if (manifest.install.transpilePackages?.length || manifest.install.serverExternalPackages?.length) {
+  if (
+    manifest.install.transpilePackages?.length ||
+    manifest.install.serverExternalPackages?.length
+  ) {
     info('Updating next.config.ts...');
     patchNextConfig(root, manifest.name, manifest, 'add');
     success('next.config.ts updated');
@@ -225,7 +228,10 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
   }
 
   // 6. Remove next.config.ts patches
-  if (manifest.install.transpilePackages?.length || manifest.install.serverExternalPackages?.length) {
+  if (
+    manifest.install.transpilePackages?.length ||
+    manifest.install.serverExternalPackages?.length
+  ) {
     info('Reverting next.config.ts...');
     patchNextConfig(root, manifest.name, manifest, 'remove');
     success('next.config.ts reverted');
@@ -275,9 +281,7 @@ export async function pluginsListCommand(): Promise<void> {
     return;
   }
 
-  const files = readdirSync(pluginsDir).filter(
-    (f) => f.endsWith('.ts') && f !== 'index.ts',
-  );
+  const files = readdirSync(pluginsDir).filter((f) => f.endsWith('.ts') && f !== 'index.ts');
 
   if (files.length === 0) {
     dim('No plugins installed.');
@@ -298,9 +302,7 @@ export async function pluginsListCommand(): Promise<void> {
     const pluginName = file.replace('.ts', '');
     const content = readFileSync(resolve(pluginsDir, file), 'utf-8');
     const allImports = [...content.matchAll(/from\s+['"]([^'"]+)['"]/g)];
-    const packageMatch = allImports.find(
-      (m) => m[1] && !m[1].startsWith('@/lib/'),
-    );
+    const packageMatch = allImports.find((m) => m[1] && !m[1].startsWith('@/lib/'));
     const packageName = packageMatch?.[1] ?? 'unknown';
     const version = deps[packageName] ?? '';
 

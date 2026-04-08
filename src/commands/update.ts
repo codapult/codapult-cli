@@ -86,7 +86,10 @@ function classifyConflicts(cwd: string): { safe: string[]; caution: string[]; co
   return { safe, caution, core };
 }
 
-export async function updateCommand(version: string | undefined, options: UpdateOptions): Promise<void> {
+export async function updateCommand(
+  version: string | undefined,
+  options: UpdateOptions,
+): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -137,7 +140,10 @@ export async function updateCommand(version: string | undefined, options: Update
   if (options.dryRun) {
     info('Dry run — showing changes without applying:');
     console.log();
-    exec(`git log --oneline ${current}..${UPSTREAM_REMOTE}/${target} 2>/dev/null || git log --oneline ..${target} 2>/dev/null`, root);
+    exec(
+      `git log --oneline ${current}..${UPSTREAM_REMOTE}/${target} 2>/dev/null || git log --oneline ..${target} 2>/dev/null`,
+      root,
+    );
     console.log();
     dim('Run without --dry-run to apply the update.');
     return;

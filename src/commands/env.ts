@@ -45,7 +45,10 @@ function parseEnvFile(content: string): EnvEntry[] {
 
 export async function envCheckCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   heading('Environment Check');
 
@@ -87,9 +90,7 @@ export async function envCheckCommand(): Promise<void> {
     }
   }
 
-  const extra = localEntries.filter(
-    (e) => !exampleEntries.some((ex) => ex.key === e.key),
-  );
+  const extra = localEntries.filter((e) => !exampleEntries.some((ex) => ex.key === e.key));
   if (extra.length > 0) {
     console.log();
     info(`${extra.length} extra variable(s) in .env.local (not in .env.example):`);
@@ -114,7 +115,10 @@ export async function envCheckCommand(): Promise<void> {
 
 export async function envSyncCommand(): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   heading('Sync .env.local with .env.example');
 
@@ -139,9 +143,7 @@ export async function envSyncCommand(): Promise<void> {
   const localEntries = parseEnvFile(localContent);
   const localKeys = new Set(localEntries.map((e) => e.key));
 
-  const newEntries = exampleEntries.filter(
-    (e) => e.required && !localKeys.has(e.key),
-  );
+  const newEntries = exampleEntries.filter((e) => e.required && !localKeys.has(e.key));
 
   if (newEntries.length === 0) {
     success('Already in sync — no new variables to add');

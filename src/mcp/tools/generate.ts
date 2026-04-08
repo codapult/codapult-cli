@@ -11,10 +11,16 @@ function getRoot(): string {
 }
 
 function toKebab(name: string): string {
-  return name.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
+  return name
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[\s_]+/g, '-')
+    .toLowerCase();
 }
 function toPascal(name: string): string {
-  return toKebab(name).split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('');
+  return toKebab(name)
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
 }
 function toCamel(name: string): string {
   const p = toPascal(name);
@@ -33,7 +39,8 @@ export function registerGenerateTools(server: McpServer): void {
     'codapult_generate_page',
     {
       title: 'Generate Page',
-      description: 'Create a new dashboard page following Codapult conventions (server component, auth, Card UI)',
+      description:
+        'Create a new dashboard page following Codapult conventions (server component, auth, Card UI)',
       inputSchema: { name: z.string().describe('Page name (e.g. "analytics", "team-settings")') },
     },
     async ({ name }) => {
@@ -44,7 +51,10 @@ export function registerGenerateTools(server: McpServer): void {
 
       const page = `import { getAppSession } from '@/lib/auth';\nimport { redirect } from 'next/navigation';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\n\nexport const metadata = {\n  title: '${title} — Codapult',\n};\n\nexport default async function ${pascal}Page() {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  return (\n    <div className="space-y-6">\n      <div>\n        <h1 className="text-3xl font-bold tracking-tight">${title}</h1>\n        <p className="text-muted-foreground">Manage your ${kebab} settings</p>\n      </div>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>${title}</CardTitle>\n          <CardDescription>Your ${kebab} content goes here</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <p className="text-muted-foreground">Start building your ${kebab} page.</p>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
 
-      const result = writeIfNew(resolve(root, `src/app/(dashboard)/dashboard/${kebab}/page.tsx`), page);
+      const result = writeIfNew(
+        resolve(root, `src/app/(dashboard)/dashboard/${kebab}/page.tsx`),
+        page,
+      );
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
     },
   );
@@ -74,7 +84,9 @@ export function registerGenerateTools(server: McpServer): void {
     {
       title: 'Generate Server Action',
       description: 'Create a new server action with auth, rate limiting, and Zod validation',
-      inputSchema: { name: z.string().describe('Action name (e.g. "update-profile", "create-team")') },
+      inputSchema: {
+        name: z.string().describe('Action name (e.g. "update-profile", "create-team")'),
+      },
     },
     async ({ name }) => {
       const root = getRoot();
@@ -93,7 +105,8 @@ export function registerGenerateTools(server: McpServer): void {
     'codapult_generate_plugin',
     {
       title: 'Generate Plugin',
-      description: 'Scaffold a new plugin repository with package.json, tsconfig, index.ts, and manifest',
+      description:
+        'Scaffold a new plugin repository with package.json, tsconfig, index.ts, and manifest',
       inputSchema: { name: z.string().describe('Plugin name (e.g. "my-widget")') },
     },
     async ({ name }) => {
@@ -104,32 +117,64 @@ export function registerGenerateTools(server: McpServer): void {
       const pluginDir = resolve(root, '..', `codapult-plugin-${kebab}`);
 
       if (existsSync(pluginDir)) {
-        return { content: [{ type: 'text' as const, text: `Directory already exists: ${pluginDir}` }], isError: true };
+        return {
+          content: [{ type: 'text' as const, text: `Directory already exists: ${pluginDir}` }],
+          isError: true,
+        };
       }
 
       mkdirSync(resolve(pluginDir, 'src'), { recursive: true });
 
-      writeFileSync(resolve(pluginDir, 'package.json'), JSON.stringify({
-        name: `@codapult/plugin-${kebab}`, version: '0.1.0', description: `Codapult plugin: ${name}`,
-        license: 'MIT', type: 'module', main: './src/index.ts',
-        exports: { '.': './src/index.ts' },
-        peerDependencies: { react: '>=19', next: '>=16' },
-        devDependencies: { typescript: '^5' },
-        packageManager: 'pnpm@10.0.0',
-      }, null, 2) + '\n', 'utf-8');
+      writeFileSync(
+        resolve(pluginDir, 'package.json'),
+        JSON.stringify(
+          {
+            name: `@codapult/plugin-${kebab}`,
+            version: '0.1.0',
+            description: `Codapult plugin: ${name}`,
+            license: 'MIT',
+            type: 'module',
+            main: './src/index.ts',
+            exports: { '.': './src/index.ts' },
+            peerDependencies: { react: '>=19', next: '>=16' },
+            devDependencies: { typescript: '^5' },
+            packageManager: 'pnpm@10.0.0',
+          },
+          null,
+          2,
+        ) + '\n',
+        'utf-8',
+      );
 
-      writeFileSync(resolve(pluginDir, 'src/index.ts'),
-        `import type { CodapultPlugin } from '@/lib/plugins';\n\nconst ${camel}Plugin: CodapultPlugin = {\n  name: '${kebab}',\n  version: '0.1.0',\n  description: '${pascal} plugin for Codapult',\n  onInit() {},\n  navItems: [{ id: '${kebab}', label: '${pascal}', href: '/dashboard/${kebab}', icon: 'Puzzle', order: 50 }],\n  settingsPanels: [],\n  apiRoutes: [{ method: 'GET', path: '/status', async handler() { return Response.json({ status: 'ok', plugin: '${kebab}' }); } }],\n};\n\nexport default ${camel}Plugin;\n`, 'utf-8');
+      writeFileSync(
+        resolve(pluginDir, 'src/index.ts'),
+        `import type { CodapultPlugin } from '@/lib/plugins';\n\nconst ${camel}Plugin: CodapultPlugin = {\n  name: '${kebab}',\n  version: '0.1.0',\n  description: '${pascal} plugin for Codapult',\n  onInit() {},\n  navItems: [{ id: '${kebab}', label: '${pascal}', href: '/dashboard/${kebab}', icon: 'Puzzle', order: 50 }],\n  settingsPanels: [],\n  apiRoutes: [{ method: 'GET', path: '/status', async handler() { return Response.json({ status: 'ok', plugin: '${kebab}' }); } }],\n};\n\nexport default ${camel}Plugin;\n`,
+        'utf-8',
+      );
 
-      writeFileSync(resolve(pluginDir, 'codapult-plugin.json'), JSON.stringify({
-        name: kebab, package: `@codapult/plugin-${kebab}`, version: '0.1.0',
-        description: `${pascal} plugin for Codapult`,
-        install: { transpilePackages: [`@codapult/plugin-${kebab}`], pages: {}, env: {} },
-      }, null, 2) + '\n', 'utf-8');
+      writeFileSync(
+        resolve(pluginDir, 'codapult-plugin.json'),
+        JSON.stringify(
+          {
+            name: kebab,
+            package: `@codapult/plugin-${kebab}`,
+            version: '0.1.0',
+            description: `${pascal} plugin for Codapult`,
+            install: { transpilePackages: [`@codapult/plugin-${kebab}`], pages: {}, env: {} },
+          },
+          null,
+          2,
+        ) + '\n',
+        'utf-8',
+      );
 
       writeFileSync(resolve(pluginDir, '.gitignore'), 'node_modules\ndist\n', 'utf-8');
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify({ created: true, path: pluginDir }) }] };
+      return {
+        content: [
+          { type: 'text' as const, text: JSON.stringify({ created: true, path: pluginDir }) },
+        ],
+      };
     },
   );
 }

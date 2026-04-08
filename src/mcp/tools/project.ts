@@ -16,7 +16,8 @@ export function registerProjectTools(server: McpServer): void {
     'codapult_project_status',
     {
       title: 'Project Status',
-      description: 'Get Codapult project status: variant, adapters, installed plugins, enabled features, git status',
+      description:
+        'Get Codapult project status: variant, adapters, installed plugins, enabled features, git status',
       inputSchema: {},
     },
     async () => {
@@ -31,16 +32,24 @@ export function registerProjectTools(server: McpServer): void {
 
       const pluginsDir = resolve(root, 'src/plugins');
       const plugins = existsSync(pluginsDir)
-        ? readdirSync(pluginsDir).filter(f => f.endsWith('.ts') && f !== 'index.ts').map(f => f.replace('.ts', ''))
+        ? readdirSync(pluginsDir)
+            .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+            .map((f) => f.replace('.ts', ''))
         : [];
 
       let gitBranch = '';
       let gitDirty = false;
       try {
-        gitBranch = execSync('git branch --show-current', { cwd: root, stdio: 'pipe' }).toString().trim();
-        const status = execSync('git status --porcelain', { cwd: root, stdio: 'pipe' }).toString().trim();
+        gitBranch = execSync('git branch --show-current', { cwd: root, stdio: 'pipe' })
+          .toString()
+          .trim();
+        const status = execSync('git status --porcelain', { cwd: root, stdio: 'pipe' })
+          .toString()
+          .trim();
         gitDirty = status.length > 0;
-      } catch { /* not a git repo */ }
+      } catch {
+        /* not a git repo */
+      }
 
       const configContent = readProjectFile(root, 'src/config/app.ts') ?? '';
       const features: string[] = [];
@@ -88,7 +97,10 @@ export function registerProjectTools(server: McpServer): void {
       title: 'Run Checks',
       description: 'Run lint, typecheck, and/or test. Returns structured pass/fail results.',
       inputSchema: {
-        checks: z.array(z.enum(['lint', 'typecheck', 'test'])).optional().describe('Which checks to run (default: all)'),
+        checks: z
+          .array(z.enum(['lint', 'typecheck', 'test']))
+          .optional()
+          .describe('Which checks to run (default: all)'),
       },
     },
     async ({ checks }) => {
@@ -108,8 +120,10 @@ export function registerProjectTools(server: McpServer): void {
           const output = execSync(cmd, { cwd: root, stdio: 'pipe', timeout: 120_000 }).toString();
           results[check] = { passed: true, output: output.slice(-2000) };
         } catch (err) {
-          const output = (err as { stdout?: Buffer; stderr?: Buffer }).stderr?.toString() ??
-            (err as { stdout?: Buffer }).stdout?.toString() ?? 'Check failed';
+          const output =
+            (err as { stdout?: Buffer; stderr?: Buffer }).stderr?.toString() ??
+            (err as { stdout?: Buffer }).stdout?.toString() ??
+            'Check failed';
           results[check] = { passed: false, output: output.slice(-2000) };
         }
       }
@@ -122,7 +136,8 @@ export function registerProjectTools(server: McpServer): void {
     'codapult_doctor',
     {
       title: 'Doctor',
-      description: 'Run project health checks: file structure, env vars, dependencies, TypeScript, git',
+      description:
+        'Run project health checks: file structure, env vars, dependencies, TypeScript, git',
       inputSchema: {},
     },
     async () => {
@@ -130,9 +145,13 @@ export function registerProjectTools(server: McpServer): void {
       const checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; detail: string }> = [];
 
       const requiredFiles = [
-        'package.json', 'next.config.ts', 'src/lib/db/schema.ts',
-        'src/lib/auth/index.ts', 'src/lib/payments/index.ts',
-        'src/config/app.ts', '.env.local',
+        'package.json',
+        'next.config.ts',
+        'src/lib/db/schema.ts',
+        'src/lib/auth/index.ts',
+        'src/lib/payments/index.ts',
+        'src/config/app.ts',
+        '.env.local',
       ];
       for (const f of requiredFiles) {
         checks.push({

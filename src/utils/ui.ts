@@ -47,9 +47,7 @@ export function table(rows: Array<[string, string, string?]>): void {
 
   for (const [key, value, status] of rows) {
     const statusStr = status ?? '';
-    console.log(
-      `  ${key.padEnd(maxKey)}  ${value.padEnd(maxVal)}  ${statusStr}`,
-    );
+    console.log(`  ${key.padEnd(maxKey)}  ${value.padEnd(maxVal)}  ${statusStr}`);
   }
 }
 

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
-import { heading, success, fail, info, dim, confirm } from '../utils/ui.js';
+import { heading, success, fail, info, dim } from '../utils/ui.js';
 
 function toKebab(name: string): string {
   return name
@@ -35,7 +35,10 @@ function writeIfNotExists(filePath: string, content: string): boolean {
 
 export async function generatePageCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   const kebab = toKebab(name);
   const pascal = toPascal(name);
@@ -93,7 +96,10 @@ export default async function ${pascal}Page() {
 
 export async function generateApiCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -175,11 +181,13 @@ export async function POST(req: Request) {
 
 export async function generateActionCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
-  const pascal = toPascal(name);
   const schemaName = `${camel}Schema`;
 
   heading(`Generating server action: ${kebab}`);
@@ -231,7 +239,10 @@ export async function ${camel}Action(input: unknown): Promise<{ success: boolean
 
 export async function generatePluginCommand(name: string): Promise<void> {
   const root = findProjectRoot();
-  if (!root) { fail('Not inside a Codapult project.'); process.exit(1); }
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -246,37 +257,47 @@ export async function generatePluginCommand(name: string): Promise<void> {
   }
 
   // package.json
-  const pkg = JSON.stringify({
-    name: `@codapult/plugin-${kebab}`,
-    version: '0.1.0',
-    description: `Codapult plugin: ${name}`,
-    license: 'MIT',
-    type: 'module',
-    main: './src/index.ts',
-    exports: { '.': './src/index.ts' },
-    peerDependencies: { react: '>=19', 'next': '>=16' },
-    devDependencies: { typescript: '^5' },
-    packageManager: 'pnpm@10.0.0',
-  }, null, 2) + '\n';
+  const pkg =
+    JSON.stringify(
+      {
+        name: `@codapult/plugin-${kebab}`,
+        version: '0.1.0',
+        description: `Codapult plugin: ${name}`,
+        license: 'MIT',
+        type: 'module',
+        main: './src/index.ts',
+        exports: { '.': './src/index.ts' },
+        peerDependencies: { react: '>=19', next: '>=16' },
+        devDependencies: { typescript: '^5' },
+        packageManager: 'pnpm@10.0.0',
+      },
+      null,
+      2,
+    ) + '\n';
   writeIfNotExists(resolve(pluginDir, 'package.json'), pkg);
   success('package.json');
 
   // tsconfig.json
-  const tsconfig = JSON.stringify({
-    compilerOptions: {
-      target: 'ES2022',
-      module: 'ESNext',
-      moduleResolution: 'bundler',
-      jsx: 'react-jsx',
-      strict: true,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      declaration: true,
-      outDir: './dist',
-      paths: { '@/*': ['../../codapult/src/*'] },
-    },
-    include: ['src'],
-  }, null, 2) + '\n';
+  const tsconfig =
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          jsx: 'react-jsx',
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          declaration: true,
+          outDir: './dist',
+          paths: { '@/*': ['../../codapult/src/*'] },
+        },
+        include: ['src'],
+      },
+      null,
+      2,
+    ) + '\n';
   writeIfNotExists(resolve(pluginDir, 'tsconfig.json'), tsconfig);
   success('tsconfig.json');
 
@@ -321,20 +342,24 @@ export default ${camel}Plugin;
   success('src/index.ts');
 
   // codapult-plugin.json manifest
-  const manifest = JSON.stringify({
-    name: kebab,
-    package: `@codapult/plugin-${kebab}`,
-    version: '0.1.0',
-    description: `${pascal} plugin for Codapult`,
-    install: {
-      transpilePackages: [`@codapult/plugin-${kebab}`],
-      pages: {
-        [`src/app/(dashboard)/dashboard/${kebab}/page.tsx`]:
-          `@codapult/plugin-${kebab}/pages/${kebab}-page`,
+  const manifest =
+    JSON.stringify(
+      {
+        name: kebab,
+        package: `@codapult/plugin-${kebab}`,
+        version: '0.1.0',
+        description: `${pascal} plugin for Codapult`,
+        install: {
+          transpilePackages: [`@codapult/plugin-${kebab}`],
+          pages: {
+            [`src/app/(dashboard)/dashboard/${kebab}/page.tsx`]: `@codapult/plugin-${kebab}/pages/${kebab}-page`,
+          },
+          env: {},
+        },
       },
-      env: {},
-    },
-  }, null, 2) + '\n';
+      null,
+      2,
+    ) + '\n';
   writeIfNotExists(resolve(pluginDir, 'codapult-plugin.json'), manifest);
   success('codapult-plugin.json');
 

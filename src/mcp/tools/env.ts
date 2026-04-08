@@ -51,13 +51,18 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_schema',
     {
       title: 'Env Schema',
-      description: 'Get all environment variables from .env.example with descriptions and default values',
+      description:
+        'Get all environment variables from .env.example with descriptions and default values',
       inputSchema: {},
     },
     async () => {
       const root = getRoot();
       const content = readProjectFile(root, '.env.example');
-      if (!content) return { content: [{ type: 'text' as const, text: '.env.example not found' }], isError: true };
+      if (!content)
+        return {
+          content: [{ type: 'text' as const, text: '.env.example not found' }],
+          isError: true,
+        };
 
       const entries = parseEnvFile(content);
       return { content: [{ type: 'text' as const, text: JSON.stringify(entries, null, 2) }] };
@@ -74,23 +79,27 @@ export function registerEnvTools(server: McpServer): void {
     async () => {
       const root = getRoot();
       const localContent = readProjectFile(root, '.env.local');
-      if (!localContent) return { content: [{ type: 'text' as const, text: '.env.local not found' }], isError: true };
+      if (!localContent)
+        return {
+          content: [{ type: 'text' as const, text: '.env.local not found' }],
+          isError: true,
+        };
 
       const exampleContent = readProjectFile(root, '.env.example') ?? '';
       const localEntries = parseEnvFile(localContent);
       const exampleEntries = parseEnvFile(exampleContent);
-      const localKeys = new Set(localEntries.map(e => e.key));
+      const localKeys = new Set(localEntries.map((e) => e.key));
 
       const missing = exampleEntries
-        .filter(e => e.required && !localKeys.has(e.key))
-        .map(e => e.key);
+        .filter((e) => e.required && !localKeys.has(e.key))
+        .map((e) => e.key);
 
       const unconfigured = localEntries
-        .filter(e => !e.value || /^(your-|generate-|""?)/.test(e.value))
-        .map(e => e.key);
+        .filter((e) => !e.value || /^(your-|generate-|""?)/.test(e.value))
+        .map((e) => e.key);
 
       const result = {
-        variables: localEntries.map(e => ({ key: e.key, value: e.value, comment: e.comment })),
+        variables: localEntries.map((e) => ({ key: e.key, value: e.value, comment: e.comment })),
         missing,
         unconfigured,
       };
@@ -114,7 +123,10 @@ export function registerEnvTools(server: McpServer): void {
       const envPath = resolve(root, '.env.local');
 
       if (!existsSync(envPath)) {
-        return { content: [{ type: 'text' as const, text: '.env.local not found' }], isError: true };
+        return {
+          content: [{ type: 'text' as const, text: '.env.local not found' }],
+          isError: true,
+        };
       }
 
       let content = readFileSync(envPath, 'utf-8');

@@ -14,7 +14,8 @@ export function registerDeployTools(server: McpServer): void {
     'codapult_deploy_status',
     {
       title: 'Deploy Readiness',
-      description: 'Check deployment readiness: Dockerfile, vercel.json, Helm, Terraform, Pulumi, standalone output, Node engine',
+      description:
+        'Check deployment readiness: Dockerfile, vercel.json, Helm, Terraform, Pulumi, standalone output, Node engine',
       inputSchema: {},
     },
     async () => {
@@ -41,7 +42,10 @@ export function registerDeployTools(server: McpServer): void {
       }
 
       let nodeEngine = '';
-      const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<string, unknown>;
+      const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
+        string,
+        unknown
+      >;
       const engines = pkg.engines as Record<string, string> | undefined;
       if (engines?.node) nodeEngine = engines.node;
 

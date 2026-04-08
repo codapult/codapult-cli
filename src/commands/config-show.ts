@@ -62,8 +62,8 @@ export async function configShowCommand(): Promise<void> {
 
     info('Features');
     const features = extractTsBooleanFields(content);
-    const featureKeys = Object.keys(features).filter((k) =>
-      !['magicLink', 'passkeys', 'twoFactor'].includes(k),
+    const featureKeys = Object.keys(features).filter(
+      (k) => !['magicLink', 'passkeys', 'twoFactor'].includes(k),
     );
     const enabled = featureKeys.filter((k) => features[k]);
     const disabled = featureKeys.filter((k) => !features[k]);

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -21,11 +21,11 @@ interface TableInfo {
 
 function parseSchema(content: string): TableInfo[] {
   const tables: TableInfo[] = [];
-  const tableRegex = /export\s+const\s+(\w+)\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]\s*,\s*\{/g;
+  const tableRegex =
+    /export\s+const\s+(\w+)\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]\s*,\s*\{/g;
 
   let match;
   while ((match = tableRegex.exec(content)) !== null) {
-    const varName = match[1];
     const tableName = match[2];
 
     const startIdx = match.index + match[0].length;
@@ -40,7 +40,8 @@ function parseSchema(content: string): TableInfo[] {
     const body = content.slice(startIdx, endIdx);
     const columns: TableInfo['columns'] = [];
 
-    const colRegex = /(\w+)\s*:\s*(text|integer|real|blob|boolean|timestamp|serial)\(['"](\w+)['"]/g;
+    const colRegex =
+      /(\w+)\s*:\s*(text|integer|real|blob|boolean|timestamp|serial)\(['"](\w+)['"]/g;
     let colMatch;
     while ((colMatch = colRegex.exec(body)) !== null) {
       const colName = colMatch[1];
@@ -76,13 +77,17 @@ export function registerDbTools(server: McpServer): void {
     async () => {
       const root = getRoot();
       const content = readProjectFile(root, 'src/lib/db/schema.ts');
-      if (!content) return { content: [{ type: 'text' as const, text: 'Schema file not found' }], isError: true };
+      if (!content)
+        return {
+          content: [{ type: 'text' as const, text: 'Schema file not found' }],
+          isError: true,
+        };
 
       const tables = parseSchema(content);
-      const summary = tables.map(t => ({
+      const summary = tables.map((t) => ({
         name: t.name,
         columns: t.columns.length,
-        columnNames: t.columns.map(c => c.name),
+        columnNames: t.columns.map((c) => c.name),
       }));
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(summary, null, 2) }] };
@@ -93,7 +98,8 @@ export function registerDbTools(server: McpServer): void {
     'codapult_db_get_table_info',
     {
       title: 'Get Table Info',
-      description: 'Get detailed column info for a specific database table (columns, types, constraints)',
+      description:
+        'Get detailed column info for a specific database table (columns, types, constraints)',
       inputSchema: {
         table: z.string().describe('Table name (e.g. "user", "subscription")'),
       },
@@ -101,14 +107,20 @@ export function registerDbTools(server: McpServer): void {
     async ({ table }) => {
       const root = getRoot();
       const content = readProjectFile(root, 'src/lib/db/schema.ts');
-      if (!content) return { content: [{ type: 'text' as const, text: 'Schema file not found' }], isError: true };
+      if (!content)
+        return {
+          content: [{ type: 'text' as const, text: 'Schema file not found' }],
+          isError: true,
+        };
 
       const tables = parseSchema(content);
-      const found = tables.find(t => t.name === table);
+      const found = tables.find((t) => t.name === table);
       if (!found) {
-        const available = tables.map(t => t.name).join(', ');
+        const available = tables.map((t) => t.name).join(', ');
         return {
-          content: [{ type: 'text' as const, text: `Table "${table}" not found. Available: ${available}` }],
+          content: [
+            { type: 'text' as const, text: `Table "${table}" not found. Available: ${available}` },
+          ],
           isError: true,
         };
       }
@@ -139,10 +151,10 @@ export function registerDbTools(server: McpServer): void {
       const migrDir = resolve(root, 'src/lib/db/migrations');
       const migrPgDir = resolve(root, 'src/lib/db/migrations-pg');
       if (existsSync(migrDir)) {
-        sqliteMigrations = readdirSync(migrDir).filter(f => f.endsWith('.sql')).length;
+        sqliteMigrations = readdirSync(migrDir).filter((f) => f.endsWith('.sql')).length;
       }
       if (existsSync(migrPgDir)) {
-        pgMigrations = readdirSync(migrPgDir).filter(f => f.endsWith('.sql')).length;
+        pgMigrations = readdirSync(migrPgDir).filter((f) => f.endsWith('.sql')).length;
       }
 
       const result = { provider, tableCount: tables.length, sqliteMigrations, pgMigrations };

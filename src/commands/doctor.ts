@@ -144,8 +144,18 @@ export async function doctorCommand(): Promise<void> {
   info('Key packages');
   const pkg = readJsonFile(resolve(root, 'package.json'));
   if (pkg) {
-    const deps = { ...(pkg.dependencies as Record<string, string> | undefined), ...(pkg.devDependencies as Record<string, string> | undefined) };
-    const keyPackages = ['next', 'react', 'typescript', 'drizzle-orm', 'tailwindcss', 'better-auth'];
+    const deps = {
+      ...(pkg.dependencies as Record<string, string> | undefined),
+      ...(pkg.devDependencies as Record<string, string> | undefined),
+    };
+    const keyPackages = [
+      'next',
+      'react',
+      'typescript',
+      'drizzle-orm',
+      'tailwindcss',
+      'better-auth',
+    ];
     for (const name of keyPackages) {
       if (deps[name]) {
         dim(`  ${name}: ${deps[name]}`);

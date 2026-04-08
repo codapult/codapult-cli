@@ -1,4 +1,12 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, rmdirSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  rmdirSync,
+} from 'node:fs';
 import { resolve, dirname, relative } from 'node:path';
 import type { PluginManifest } from './manifest.js';
 
@@ -41,7 +49,10 @@ export function patchSchemaImports(
   );
   if (!importLine) return;
 
-  const existing = importLine[1].split(',').map((s) => s.trim()).filter(Boolean);
+  const existing = importLine[1]
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   if (action === 'add') {
     for (const imp of imports) {
@@ -125,12 +136,14 @@ export function patchDbReExports(
   if (hasMarker(content, pluginName)) return;
 
   // Collect symbols already re-exported from './schema' by other plugins
-  const existingExportMatch = content.match(
-    /export\s*\{([^}]+)\}\s*from\s*['"]\.\/schema['"];?/,
-  );
+  const existingExportMatch = content.match(/export\s*\{([^}]+)\}\s*from\s*['"]\.\/schema['"];?/);
   const alreadyExported = new Set<string>();
   if (existingExportMatch) {
-    existingExportMatch[1].split(',').map((s) => s.trim()).filter(Boolean).forEach((s) => alreadyExported.add(s));
+    existingExportMatch[1]
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((s) => alreadyExported.add(s));
   }
 
   // Only add symbols not already exported
@@ -188,7 +201,9 @@ export function patchNextConfig(
         }
       } else {
         // Create a new transpilePackages array
-        const transpileEntries = transpile.map((p) => `    '${p}', // plugin:${pluginName}`).join('\n');
+        const transpileEntries = transpile
+          .map((p) => `    '${p}', // plugin:${pluginName}`)
+          .join('\n');
         const newBlock = `  transpilePackages: [\n${transpileEntries}\n  ],`;
         content = content.replace(
           /const nextConfig:\s*NextConfig\s*=\s*\{/,
@@ -212,7 +227,10 @@ export function patchNextConfig(
     // Also remove old-style marker blocks for backward compatibility
     content = removeMarkedBlock(content, pluginName);
     for (const pkg of externals) {
-      content = content.replace(new RegExp(`\\s*'${pkg.replace('/', '\\/')}',?\\s*(//[^\n]*)?`, 'g'), '');
+      content = content.replace(
+        new RegExp(`\\s*'${pkg.replace('/', '\\/')}',?\\s*(//[^\n]*)?`, 'g'),
+        '',
+      );
     }
     // Clean up empty transpilePackages array
     content = content.replace(/\s*transpilePackages:\s*\[\s*\],?\s*\n/g, '\n');

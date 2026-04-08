@@ -12,8 +12,10 @@ function loadProjectContext(): { schema: string; config: string } {
 }
 
 function extractTableNames(schema: string): string {
-  const matches = [...schema.matchAll(/export\s+const\s+\w+\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]/g)];
-  return matches.map(m => m[1]).join(', ');
+  const matches = [
+    ...schema.matchAll(/export\s+const\s+\w+\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]/g),
+  ];
+  return matches.map((m) => m[1]).join(', ');
 }
 
 export function registerPrompts(server: McpServer): void {
@@ -21,10 +23,14 @@ export function registerPrompts(server: McpServer): void {
     'codapult_code_review',
     {
       title: 'Codapult Code Review',
-      description: 'Review code against Codapult conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first. Auto-includes current project config.',
+      description:
+        'Review code against Codapult conventions: API pattern (auth→rate limit→Zod→response), adapter usage, TypeScript strict mode, server components first. Auto-includes current project config.',
       argsSchema: {
         code: z.string().describe('The code to review'),
-        focus: z.string().optional().describe('Focus area: "security" | "performance" | "conventions" | "typescript"'),
+        focus: z
+          .string()
+          .optional()
+          .describe('Focus area: "security" | "performance" | "conventions" | "typescript"'),
       },
     },
     ({ code, focus }) => {
@@ -74,9 +80,14 @@ ${code}
     'codapult_schema_design',
     {
       title: 'Codapult Schema Design',
-      description: 'Design a Drizzle ORM table following Codapult conventions. Auto-includes current schema for context (existing tables, naming patterns).',
+      description:
+        'Design a Drizzle ORM table following Codapult conventions. Auto-includes current schema for context (existing tables, naming patterns).',
       argsSchema: {
-        description: z.string().describe('What the table should store (e.g. "user bookmarks with URL, title, and tags")'),
+        description: z
+          .string()
+          .describe(
+            'What the table should store (e.g. "user bookmarks with URL, title, and tags")',
+          ),
       },
     },
     ({ description }) => {
