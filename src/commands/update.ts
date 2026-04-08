@@ -3,7 +3,7 @@ import { findProjectRoot } from '../utils/project.js';
 import { heading, success, fail, warn, info, dim, confirm, label } from '../utils/ui.js';
 
 const UPSTREAM_REMOTE = 'codapult-upstream';
-const UPSTREAM_URL = 'https://github.com/AstronautSaaS/codapult.git';
+const UPSTREAM_URL = 'https://github.com/codapult/codapult.git';
 
 interface UpdateOptions {
   dryRun?: boolean;
