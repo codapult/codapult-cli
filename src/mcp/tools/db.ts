@@ -12,11 +12,11 @@ function getRoot(): string {
 
 interface TableInfo {
   name: string;
-  columns: Array<{
+  columns: {
     name: string;
     type: string;
     constraints: string[];
-  }>;
+  }[];
 }
 
 function parseSchema(content: string): TableInfo[] {
@@ -31,9 +31,9 @@ function parseSchema(content: string): TableInfo[] {
     const startIdx = match.index + match[0].length;
     let depth = 1;
     let endIdx = startIdx;
-    for (let i = startIdx; i < content.length && depth > 0; i++) {
-      if (content[i] === '{') depth++;
-      if (content[i] === '}') depth--;
+    for (let i = startIdx; i < content.length && depth > 0; i += 1) {
+      if (content[i] === '{') depth += 1;
+      if (content[i] === '}') depth -= 1;
       endIdx = i;
     }
 
@@ -74,7 +74,7 @@ export function registerDbTools(server: McpServer): void {
       description: 'List all tables in the database schema with column counts',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
       const content = readProjectFile(root, 'src/lib/db/schema.ts');
       if (!content)
@@ -104,7 +104,7 @@ export function registerDbTools(server: McpServer): void {
         table: z.string().describe('Table name (e.g. "user", "subscription")'),
       },
     },
-    async ({ table }) => {
+    ({ table }) => {
       const root = getRoot();
       const content = readProjectFile(root, 'src/lib/db/schema.ts');
       if (!content)
@@ -136,11 +136,11 @@ export function registerDbTools(server: McpServer): void {
       description: 'Get database provider, table count, and migration count',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
 
       const envContent = readProjectFile(root, '.env.local') ?? '';
-      const providerMatch = envContent.match(/^DB_PROVIDER\s*=\s*"?(\w+)"?/m);
+      const providerMatch = /^DB_PROVIDER\s*=\s*"?(\w+)"?/m.exec(envContent);
       const provider = providerMatch?.[1] ?? 'turso';
 
       const schemaContent = readProjectFile(root, 'src/lib/db/schema.ts') ?? '';

@@ -22,7 +22,7 @@ function parseEnvFile(content: string): EnvEntry[] {
       continue;
     }
 
-    const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)\s*=\s*"?(.*?)"?\s*$/);
+    const match = /^([A-Z_][A-Z0-9_]*)\s*=\s*"?(.*?)"?\s*$/.exec(trimmed);
     if (match) {
       entries.push({
         key: match[1],
@@ -43,7 +43,7 @@ function parseEnvFile(content: string): EnvEntry[] {
 // codapult env check
 // ---------------------------------------------------------------------------
 
-export async function envCheckCommand(): Promise<void> {
+export function envCheckCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -77,14 +77,14 @@ export async function envCheckCommand(): Promise<void> {
   for (const entry of requiredKeys) {
     if (!localKeys.has(entry.key)) {
       fail(`Missing: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`);
-      missing++;
+      missing += 1;
     } else {
       const local = localEntries.find((e) => e.key === entry.key);
       if (local && (!local.value || local.value === entry.value)) {
         const isPlaceholder = /^(your-|generate-|https?:\/\/your|""?)/.test(local.value);
         if (isPlaceholder || !local.value) {
           warn(`Not configured: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`);
-          empty++;
+          empty += 1;
         }
       }
     }

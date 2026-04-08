@@ -20,13 +20,16 @@ export function registerProjectTools(server: McpServer): void {
         'Get Codapult project status: variant, adapters, installed plugins, enabled features, git status',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
-      const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8'));
+      const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
+        string,
+        unknown
+      >;
 
       const envContent = readProjectFile(root, '.env.local') ?? '';
-      const getEnv = (key: string, fallback: string) => {
-        const m = envContent.match(new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm'));
+      const getEnv = (key: string, fallback: string): string => {
+        const m = new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm').exec(envContent);
         return m?.[1] ?? fallback;
       };
 
@@ -58,8 +61,8 @@ export function registerProjectTools(server: McpServer): void {
       }
 
       const result = {
-        name: pkg.name,
-        version: pkg.version,
+        name: pkg.name as string,
+        version: pkg.version as string,
         adapters: {
           auth: getEnv('AUTH_PROVIDER', 'better-auth'),
           payments: getEnv('PAYMENT_PROVIDER', 'stripe'),
@@ -84,7 +87,7 @@ export function registerProjectTools(server: McpServer): void {
       description: 'Read the app configuration from src/config/app.ts (brand, auth, features)',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
       const content = readProjectFile(root, 'src/config/app.ts') ?? 'Config file not found';
       return { content: [{ type: 'text' as const, text: content }] };
@@ -103,7 +106,7 @@ export function registerProjectTools(server: McpServer): void {
           .describe('Which checks to run (default: all)'),
       },
     },
-    async ({ checks }) => {
+    ({ checks }) => {
       const root = getRoot();
       const toRun = checks ?? ['lint', 'typecheck', 'test'];
       const commands: Record<string, string> = {
@@ -140,9 +143,9 @@ export function registerProjectTools(server: McpServer): void {
         'Run project health checks: file structure, env vars, dependencies, TypeScript, git',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
-      const checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; detail: string }> = [];
+      const checks: { name: string; status: 'ok' | 'warn' | 'fail'; detail: string }[] = [];
 
       const requiredFiles = [
         'package.json',

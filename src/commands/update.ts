@@ -18,7 +18,7 @@ function exec(cmd: string, cwd: string, silent = false): string {
 
 function execQuiet(cmd: string, cwd: string): string {
   try {
-    return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).toString().trim();
+    return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
     return '';
   }

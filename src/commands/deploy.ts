@@ -48,7 +48,7 @@ export async function deployVercelCommand(): Promise<void> {
     const content = readFileSync(envPath, 'utf-8');
     const critical = ['TURSO_DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'];
     for (const key of critical) {
-      const match = content.match(new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm'));
+      const match = new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm').exec(content);
       if (match && !/^(your-|generate-)/.test(match[1])) {
         success(`${key} configured`);
       } else {
@@ -170,7 +170,7 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
 // codapult deploy status
 // ---------------------------------------------------------------------------
 
-export async function deployStatusCommand(): Promise<void> {
+export function deployStatusCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');

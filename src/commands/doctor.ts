@@ -27,13 +27,13 @@ function checkEnvVar(envContent: string, key: string, description: string): bool
 
 function tryExec(cmd: string, cwd: string): string | null {
   try {
-    return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).toString().trim();
+    return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
     return null;
   }
 }
 
-export async function doctorCommand(): Promise<void> {
+export function doctorCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -49,13 +49,13 @@ export async function doctorCommand(): Promise<void> {
 
   // --- Project structure ---
   info('Project structure');
-  if (!checkExists(root, 'package.json', 'package.json')) issues++;
-  if (!checkExists(root, 'src/config/app.ts', 'App config (src/config/app.ts)')) issues++;
-  if (!checkExists(root, 'src/lib/db/schema.ts', 'Database schema')) issues++;
-  if (!checkExists(root, 'src/lib/auth/index.ts', 'Auth adapter')) issues++;
-  if (!checkExists(root, 'src/lib/payments/index.ts', 'Payments adapter')) issues++;
-  if (!checkExists(root, 'next.config.ts', 'Next.js config')) issues++;
-  if (!checkExists(root, 'codapult.plugins.ts', 'Plugin registry')) warnings++;
+  if (!checkExists(root, 'package.json', 'package.json')) issues += 1;
+  if (!checkExists(root, 'src/config/app.ts', 'App config (src/config/app.ts)')) issues += 1;
+  if (!checkExists(root, 'src/lib/db/schema.ts', 'Database schema')) issues += 1;
+  if (!checkExists(root, 'src/lib/auth/index.ts', 'Auth adapter')) issues += 1;
+  if (!checkExists(root, 'src/lib/payments/index.ts', 'Payments adapter')) issues += 1;
+  if (!checkExists(root, 'next.config.ts', 'Next.js config')) issues += 1;
+  if (!checkExists(root, 'codapult.plugins.ts', 'Plugin registry')) warnings += 1;
   console.log();
 
   // --- Environment ---
@@ -64,15 +64,15 @@ export async function doctorCommand(): Promise<void> {
   const envPath = resolve(root, '.env.local');
   if (!existsSync(envPath)) {
     fail('.env.local not found — run `codapult setup`');
-    issues++;
+    issues += 1;
   } else {
     success('.env.local exists');
     const envContent = readFileSync(envPath, 'utf-8');
 
-    if (!checkEnvVar(envContent, 'TURSO_DATABASE_URL', 'Database URL')) issues++;
-    if (!checkEnvVar(envContent, 'BETTER_AUTH_SECRET', 'Auth secret')) warnings++;
-    if (!checkEnvVar(envContent, 'AUTH_PROVIDER', 'Auth provider')) warnings++;
-    if (!checkEnvVar(envContent, 'PAYMENT_PROVIDER', 'Payment provider')) warnings++;
+    if (!checkEnvVar(envContent, 'TURSO_DATABASE_URL', 'Database URL')) issues += 1;
+    if (!checkEnvVar(envContent, 'BETTER_AUTH_SECRET', 'Auth secret')) warnings += 1;
+    if (!checkEnvVar(envContent, 'AUTH_PROVIDER', 'Auth provider')) warnings += 1;
+    if (!checkEnvVar(envContent, 'PAYMENT_PROVIDER', 'Payment provider')) warnings += 1;
   }
   console.log();
 
@@ -86,11 +86,11 @@ export async function doctorCommand(): Promise<void> {
       success(`Node.js ${nodeVersion}`);
     } else {
       fail(`Node.js ${nodeVersion} — requires v20+`);
-      issues++;
+      issues += 1;
     }
   } else {
     fail('Node.js not found');
-    issues++;
+    issues += 1;
   }
 
   const pnpmVersion = tryExec('pnpm --version', root);
@@ -98,7 +98,7 @@ export async function doctorCommand(): Promise<void> {
     success(`pnpm ${pnpmVersion}`);
   } else {
     fail('pnpm not found — install: npm i -g pnpm');
-    issues++;
+    issues += 1;
   }
 
   const nodeModulesExist = existsSync(resolve(root, 'node_modules'));
@@ -106,7 +106,7 @@ export async function doctorCommand(): Promise<void> {
     success('node_modules installed');
   } else {
     fail('node_modules missing — run: pnpm install');
-    issues++;
+    issues += 1;
   }
   console.log();
 
@@ -115,7 +115,7 @@ export async function doctorCommand(): Promise<void> {
   const tscResult = tryExec('npx tsc --noEmit 2>&1 | tail -1', root);
   if (tscResult === null || tscResult.includes('error')) {
     warn('TypeScript has errors — run: pnpm type-check');
-    warnings++;
+    warnings += 1;
   } else {
     success('TypeScript compiles cleanly');
   }

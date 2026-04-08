@@ -5,7 +5,7 @@ import { heading, success, fail, info, dim, label } from '../utils/ui.js';
 
 function extractTsObjectField(content: string, field: string): string | null {
   const regex = new RegExp(`${field}:\\s*['"\`]([^'"\`]+)['"\`]`);
-  const match = content.match(regex);
+  const match = regex.exec(content);
   return match?.[1] ?? null;
 }
 
@@ -21,11 +21,11 @@ function extractTsBooleanFields(content: string): Record<string, boolean> {
 
 function extractEnvValue(envContent: string, key: string): string | null {
   const regex = new RegExp(`^${key}=(.*)$`, 'm');
-  const match = envContent.match(regex);
+  const match = regex.exec(envContent);
   return match?.[1]?.trim() ?? null;
 }
 
-export async function configShowCommand(): Promise<void> {
+export function configShowCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -38,8 +38,8 @@ export async function configShowCommand(): Promise<void> {
   // --- Package info ---
   const pkg = readJsonFile(resolve(root, 'package.json'));
   if (pkg) {
-    label('Package name', String(pkg.name ?? 'unknown'));
-    label('Version', String(pkg.version ?? 'unknown'));
+    label('Package name', typeof pkg.name === 'string' ? pkg.name : 'unknown');
+    label('Version', typeof pkg.version === 'string' ? pkg.version : 'unknown');
   }
   console.log();
 
@@ -84,7 +84,7 @@ export async function configShowCommand(): Promise<void> {
     if (passkeys !== undefined) label('  Passkeys', passkeys ? 'enabled' : 'disabled');
     if (twoFactor !== undefined) label('  2FA (TOTP)', twoFactor ? 'enabled' : 'disabled');
 
-    const oauthMatch = content.match(/oauthProviders:\s*\[([^\]]*)\]/);
+    const oauthMatch = /oauthProviders:\s*\[([^\]]*)\]/.exec(content);
     if (oauthMatch) {
       const providers = oauthMatch[1]
         .split(',')

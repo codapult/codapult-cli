@@ -4,7 +4,8 @@ import { createInterface } from 'node:readline';
 import { findProjectRoot } from '../utils/project.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
 
-const rl = () => createInterface({ input: process.stdin, output: process.stdout });
+const rl = (): ReturnType<typeof createInterface> =>
+  createInterface({ input: process.stdin, output: process.stdout });
 
 function ask(
   iface: ReturnType<typeof rl>,
@@ -12,9 +13,9 @@ function ask(
   defaultValue?: string,
 ): Promise<string> {
   const suffix = defaultValue ? ` (${defaultValue})` : '';
-  return new Promise((resolve) => {
+  return new Promise((res) => {
     iface.question(`  ${question}${suffix}: `, (answer) => {
-      resolve(answer.trim() || defaultValue || '');
+      res(answer.trim() || defaultValue || '');
     });
   });
 }
@@ -171,11 +172,11 @@ function resolvePreset(raw: string): ProjectConfig {
   return config;
 }
 
-const MODULE_REMOVALS: Array<{
+const MODULE_REMOVALS: {
   key: keyof ProjectConfig;
   paths: string[];
   label: string;
-}> = [
+}[] = [
   {
     key: 'enableAuth',
     paths: [

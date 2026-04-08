@@ -43,7 +43,7 @@ export function registerGenerateTools(server: McpServer): void {
         'Create a new dashboard page following Codapult conventions (server component, auth, Card UI)',
       inputSchema: { name: z.string().describe('Page name (e.g. "analytics", "team-settings")') },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const kebab = toKebab(name);
       const pascal = toPascal(name);
@@ -66,7 +66,7 @@ export function registerGenerateTools(server: McpServer): void {
       description: 'Create a new API route with auth, rate limiting, and Zod validation',
       inputSchema: { name: z.string().describe('Route name (e.g. "webhooks", "billing")') },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
@@ -88,7 +88,7 @@ export function registerGenerateTools(server: McpServer): void {
         name: z.string().describe('Action name (e.g. "update-profile", "create-team")'),
       },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
@@ -109,7 +109,7 @@ export function registerGenerateTools(server: McpServer): void {
         'Scaffold a new plugin repository with package.json, tsconfig, index.ts, and manifest',
       inputSchema: { name: z.string().describe('Plugin name (e.g. "my-widget")') },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);

@@ -29,7 +29,7 @@ export function registerPluginTools(server: McpServer): void {
       description: 'List installed Codapult plugins with package names and versions',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
       const pluginsDir = resolve(root, 'src/plugins');
       if (!existsSync(pluginsDir)) {
@@ -67,7 +67,7 @@ export function registerPluginTools(server: McpServer): void {
         name: z.string().describe('Plugin name (e.g. "ai-kit", "video-player")'),
       },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       if (!result) {
@@ -83,21 +83,23 @@ export function registerPluginTools(server: McpServer): void {
       patchPackageJson(root, manifest.name, manifest.package, pluginDir, 'add');
       steps.push('package.json updated');
 
-      if (manifest.install.schemaImports?.length) {
-        patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'add');
-        steps.push(`Schema imports: ${manifest.install.schemaImports.join(', ')}`);
+      if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
+        const imports = manifest.install.schemaImports;
+        patchSchemaImports(root, manifest.name, imports, 'add');
+        steps.push(`Schema imports: ${imports.join(', ')}`);
       }
-      if (manifest.install.dbReExports?.length) {
-        patchDbReExports(root, manifest.name, manifest.install.dbReExports, 'add');
-        steps.push(`DB re-exports: ${manifest.install.dbReExports.join(', ')}`);
+      if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
+        const reExports = manifest.install.dbReExports;
+        patchDbReExports(root, manifest.name, reExports, 'add');
+        steps.push(`DB re-exports: ${reExports.join(', ')}`);
       }
       if (manifest.install.schemaTables) {
         patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'add');
         steps.push('Schema tables added');
       }
       if (
-        manifest.install.transpilePackages?.length ||
-        manifest.install.serverExternalPackages?.length
+        (manifest.install.transpilePackages?.length ?? 0) > 0 ||
+        (manifest.install.serverExternalPackages?.length ?? 0) > 0
       ) {
         patchNextConfig(root, manifest.name, manifest, 'add');
         steps.push('next.config.ts updated');
@@ -138,7 +140,7 @@ export function registerPluginTools(server: McpServer): void {
         name: z.string().describe('Plugin name to remove'),
       },
     },
-    async ({ name }) => {
+    ({ name }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       const manifest = result?.manifest ?? {
@@ -162,17 +164,17 @@ export function registerPluginTools(server: McpServer): void {
         patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'remove');
         steps.push('Schema tables removed');
       }
-      if (manifest.install.schemaImports?.length) {
+      if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
         patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'remove');
         steps.push('Schema imports removed');
       }
-      if (manifest.install.dbReExports?.length) {
+      if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
         patchDbReExports(root, manifest.name, manifest.install.dbReExports, 'remove');
         steps.push('DB re-exports removed');
       }
       if (
-        manifest.install.transpilePackages?.length ||
-        manifest.install.serverExternalPackages?.length
+        (manifest.install.transpilePackages?.length ?? 0) > 0 ||
+        (manifest.install.serverExternalPackages?.length ?? 0) > 0
       ) {
         patchNextConfig(root, manifest.name, manifest, 'remove');
         steps.push('next.config.ts reverted');

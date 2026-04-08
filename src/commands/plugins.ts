@@ -59,17 +59,19 @@ export async function pluginsAddCommand(name: string): Promise<void> {
   success('package.json updated');
 
   // 2. Patch schema imports
-  if (manifest.install.schemaImports?.length) {
+  if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
+    const imports = manifest.install.schemaImports;
     info('Adding schema imports...');
-    patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'add');
-    success(`Added imports: ${manifest.install.schemaImports.join(', ')}`);
+    patchSchemaImports(root, manifest.name, imports, 'add');
+    success(`Added imports: ${imports.join(', ')}`);
   }
 
   // 3. Re-export tables from db/index.ts
-  if (manifest.install.dbReExports?.length) {
+  if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
+    const reExports = manifest.install.dbReExports;
     info('Adding DB re-exports...');
-    patchDbReExports(root, manifest.name, manifest.install.dbReExports, 'add');
-    success(`Re-exported: ${manifest.install.dbReExports.join(', ')}`);
+    patchDbReExports(root, manifest.name, reExports, 'add');
+    success(`Re-exported: ${reExports.join(', ')}`);
   }
 
   // 4. Copy schema tables
@@ -81,8 +83,8 @@ export async function pluginsAddCommand(name: string): Promise<void> {
 
   // 5. Patch next.config.ts
   if (
-    manifest.install.transpilePackages?.length ||
-    manifest.install.serverExternalPackages?.length
+    (manifest.install.transpilePackages?.length ?? 0) > 0 ||
+    (manifest.install.serverExternalPackages?.length ?? 0) > 0
   ) {
     info('Updating next.config.ts...');
     patchNextConfig(root, manifest.name, manifest, 'add');
@@ -90,9 +92,10 @@ export async function pluginsAddCommand(name: string): Promise<void> {
   }
 
   // 6. Install shadcn components
-  if (manifest.install.shadcnComponents?.length) {
-    info(`Installing shadcn components: ${manifest.install.shadcnComponents.join(', ')}...`);
-    const components = manifest.install.shadcnComponents.join(' ');
+  if (manifest.install.shadcnComponents && manifest.install.shadcnComponents.length > 0) {
+    const shadcn = manifest.install.shadcnComponents;
+    info(`Installing shadcn components: ${shadcn.join(', ')}...`);
+    const components = shadcn.join(' ');
     if (!execQuiet(`npx shadcn@latest add ${components} --yes`, root)) {
       warn('shadcn install failed — you may need to add components manually');
     } else {
@@ -214,14 +217,14 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
   }
 
   // 4. Remove schema imports
-  if (manifest.install.schemaImports?.length) {
+  if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
     info('Removing schema imports...');
     patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'remove');
     success('Schema imports removed');
   }
 
   // 5. Remove DB re-exports
-  if (manifest.install.dbReExports?.length) {
+  if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
     info('Removing DB re-exports...');
     patchDbReExports(root, manifest.name, manifest.install.dbReExports, 'remove');
     success('DB re-exports removed');
@@ -229,8 +232,8 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
 
   // 6. Remove next.config.ts patches
   if (
-    manifest.install.transpilePackages?.length ||
-    manifest.install.serverExternalPackages?.length
+    (manifest.install.transpilePackages?.length ?? 0) > 0 ||
+    (manifest.install.serverExternalPackages?.length ?? 0) > 0
   ) {
     info('Reverting next.config.ts...');
     patchNextConfig(root, manifest.name, manifest, 'remove');
@@ -264,7 +267,7 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
 // codapult plugins list
 // ---------------------------------------------------------------------------
 
-export async function pluginsListCommand(): Promise<void> {
+export function pluginsListCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -306,7 +309,7 @@ export async function pluginsListCommand(): Promise<void> {
     const packageName = packageMatch?.[1] ?? 'unknown';
     const version = deps[packageName] ?? '';
 
-    success(`${pluginName}`);
+    success(pluginName);
     dim(`    package: ${packageName}`);
     if (version) dim(`    version: ${version}`);
   }

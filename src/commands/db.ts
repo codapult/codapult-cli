@@ -19,13 +19,13 @@ function getDbProvider(root: string): string {
   const envPath = resolve(root, '.env.local');
   if (existsSync(envPath)) {
     const content = readFileSync(envPath, 'utf-8');
-    const match = content.match(/^DB_PROVIDER\s*=\s*"?(\w+)"?/m);
+    const match = /^DB_PROVIDER\s*=\s*"?(\w+)"?/m.exec(content);
     if (match) return match[1];
   }
   return 'turso';
 }
 
-export async function dbPushCommand(): Promise<void> {
+export function dbPushCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -38,7 +38,7 @@ export async function dbPushCommand(): Promise<void> {
   run('pnpm db:push', root);
 }
 
-export async function dbGenerateCommand(): Promise<void> {
+export function dbGenerateCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -56,7 +56,7 @@ export async function dbGenerateCommand(): Promise<void> {
   }
 }
 
-export async function dbSeedCommand(): Promise<void> {
+export function dbSeedCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -67,7 +67,7 @@ export async function dbSeedCommand(): Promise<void> {
   run('pnpm db:seed', root);
 }
 
-export async function dbStudioCommand(): Promise<void> {
+export function dbStudioCommand(): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');

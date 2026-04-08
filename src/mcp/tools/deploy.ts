@@ -18,7 +18,7 @@ export function registerDeployTools(server: McpServer): void {
         'Check deployment readiness: Dockerfile, vercel.json, Helm, Terraform, Pulumi, standalone output, Node engine',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
 
       const checks = [

@@ -29,7 +29,7 @@ function parseEnvFile(content: string): EnvEntry[] {
       continue;
     }
 
-    const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)\s*=\s*"?(.*?)"?\s*$/);
+    const match = /^([A-Z_][A-Z0-9_]*)\s*=\s*"?(.*?)"?\s*$/.exec(trimmed);
     if (match) {
       entries.push({
         key: match[1],
@@ -55,7 +55,7 @@ export function registerEnvTools(server: McpServer): void {
         'Get all environment variables from .env.example with descriptions and default values',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
       const content = readProjectFile(root, '.env.example');
       if (!content)
@@ -76,7 +76,7 @@ export function registerEnvTools(server: McpServer): void {
       description: 'Read current .env.local values with validation status against .env.example',
       inputSchema: {},
     },
-    async () => {
+    () => {
       const root = getRoot();
       const localContent = readProjectFile(root, '.env.local');
       if (!localContent)
@@ -118,7 +118,7 @@ export function registerEnvTools(server: McpServer): void {
         value: z.string().describe('Variable value'),
       },
     },
-    async ({ key, value }) => {
+    ({ key, value }) => {
       const root = getRoot();
       const envPath = resolve(root, '.env.local');
 

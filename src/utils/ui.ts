@@ -41,7 +41,7 @@ export function label(key: string, value: string): void {
   console.log(`  ${pc.dim(key + ':')} ${value}`);
 }
 
-export function table(rows: Array<[string, string, string?]>): void {
+export function table(rows: [string, string, string?][]): void {
   const maxKey = Math.max(...rows.map((r) => r[0].length));
   const maxVal = Math.max(...rows.map((r) => r[1].length));
 

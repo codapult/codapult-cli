@@ -33,7 +33,7 @@ function writeIfNotExists(filePath: string, content: string): boolean {
 // codapult generate page <name>
 // ---------------------------------------------------------------------------
 
-export async function generatePageCommand(name: string): Promise<void> {
+export function generatePageCommand(name: string): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -94,7 +94,7 @@ export default async function ${pascal}Page() {
 // codapult generate api <name>
 // ---------------------------------------------------------------------------
 
-export async function generateApiCommand(name: string): Promise<void> {
+export function generateApiCommand(name: string): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -179,7 +179,7 @@ export async function POST(req: Request) {
 // codapult generate action <name>
 // ---------------------------------------------------------------------------
 
-export async function generateActionCommand(name: string): Promise<void> {
+export function generateActionCommand(name: string): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -237,7 +237,7 @@ export async function ${camel}Action(input: unknown): Promise<{ success: boolean
 // codapult generate plugin <name>
 // ---------------------------------------------------------------------------
 
-export async function generatePluginCommand(name: string): Promise<void> {
+export function generatePluginCommand(name: string): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
