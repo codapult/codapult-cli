@@ -51,8 +51,12 @@ export function table(rows: Array<[string, string, string?]>): void {
   }
 }
 
-/** Prompt yes/no. */
+/** Prompt yes/no. Returns default when stdin is not a TTY (piped / CI). */
 export function confirm(question: string, defaultYes = true): Promise<boolean> {
+  if (!process.stdin.isTTY) {
+    return Promise.resolve(defaultYes);
+  }
+
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const hint = defaultYes ? 'Y/n' : 'y/N';
   return new Promise((resolve) => {
