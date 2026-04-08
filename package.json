@@ -27,10 +27,6 @@
     "cli",
     "nextjs"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/AstronautSaaS/codapult-cli.git"
-  },
   "homepage": "https://codapult.dev",
   "publishConfig": {
     "access": "public"
@@ -49,6 +45,7 @@
     "@types/node": "^25.5.0",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "prettier": "^3.8.1",
     "typescript": "^6.0.0",
     "typescript-eslint": "^8.58.1"

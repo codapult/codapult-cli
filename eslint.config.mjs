@@ -1,12 +1,12 @@
+import common from '@js-toolkit/eslint-config/common';
+import { getFilesGlob, getTSExtensions } from '@js-toolkit/config-utils/extensions';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import tseslint from 'typescript-eslint';
-import prettier from 'eslint-config-prettier';
 
 const eslintConfig = defineConfig([
-  ...tseslint.configs.recommended,
-  prettier,
+  ...common,
   globalIgnores(['node_modules/**', 'dist/**']),
   {
+    files: [getFilesGlob(getTSExtensions())],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
