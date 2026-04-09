@@ -57,6 +57,7 @@ interface ProjectConfig {
   enableWaitlist: boolean;
   enableGraphQL: boolean;
   enableSSO: boolean;
+  enableApiDocs: boolean;
   enableHelpCenter: boolean;
   enableExperiments: boolean;
   enableFeatureRequests: boolean;
@@ -68,6 +69,7 @@ interface ProjectConfig {
   enableWorkflows: boolean;
   enableReferrals: boolean;
   enableAnalytics: boolean;
+  enableChangelog: boolean;
   enableRAG: boolean;
 }
 
@@ -92,6 +94,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableEventStore: false,
     enableOtel: false,
     enableDripCampaigns: false,
+    enableApiDocs: false,
   },
   demo: {
     authProvider: 'better-auth',
@@ -112,6 +115,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableWaitlist: true,
   enableGraphQL: true,
   enableSSO: true,
+  enableApiDocs: true,
   enableHelpCenter: true,
   enableExperiments: true,
   enableFeatureRequests: true,
@@ -123,6 +127,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableWorkflows: true,
   enableReferrals: true,
   enableAnalytics: true,
+  enableChangelog: true,
   enableRAG: true,
 };
 
@@ -250,6 +255,15 @@ const MODULE_REMOVALS: {
     label: 'Enterprise SSO',
   },
   {
+    key: 'enableApiDocs',
+    paths: [
+      'src/lib/api-docs.ts',
+      'src/app/(marketing)/docs/api',
+      'src/components/docs/ApiReference.tsx',
+    ],
+    label: 'API Docs',
+  },
+  {
     key: 'enableHelpCenter',
     paths: [
       'src/lib/docs',
@@ -357,6 +371,13 @@ const MODULE_REMOVALS: {
   },
 ];
 
+// Maps CLI enable* flags → server-side ENABLE_* env var names.
+const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
+  enableApiDocs: 'ENABLE_API_DOCS',
+  enableHelpCenter: 'ENABLE_HELP_CENTER',
+  enableChangelog: 'ENABLE_CHANGELOG',
+};
+
 function generateEnvFile(root: string, config: ProjectConfig): void {
   const envExamplePath = join(root, '.env.example');
   const envLocalPath = join(root, '.env.local');
@@ -376,6 +397,12 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
     JOB_PROVIDER: config.jobProvider,
     ...(config.enableAnalytics ? { NEXT_PUBLIC_ANALYTICS_ENABLED: 'true' } : {}),
   };
+
+  for (const [cliKey, envVar] of Object.entries(FEATURE_ENV_VARS)) {
+    if (config[cliKey as keyof ProjectConfig] === false) {
+      replacements[envVar] = 'false';
+    }
+  }
 
   for (const [key, value] of Object.entries(replacements)) {
     const regex = new RegExp(`^${key}=.*$`, 'm');
@@ -470,6 +497,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableGraphQL: await confirmPrompt(iface, 'Enable GraphQL API layer?'),
     enableSSO:
       authProvider !== 'none' && (await confirmPrompt(iface, 'Enable Enterprise SSO (SAML)?')),
+    enableApiDocs: await confirmPrompt(iface, 'Enable interactive API docs?'),
     enableHelpCenter: await confirmPrompt(iface, 'Enable Help Center (docs)?'),
     enableExperiments: await confirmPrompt(iface, 'Enable A/B Testing?'),
     enableFeatureRequests: await confirmPrompt(iface, 'Enable Feature Request board?'),
@@ -486,6 +514,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableReferrals:
       authProvider !== 'none' && (await confirmPrompt(iface, 'Enable referral program?')),
     enableAnalytics: await confirmPrompt(iface, 'Enable built-in analytics?'),
+    enableChangelog: await confirmPrompt(iface, 'Enable Changelog page?'),
     enableRAG: await confirmPrompt(iface, 'Enable RAG pipeline (vector search)?'),
   };
 
