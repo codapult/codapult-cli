@@ -78,39 +78,61 @@ export function patchSchemaImports(
   writeFileSync(schemaPath, content, 'utf-8');
 }
 
+function extractMarkedBlock(content: string, name: string): string | null {
+  const start = MARKER_START(name);
+  const end = MARKER_END(name);
+  const startIdx = content.indexOf(start);
+  const endIdx = content.indexOf(end);
+  if (startIdx === -1 || endIdx === -1) return null;
+  return content.slice(startIdx + start.length, endIdx);
+}
+
+function readPluginTables(pluginDir: string, tablesFile: string): string | null {
+  const tablesPath = resolve(pluginDir, tablesFile);
+  if (!existsSync(tablesPath)) return null;
+
+  let tables = readFileSync(tablesPath, 'utf-8');
+  // Strip import lines — host schema already has them
+  tables = tables.replace(/^import\s+.*;\s*\n/gm, '');
+  // Strip type/interface declarations
+  tables = tables.replace(/^export\s+type\s+.*;\s*\n/gm, '');
+  tables = tables.replace(/^(?:export\s+)?interface\s+\w+\s*\{[\s\S]*?\}\s*\n/gm, '');
+  return tables.trim();
+}
+
 export function patchSchemaTables(
   projectRoot: string,
   pluginName: string,
   pluginDir: string,
   tablesFile: string,
-  action: 'add' | 'remove',
-): void {
+  action: 'add' | 'remove' | 'update',
+): boolean {
   const schemaPath = resolve(projectRoot, 'src/lib/db/schema.ts');
-  if (!existsSync(schemaPath)) return;
+  if (!existsSync(schemaPath)) return false;
   let content = readFileSync(schemaPath, 'utf-8');
 
   if (action === 'remove') {
     content = removeMarkedBlock(content, pluginName);
     writeFileSync(schemaPath, content, 'utf-8');
-    return;
+    return true;
   }
 
-  if (hasMarker(content, pluginName)) return;
+  if (action === 'add' && hasMarker(content, pluginName)) return false;
 
-  const tablesPath = resolve(pluginDir, tablesFile);
-  if (!existsSync(tablesPath)) return;
+  const tables = readPluginTables(pluginDir, tablesFile);
+  if (!tables) return false;
 
-  let tables = readFileSync(tablesPath, 'utf-8');
-
-  // Strip import lines — host schema already has them
-  tables = tables.replace(/^import\s+.*;\s*\n/gm, '');
-  // Strip type exports
-  tables = tables.replace(/^export\s+type\s+.*;\s*\n/gm, '');
-  tables = tables.trim();
+  if (action === 'update') {
+    if (!hasMarker(content, pluginName)) return false;
+    const oldBlock = extractMarkedBlock(content, pluginName);
+    if (oldBlock !== null && oldBlock.trim() === tables) return false;
+    content = removeMarkedBlock(content, pluginName);
+  }
 
   const block = `\n${MARKER_START(pluginName)}\n${tables}\n${MARKER_END(pluginName)}\n`;
   content = content.trimEnd() + '\n' + block;
   writeFileSync(schemaPath, content, 'utf-8');
+  return true;
 }
 
 // ---------------------------------------------------------------------------

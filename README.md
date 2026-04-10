@@ -27,6 +27,7 @@ npx @codapult/cli <command>
 
 - `codapult plugins add <name>` — install a plugin from a local directory
 - `codapult plugins remove <name>` — uninstall a plugin
+- `codapult plugins migrate [name]` — update plugin schema and generate DB migration (`--push` for dev mode)
 - `codapult plugins list` — list installed plugins
 
 ### Code Generation
@@ -61,7 +62,7 @@ npx @codapult/cli <command>
 
 ## MCP Server
 
-The CLI includes an MCP (Model Context Protocol) server with 18 tools, 6 resources, and 2 prompt templates for AI-assisted development. See the [MCP documentation](https://codapult.dev/docs/developer-tools/mcp) for details.
+The CLI includes an MCP (Model Context Protocol) server with 19 tools, 6 resources, and 2 prompt templates for AI-assisted development. See the [MCP documentation](https://codapult.dev/docs/developer-tools/mcp) for details.
 
 ## License
 

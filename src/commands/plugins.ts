@@ -264,6 +264,119 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// codapult plugins migrate [name]
+// ---------------------------------------------------------------------------
+
+function getInstalledPluginNames(root: string): string[] {
+  const pluginsDir = resolve(root, 'src/plugins');
+  if (!existsSync(pluginsDir)) return [];
+  return readdirSync(pluginsDir)
+    .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+    .map((f) => f.replace('.ts', ''));
+}
+
+export async function pluginsMigrateCommand(
+  name: string | undefined,
+  options: { push?: boolean },
+): Promise<void> {
+  const root = findProjectRoot();
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exit(1);
+  }
+
+  const pluginNames = name ? [name] : getInstalledPluginNames(root);
+
+  if (pluginNames.length === 0) {
+    info('No installed plugins found.');
+    dim('Use: codapult plugins add <name>');
+    return;
+  }
+
+  heading(name ? `Migrating plugin: ${name}` : 'Migrating all installed plugins');
+
+  let schemaUpdated = false;
+
+  for (const pName of pluginNames) {
+    const result = resolveManifest(root, pName);
+    if (!result) {
+      warn(`Plugin "${pName}" — manifest not found, skipping.`);
+      continue;
+    }
+
+    const { manifest, pluginDir } = result;
+
+    if (!manifest.install.schemaTables) {
+      dim(`${manifest.name}: no schema tables — skipping.`);
+      continue;
+    }
+
+    const updated = patchSchemaTables(
+      root,
+      manifest.name,
+      pluginDir,
+      manifest.install.schemaTables,
+      'update',
+    );
+
+    if (updated) {
+      success(`${manifest.name}: schema updated in schema.ts`);
+      schemaUpdated = true;
+    } else {
+      dim(`${manifest.name}: schema is already up to date.`);
+    }
+
+    // Also refresh imports in case the plugin added new drizzle column types
+    if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
+      patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'add');
+    }
+  }
+
+  if (!schemaUpdated) {
+    console.log();
+    info('All plugin schemas are up to date — no migration needed.');
+    return;
+  }
+
+  console.log();
+
+  if (options.push) {
+    info('Applying schema changes (db:push)...');
+    if (!execQuiet('pnpm db:push', root)) {
+      fail('db:push failed — run manually: pnpm db:push');
+      process.exit(1);
+    }
+    success('Database schema applied');
+  } else {
+    info('Generating migration...');
+    try {
+      execSync('pnpm db:generate', { cwd: root, stdio: 'inherit' });
+      success('Migration generated');
+    } catch {
+      fail('db:generate failed — run manually: pnpm db:generate');
+      process.exit(1);
+    }
+
+    console.log();
+    const apply = await confirm('Apply the migration now (pnpm db:migrate)?');
+    if (apply) {
+      try {
+        execSync('pnpm db:migrate', { cwd: root, stdio: 'inherit' });
+        success('Migration applied');
+      } catch {
+        fail('db:migrate failed — run manually: pnpm db:migrate');
+        process.exit(1);
+      }
+    } else {
+      info('Skipped. Apply later with: pnpm db:migrate');
+    }
+  }
+
+  heading('Done!');
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
 // codapult plugins list
 // ---------------------------------------------------------------------------
 

@@ -193,4 +193,84 @@ export function registerPluginTools(server: McpServer): void {
       };
     },
   );
+
+  server.registerTool(
+    'codapult_plugins_migrate',
+    {
+      title: 'Migrate Plugin Schema',
+      description:
+        "Update an installed plugin's schema in schema.ts to match the latest version. " +
+        'Returns whether the schema changed. After this, run db:generate + db:migrate (production) ' +
+        'or db:push (development) to apply changes to the database.',
+      inputSchema: {
+        name: z
+          .string()
+          .optional()
+          .describe('Plugin name (e.g. "crm"). Omit to migrate all installed plugins.'),
+      },
+    },
+    ({ name }) => {
+      const root = getRoot();
+
+      const pluginsDir = resolve(root, 'src/plugins');
+      const pluginNames: string[] = name
+        ? [name]
+        : existsSync(pluginsDir)
+          ? readdirSync(pluginsDir)
+              .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+              .map((f) => f.replace('.ts', ''))
+          : [];
+
+      if (pluginNames.length === 0) {
+        return { content: [{ type: 'text' as const, text: 'No installed plugins found.' }] };
+      }
+
+      const results: { plugin: string; updated: boolean; error?: string }[] = [];
+
+      for (const pName of pluginNames) {
+        const res = resolveManifest(root, pName);
+        if (!res) {
+          results.push({ plugin: pName, updated: false, error: 'manifest not found' });
+          continue;
+        }
+
+        const { manifest, pluginDir } = res;
+
+        if (!manifest.install.schemaTables) {
+          results.push({ plugin: pName, updated: false });
+          continue;
+        }
+
+        const updated = patchSchemaTables(
+          root,
+          manifest.name,
+          pluginDir,
+          manifest.install.schemaTables,
+          'update',
+        );
+
+        const imports = manifest.install.schemaImports;
+        if (updated && imports && imports.length > 0) {
+          patchSchemaImports(root, manifest.name, imports, 'add');
+        }
+
+        results.push({ plugin: pName, updated });
+      }
+
+      const anyUpdated = results.some((r) => r.updated);
+      const output = {
+        results,
+        schemaChanged: anyUpdated,
+        nextSteps: anyUpdated
+          ? [
+              'Run: pnpm db:generate (create migration file)',
+              'Run: pnpm db:migrate (apply migration)',
+              'Or for development: pnpm db:push',
+            ]
+          : [],
+      };
+
+      return { content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }] };
+    },
+  );
 }

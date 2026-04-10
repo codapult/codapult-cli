@@ -6,7 +6,12 @@ import { setupCommand } from './commands/setup.js';
 import { updateCommand } from './commands/update.js';
 import { doctorCommand } from './commands/doctor.js';
 import { configShowCommand } from './commands/config-show.js';
-import { pluginsAddCommand, pluginsRemoveCommand, pluginsListCommand } from './commands/plugins.js';
+import {
+  pluginsAddCommand,
+  pluginsRemoveCommand,
+  pluginsListCommand,
+  pluginsMigrateCommand,
+} from './commands/plugins.js';
 import {
   generatePageCommand,
   generateApiCommand,
@@ -72,6 +77,12 @@ plugins
   .action(pluginsAddCommand);
 
 plugins.command('remove <name>').description('uninstall a plugin').action(pluginsRemoveCommand);
+
+plugins
+  .command('migrate [name]')
+  .description('update plugin schema and generate DB migration')
+  .option('--push', 'use db:push instead of db:generate + db:migrate (dev mode)')
+  .action(pluginsMigrateCommand);
 
 plugins.command('list').description('list installed plugins').action(pluginsListCommand);
 

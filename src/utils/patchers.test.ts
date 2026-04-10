@@ -160,6 +160,55 @@ describe('patchSchemaTables', () => {
     expect(written).not.toContain('widget');
     expect(written).toContain('user');
   });
+
+  it('replaces marked block with new content on update', () => {
+    const schema = `export const user = sqliteTable('user', {});\n\n// --- plugin:test-plugin:start ---\nexport const widget = sqliteTable('widget', {\n  id: text('id'),\n});\n// --- plugin:test-plugin:end ---\n`;
+    const newTables = `export const widget = sqliteTable('widget', {\n  id: text('id'),\n  name: text('name'),\n});\n`;
+
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockImplementation((p) => {
+      const path = p as string;
+      if (path.includes('schema.ts')) return schema;
+      return newTables;
+    });
+
+    const result = patchSchemaTables(ROOT, 'test-plugin', '/plugins/test', 'tables.ts', 'update');
+
+    expect(result).toBe(true);
+    const written = mockedWrite.mock.calls[0][1] as string;
+    expect(written).toContain("name: text('name')");
+    expect(written).toContain('// --- plugin:test-plugin:start ---');
+    expect(written).toContain('// --- plugin:test-plugin:end ---');
+  });
+
+  it('returns false on update when schema is unchanged', () => {
+    const tables = `export const widget = sqliteTable('widget', {});`;
+    const schema = `export const user = sqliteTable('user', {});\n\n// --- plugin:test-plugin:start ---\n${tables}\n// --- plugin:test-plugin:end ---\n`;
+
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockImplementation((p) => {
+      const path = p as string;
+      if (path.includes('schema.ts')) return schema;
+      return tables + '\n';
+    });
+
+    const result = patchSchemaTables(ROOT, 'test-plugin', '/plugins/test', 'tables.ts', 'update');
+
+    expect(result).toBe(false);
+    expect(mockedWrite).not.toHaveBeenCalled();
+  });
+
+  it('returns false on update when plugin is not installed', () => {
+    const schema = `export const user = sqliteTable('user', {});`;
+
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockReturnValue(schema);
+
+    const result = patchSchemaTables(ROOT, 'test-plugin', '/plugins/test', 'tables.ts', 'update');
+
+    expect(result).toBe(false);
+    expect(mockedWrite).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
