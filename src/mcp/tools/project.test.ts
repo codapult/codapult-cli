@@ -1,0 +1,174 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('node:fs');
+vi.mock('node:child_process');
+vi.mock('../../utils/project.js', () => ({
+  findProjectRoot: vi.fn(),
+  readProjectFile: vi.fn(),
+}));
+
+const { existsSync, readFileSync, readdirSync } = await import('node:fs');
+const { execSync } = await import('node:child_process');
+const { findProjectRoot, readProjectFile } = await import('../../utils/project.js');
+const { registerProjectTools } = await import('./project.js');
+
+const mockedFindRoot = vi.mocked(findProjectRoot);
+const mockedReadProject = vi.mocked(readProjectFile);
+const mockedExists = vi.mocked(existsSync);
+const mockedRead = vi.mocked(readFileSync);
+const mockedReaddir = vi.mocked(readdirSync);
+const mockedExec = vi.mocked(execSync);
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockedFindRoot.mockReturnValue('/project');
+});
+
+interface ToolRegistration {
+  name: string;
+  handler: (args: Record<string, string[]>) => {
+    content: { type: string; text: string }[];
+  };
+}
+
+function createMockServer(): {
+  registerTool: ReturnType<typeof vi.fn>;
+  tools: ToolRegistration[];
+} {
+  const tools: ToolRegistration[] = [];
+  const registerTool = vi.fn(
+    (name: string, _opts: unknown, handler: ToolRegistration['handler']) => {
+      tools.push({ name, handler });
+    },
+  );
+  return { registerTool, tools };
+}
+
+describe('registerProjectTools', () => {
+  it('registers 4 project tools', () => {
+    const server = createMockServer();
+    registerProjectTools(server as never);
+
+    expect(server.tools).toHaveLength(4);
+    const names = server.tools.map((t) => t.name);
+    expect(names).toContain('codapult_project_status');
+    expect(names).toContain('codapult_project_config');
+    expect(names).toContain('codapult_run_checks');
+    expect(names).toContain('codapult_doctor');
+  });
+
+  describe('codapult_project_status', () => {
+    it('returns project info with adapters and plugins', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedRead.mockReturnValue(JSON.stringify({ name: 'codapult', version: '1.0.0' }));
+      mockedReadProject.mockImplementation((_root, path) => {
+        if (path === '.env.local')
+          return 'AUTH_PROVIDER=kinde\nPAYMENT_PROVIDER=lemonsqueezy\nSTORAGE_PROVIDER=s3\n';
+        if (path === 'src/config/app.ts') return 'ai: true,\nblog: true,\nteams: false,';
+        return null;
+      });
+      mockedExists.mockReturnValue(true);
+      mockedReaddir.mockReturnValue(['ai-kit.ts', 'crm.ts', 'index.ts'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      mockedExec.mockImplementation((cmd: string) => {
+        if (cmd.includes('branch')) return Buffer.from('main');
+        if (cmd.includes('porcelain')) return Buffer.from('');
+        return Buffer.from('');
+      });
+
+      const handler = server.tools.find((t) => t.name === 'codapult_project_status')!.handler;
+      const result = handler({});
+      const parsed = JSON.parse(result.content[0].text) as {
+        name: string;
+        adapters: Record<string, string>;
+        plugins: string[];
+        features: string[];
+        git: { branch: string; dirty: boolean };
+      };
+
+      expect(parsed.name).toBe('codapult');
+      expect(parsed.adapters.auth).toBe('kinde');
+      expect(parsed.adapters.payments).toBe('lemonsqueezy');
+      expect(parsed.adapters.storage).toBe('s3');
+      expect(parsed.plugins).toEqual(['ai-kit', 'crm']);
+      expect(parsed.features).toContain('ai');
+      expect(parsed.features).toContain('blog');
+      expect(parsed.features).not.toContain('teams');
+      expect(parsed.git.branch).toBe('main');
+      expect(parsed.git.dirty).toBe(false);
+    });
+  });
+
+  describe('codapult_project_config', () => {
+    it('returns app.ts content', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedReadProject.mockReturnValue('export const appConfig = { brand: "test" };');
+
+      const handler = server.tools.find((t) => t.name === 'codapult_project_config')!.handler;
+      const result = handler({});
+
+      expect(result.content[0].text).toContain('appConfig');
+    });
+
+    it('returns fallback message when config not found', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedReadProject.mockReturnValue(null);
+
+      const handler = server.tools.find((t) => t.name === 'codapult_project_config')!.handler;
+      const result = handler({});
+
+      expect(result.content[0].text).toContain('not found');
+    });
+  });
+
+  describe('codapult_doctor', () => {
+    it('checks required files and TypeScript compilation', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedExists.mockReturnValue(true);
+      mockedExec.mockReturnValue(Buffer.from(''));
+
+      const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
+      const result = handler({});
+      const parsed = JSON.parse(result.content[0].text) as {
+        name: string;
+        status: string;
+        detail: string;
+      }[];
+
+      const pkgCheck = parsed.find((c) => c.name === 'package.json');
+      expect(pkgCheck?.status).toBe('ok');
+
+      const tsCheck = parsed.find((c) => c.name === 'TypeScript');
+      expect(tsCheck?.status).toBe('ok');
+    });
+
+    it('reports missing files', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedExists.mockReturnValue(false);
+      mockedExec.mockImplementation(() => {
+        throw new Error('compile error');
+      });
+
+      const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
+      const result = handler({});
+      const parsed = JSON.parse(result.content[0].text) as {
+        name: string;
+        status: string;
+      }[];
+
+      const failedChecks = parsed.filter((c) => c.status === 'fail');
+      expect(failedChecks.length).toBeGreaterThan(0);
+    });
+  });
+});

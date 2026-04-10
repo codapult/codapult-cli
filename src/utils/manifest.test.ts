@@ -1,0 +1,113 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { resolveManifest } from './manifest.js';
+
+vi.mock('node:fs');
+
+const { existsSync, readFileSync } = await import('node:fs');
+
+const mockedExists = vi.mocked(existsSync);
+const mockedRead = vi.mocked(readFileSync);
+
+const ROOT = '/project';
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+const validManifest = JSON.stringify({
+  name: 'test-plugin',
+  package: '@codapult/plugin-test',
+  version: '0.1.0',
+  description: 'A test plugin',
+  install: {},
+});
+
+describe('resolveManifest', () => {
+  it('resolves manifest from direct path', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return path === '/absolute/path/codapult-plugin.json';
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, '/absolute/path');
+
+    expect(result).not.toBeNull();
+    expect(result!.manifest.name).toBe('test-plugin');
+    expect(result!.pluginDir).toBe('/absolute/path');
+  });
+
+  it('resolves manifest from sibling dir with codapult-plugin- prefix', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return path === '/codapult-plugin-ai-kit/codapult-plugin.json';
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, 'ai-kit');
+
+    expect(result).not.toBeNull();
+    expect(result!.pluginDir).toContain('codapult-plugin-ai-kit');
+  });
+
+  it('resolves manifest from sibling dir with codapult- prefix', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      // Direct path check fails, codapult-plugin- prefix fails, codapult- prefix succeeds
+      if (path.includes('codapult-plugin-foo')) return false;
+      return path === '/codapult-foo/codapult-plugin.json';
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, 'foo');
+
+    expect(result).not.toBeNull();
+  });
+
+  it('resolves manifest from sibling dir with exact name', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      if (path.includes('codapult-plugin-bar') || path.includes('codapult-bar')) return false;
+      return path === '/bar/codapult-plugin.json';
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, 'bar');
+
+    expect(result).not.toBeNull();
+  });
+
+  it('returns null when no manifest found', () => {
+    mockedExists.mockReturnValue(false);
+
+    const result = resolveManifest(ROOT, 'nonexistent');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null for invalid JSON manifest', () => {
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockReturnValue('not valid json {{{');
+
+    const result = resolveManifest(ROOT, 'broken');
+
+    expect(result).toBeNull();
+  });
+
+  it('prioritizes direct path over sibling directories', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      // Both direct path and sibling codapult-plugin- path have manifests
+      return (
+        path === '/direct/codapult-plugin.json' ||
+        path === '/codapult-plugin-direct/codapult-plugin.json'
+      );
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, '/direct');
+
+    expect(result).not.toBeNull();
+    expect(result!.pluginDir).toBe('/direct');
+  });
+});
