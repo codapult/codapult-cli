@@ -95,6 +95,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableOtel: false,
     enableDripCampaigns: false,
     enableApiDocs: false,
+    enableChangelog: false,
   },
   demo: {
     authProvider: 'better-auth',
