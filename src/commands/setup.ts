@@ -290,7 +290,7 @@ const MODULE_REMOVALS: {
       'src/lib/feature-requests',
       'src/app/api/feature-requests',
       'src/app/(marketing)/feature-requests',
-      'src/components/marketing/FeatureBoard.tsx',
+      'src/components/feature-requests/FeatureBoard.tsx',
     ],
     label: 'Feature Requests',
   },
