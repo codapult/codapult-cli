@@ -268,11 +268,11 @@ const MODULE_REMOVALS: {
     key: 'enableHelpCenter',
     paths: [
       'src/lib/docs',
-      'src/app/(marketing)/docs/help',
+      'src/app/(marketing)/docs',
       'src/components/docs/HelpDocSearch.tsx',
       'content/docs',
     ],
-    label: 'Help Center',
+    label: 'Documentation',
   },
   {
     key: 'enableExperiments',
@@ -499,7 +499,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableSSO:
       authProvider !== 'none' && (await confirmPrompt(iface, 'Enable Enterprise SSO (SAML)?')),
     enableApiDocs: await confirmPrompt(iface, 'Enable interactive API docs?'),
-    enableHelpCenter: await confirmPrompt(iface, 'Enable Help Center (docs)?'),
+    enableHelpCenter: await confirmPrompt(iface, 'Enable Documentation module?'),
     enableExperiments: await confirmPrompt(iface, 'Enable A/B Testing?'),
     enableFeatureRequests: await confirmPrompt(iface, 'Enable Feature Request board?'),
     enableConnect:
