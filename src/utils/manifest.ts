@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, isAbsolute, relative } from 'node:path';
 
 export interface PluginManifestEnvVar {
   default?: string;
@@ -29,15 +29,38 @@ export interface PluginManifest {
 
 const MANIFEST_FILENAME = 'codapult-plugin.json';
 
+/**
+ * Verifies the resolved directory stays within expected boundaries
+ * (sibling of projectRoot or inside .codapult/plugins/).
+ */
+function isWithinAllowedScope(dir: string, projectRoot: string): boolean {
+  const parentDir = resolve(projectRoot, '..');
+  const cacheDir = resolve(projectRoot, '.codapult', 'plugins');
+
+  const relToParent = relative(parentDir, dir);
+  const relToCache = relative(cacheDir, dir);
+
+  const isUnderParent = !relToParent.startsWith('..') && !isAbsolute(relToParent);
+  const isUnderCache = !relToCache.startsWith('..') && !isAbsolute(relToCache);
+
+  return isUnderParent || isUnderCache;
+}
+
 export function resolveManifest(
   projectRoot: string,
   nameOrPath: string,
 ): { manifest: PluginManifest; pluginDir: string } | null {
   const candidates: string[] = [];
 
-  // 1. Absolute / relative path passed directly
-  if (existsSync(resolve(nameOrPath, MANIFEST_FILENAME))) {
-    candidates.push(resolve(nameOrPath));
+  // 1. Absolute / relative path — only accept if it resolves within allowed scope
+  if (isAbsolute(nameOrPath) || nameOrPath.includes('/') || nameOrPath.includes('\\')) {
+    const resolved = resolve(nameOrPath);
+    if (
+      isWithinAllowedScope(resolved, projectRoot) &&
+      existsSync(resolve(resolved, MANIFEST_FILENAME))
+    ) {
+      candidates.push(resolved);
+    }
   }
 
   // 2. Sibling directories (../codapult-plugin-<name>, ../codapult-<name>, ../<name>)
@@ -57,6 +80,8 @@ export function resolveManifest(
   );
 
   for (const dir of candidates) {
+    if (!isWithinAllowedScope(dir, projectRoot)) continue;
+
     const manifestPath = join(dir, MANIFEST_FILENAME);
     if (existsSync(manifestPath)) {
       try {

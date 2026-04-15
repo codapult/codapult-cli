@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
@@ -112,13 +112,24 @@ export async function pluginsAddCommand(name: string, options: { from?: string }
 
   // 6. Install shadcn components
   if (manifest.install.shadcnComponents && manifest.install.shadcnComponents.length > 0) {
+    const SHADCN_NAME = /^[a-z][a-z0-9-]*$/;
     const shadcn = manifest.install.shadcnComponents;
-    info(`Installing shadcn components: ${shadcn.join(', ')}...`);
-    const components = shadcn.join(' ');
-    if (!execQuiet(`npx shadcn@latest add ${components} --yes`, root)) {
-      warn('shadcn install failed — you may need to add components manually');
-    } else {
-      success('shadcn components installed');
+    const invalid = shadcn.filter((c) => !SHADCN_NAME.test(c));
+    if (invalid.length > 0) {
+      warn(`Invalid shadcn component names skipped: ${invalid.join(', ')}`);
+    }
+    const valid = shadcn.filter((c) => SHADCN_NAME.test(c));
+    if (valid.length > 0) {
+      info(`Installing shadcn components: ${valid.join(', ')}...`);
+      const shadcnResult = spawnSync('npx', ['shadcn@latest', 'add', ...valid, '--yes'], {
+        cwd: root,
+        stdio: 'pipe',
+      });
+      if (shadcnResult.status !== 0) {
+        warn('shadcn install failed — you may need to add components manually');
+      } else {
+        success('shadcn components installed');
+      }
     }
   }
 

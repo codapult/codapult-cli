@@ -1,6 +1,8 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { resolve, basename } from 'node:path';
+
+const ALLOWED_GIT_URL = /^(https?:\/\/|git@)/;
 
 export interface CloneResult {
   pluginDir: string;
@@ -26,6 +28,10 @@ export function dirNameFromGitUrl(url: string): string {
  * @throws  On git errors (no access, network, etc.).
  */
 export function clonePlugin(projectRoot: string, gitUrl: string): CloneResult {
+  if (!ALLOWED_GIT_URL.test(gitUrl)) {
+    throw new Error(`Invalid git URL: "${gitUrl}". Only https:// and git@ URLs are allowed.`);
+  }
+
   const dirName = dirNameFromGitUrl(gitUrl);
   const cacheDir = resolve(projectRoot, '.codapult', 'plugins');
   const pluginDir = resolve(cacheDir, dirName);
@@ -35,7 +41,13 @@ export function clonePlugin(projectRoot: string, gitUrl: string): CloneResult {
   if (existsSync(resolve(pluginDir, '.git'))) {
     execSync('git pull --ff-only', { cwd: pluginDir, stdio: 'pipe' });
   } else {
-    execSync(`git clone --depth 1 ${gitUrl} ${pluginDir}`, { stdio: 'pipe' });
+    const result = spawnSync('git', ['clone', '--depth', '1', gitUrl, pluginDir], {
+      stdio: 'pipe',
+    });
+    if (result.status !== 0) {
+      const stderr = result.stderr.toString().trim() || 'unknown error';
+      throw new Error(`git clone failed: ${stderr}`);
+    }
   }
 
   return { pluginDir };

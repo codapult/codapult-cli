@@ -88,7 +88,14 @@ function extractMarkedBlock(content: string, name: string): string | null {
 }
 
 function readPluginTables(pluginDir: string, tablesFile: string): string | null {
+  const resolvedPlugin = resolve(pluginDir);
   const tablesPath = resolve(pluginDir, tablesFile);
+
+  const rel = relative(resolvedPlugin, tablesPath);
+  if (rel.startsWith('..') || rel.startsWith('/')) {
+    throw new Error(`Path traversal detected: "${tablesFile}" resolves outside plugin directory`);
+  }
+
   if (!existsSync(tablesPath)) return null;
 
   let tables = readFileSync(tablesPath, 'utf-8');

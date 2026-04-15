@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot } from '../../utils/project.js';
+import { validateGeneratedName } from '../../utils/validation.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -44,6 +45,7 @@ export function registerGenerateTools(server: McpServer): void {
       inputSchema: { name: z.string().describe('Page name (e.g. "analytics", "team-settings")') },
     },
     ({ name }) => {
+      validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const pascal = toPascal(name);
@@ -67,6 +69,7 @@ export function registerGenerateTools(server: McpServer): void {
       inputSchema: { name: z.string().describe('Route name (e.g. "webhooks", "billing")') },
     },
     ({ name }) => {
+      validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
@@ -89,6 +92,7 @@ export function registerGenerateTools(server: McpServer): void {
       },
     },
     ({ name }) => {
+      validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
@@ -110,6 +114,7 @@ export function registerGenerateTools(server: McpServer): void {
       inputSchema: { name: z.string().describe('Plugin name (e.g. "my-widget")') },
     },
     ({ name }) => {
+      validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);

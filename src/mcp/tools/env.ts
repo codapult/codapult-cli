@@ -46,6 +46,19 @@ function parseEnvFile(content: string): EnvEntry[] {
   return entries;
 }
 
+const SENSITIVE_PATTERNS = [/SECRET/i, /KEY/i, /TOKEN/i, /PASSWORD/i, /CREDENTIAL/i];
+
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_PATTERNS.some((p) => p.test(key));
+}
+
+function maskValue(value: string): string {
+  if (value.length <= 4) return '****';
+  return value.slice(0, 4) + '****';
+}
+
+const ENV_KEY_REGEX = /^[A-Z][A-Z0-9_]*$/;
+
 export function registerEnvTools(server: McpServer): void {
   server.registerTool(
     'codapult_env_schema',
@@ -73,10 +86,16 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_read',
     {
       title: 'Read Env',
-      description: 'Read current .env.local values with validation status against .env.example',
-      inputSchema: {},
+      description:
+        'Read current .env.local values with validation status against .env.example. Sensitive values (keys containing SECRET, KEY, TOKEN, PASSWORD, CREDENTIAL) are masked by default.',
+      inputSchema: {
+        show_secrets: z
+          .boolean()
+          .default(false)
+          .describe('When true, show full values for sensitive keys (use with caution)'),
+      },
     },
-    () => {
+    ({ show_secrets }) => {
       const root = getRoot();
       const localContent = readProjectFile(root, '.env.local');
       if (!localContent)
@@ -98,10 +117,18 @@ export function registerEnvTools(server: McpServer): void {
         .filter((e) => !e.value || /^(your-|generate-|""?)/.test(e.value))
         .map((e) => e.key);
 
+      const variables = localEntries.map((e) => ({
+        key: e.key,
+        value: !show_secrets && isSensitiveKey(e.key) ? maskValue(e.value) : e.value,
+        comment: e.comment,
+        sensitive: isSensitiveKey(e.key) || undefined,
+      }));
+
       const result = {
-        variables: localEntries.map((e) => ({ key: e.key, value: e.value, comment: e.comment })),
+        variables,
         missing,
         unconfigured,
+        ...(show_secrets ? { warning: 'Sensitive values are shown in plain text' } : {}),
       };
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
@@ -119,6 +146,18 @@ export function registerEnvTools(server: McpServer): void {
       },
     },
     ({ key, value }) => {
+      if (!ENV_KEY_REGEX.test(key)) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Invalid key "${key}": must match ${ENV_KEY_REGEX} (uppercase letters, digits, underscores; must start with a letter)`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const root = getRoot();
       const envPath = resolve(root, '.env.local');
 
@@ -129,13 +168,15 @@ export function registerEnvTools(server: McpServer): void {
         };
       }
 
+      const escapedValue = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       let content = readFileSync(envPath, 'utf-8');
-      const regex = new RegExp(`^${key}\\s*=.*$`, 'm');
+      const line = `${key}="${escapedValue}"`;
 
+      const regex = new RegExp(`^${key}\\s*=.*$`, 'm');
       if (regex.test(content)) {
-        content = content.replace(regex, `${key}="${value}"`);
+        content = content.replace(regex, line);
       } else {
-        content = content.trimEnd() + `\n${key}="${value}"\n`;
+        content = content.trimEnd() + `\n${line}\n`;
       }
 
       writeFileSync(envPath, content, 'utf-8');

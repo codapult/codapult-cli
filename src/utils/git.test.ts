@@ -4,10 +4,11 @@ import { dirNameFromGitUrl, clonePlugin } from './git.js';
 vi.mock('node:child_process');
 vi.mock('node:fs');
 
-const { execSync } = await import('node:child_process');
+const { execSync, spawnSync } = await import('node:child_process');
 const { existsSync, mkdirSync } = await import('node:fs');
 
 const mockedExec = vi.mocked(execSync);
+const mockedSpawn = vi.mocked(spawnSync);
 const mockedExists = vi.mocked(existsSync);
 const mockedMkdir = vi.mocked(mkdirSync);
 
@@ -44,13 +45,28 @@ describe('dirNameFromGitUrl', () => {
 describe('clonePlugin', () => {
   it('clones into .codapult/plugins/ when directory does not exist', () => {
     mockedExists.mockReturnValue(false);
+    mockedSpawn.mockReturnValue({
+      status: 0,
+      stderr: Buffer.from(''),
+      stdout: Buffer.from(''),
+      pid: 0,
+      signal: null,
+      output: [],
+    });
 
     const result = clonePlugin('/project', 'git@github.com:org/codapult-plugin-test.git');
 
     expect(result.pluginDir).toBe('/project/.codapult/plugins/codapult-plugin-test');
     expect(mockedMkdir).toHaveBeenCalledWith('/project/.codapult/plugins', { recursive: true });
-    expect(mockedExec).toHaveBeenCalledWith(
-      expect.stringContaining('git clone --depth 1'),
+    expect(mockedSpawn).toHaveBeenCalledWith(
+      'git',
+      [
+        'clone',
+        '--depth',
+        '1',
+        'git@github.com:org/codapult-plugin-test.git',
+        '/project/.codapult/plugins/codapult-plugin-test',
+      ],
       expect.objectContaining({ stdio: 'pipe' }),
     );
   });
@@ -71,12 +87,22 @@ describe('clonePlugin', () => {
 
   it('throws when git clone fails', () => {
     mockedExists.mockReturnValue(false);
-    mockedExec.mockImplementation(() => {
-      throw new Error('Permission denied (publickey)');
+    mockedSpawn.mockReturnValue({
+      status: 128,
+      stderr: Buffer.from('Permission denied (publickey)'),
+      stdout: Buffer.from(''),
+      pid: 0,
+      signal: null,
+      output: [],
     });
 
     expect(() => clonePlugin('/project', 'git@github.com:org/private-plugin.git')).toThrow(
       'Permission denied',
     );
+  });
+
+  it('rejects URLs that are not https:// or git@', () => {
+    expect(() => clonePlugin('/project', 'file:///etc/passwd')).toThrow('Invalid git URL');
+    expect(() => clonePlugin('/project', '/some/local/path')).toThrow('Invalid git URL');
   });
 });
