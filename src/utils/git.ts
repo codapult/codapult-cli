@@ -1,0 +1,42 @@
+import { execSync } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
+import { resolve, basename } from 'node:path';
+
+export interface CloneResult {
+  pluginDir: string;
+}
+
+/**
+ * Derive a directory name from a git URL.
+ *
+ * Examples:
+ *   git@github.com:org/codapult-plugin-onboarding.git → codapult-plugin-onboarding
+ *   https://github.com/org/codapult-plugin-ai-kit     → codapult-plugin-ai-kit
+ */
+export function dirNameFromGitUrl(url: string): string {
+  const last = url.split('/').pop() ?? url;
+  return basename(last, '.git');
+}
+
+/**
+ * Clone (or pull) a git repository into `.codapult/plugins/<dir>/` inside the
+ * project root. If the directory already exists, runs `git pull` instead.
+ *
+ * @returns Absolute path to the cloned directory.
+ * @throws  On git errors (no access, network, etc.).
+ */
+export function clonePlugin(projectRoot: string, gitUrl: string): CloneResult {
+  const dirName = dirNameFromGitUrl(gitUrl);
+  const cacheDir = resolve(projectRoot, '.codapult', 'plugins');
+  const pluginDir = resolve(cacheDir, dirName);
+
+  mkdirSync(cacheDir, { recursive: true });
+
+  if (existsSync(resolve(pluginDir, '.git'))) {
+    execSync('git pull --ff-only', { cwd: pluginDir, stdio: 'pipe' });
+  } else {
+    execSync(`git clone --depth 1 ${gitUrl} ${pluginDir}`, { stdio: 'pipe' });
+  }
+
+  return { pluginDir };
+}

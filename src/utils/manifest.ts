@@ -35,15 +35,25 @@ export function resolveManifest(
 ): { manifest: PluginManifest; pluginDir: string } | null {
   const candidates: string[] = [];
 
+  // 1. Absolute / relative path passed directly
   if (existsSync(resolve(nameOrPath, MANIFEST_FILENAME))) {
     candidates.push(resolve(nameOrPath));
   }
 
+  // 2. Sibling directories (../codapult-plugin-<name>, ../codapult-<name>, ../<name>)
   const parentDir = resolve(projectRoot, '..');
   candidates.push(
     join(parentDir, `codapult-plugin-${nameOrPath}`),
     join(parentDir, `codapult-${nameOrPath}`),
     join(parentDir, nameOrPath),
+  );
+
+  // 3. Local cache (.codapult/plugins/codapult-plugin-<name>, ../<name>)
+  const cacheDir = join(projectRoot, '.codapult', 'plugins');
+  candidates.push(
+    join(cacheDir, `codapult-plugin-${nameOrPath}`),
+    join(cacheDir, `codapult-${nameOrPath}`),
+    join(cacheDir, nameOrPath),
   );
 
   for (const dir of candidates) {

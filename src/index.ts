@@ -73,7 +73,8 @@ const plugins = program
 
 plugins
   .command('add <name>')
-  .description('install a plugin from a local directory')
+  .description('install a plugin (local or remote)')
+  .option('--from <url>', 'git URL to clone the plugin from')
   .action(pluginsAddCommand);
 
 plugins.command('remove <name>').description('uninstall a plugin').action(pluginsRemoveCommand);

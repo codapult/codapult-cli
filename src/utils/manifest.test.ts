@@ -85,6 +85,35 @@ describe('resolveManifest', () => {
     expect(result).toBeNull();
   });
 
+  it('resolves manifest from .codapult/plugins/ cache directory', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return path === '/project/.codapult/plugins/codapult-plugin-cached/codapult-plugin.json';
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, 'cached');
+
+    expect(result).not.toBeNull();
+    expect(result!.pluginDir).toContain('.codapult/plugins/codapult-plugin-cached');
+  });
+
+  it('prefers sibling directory over .codapult/plugins/ cache', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return (
+        path === '/codapult-plugin-both/codapult-plugin.json' ||
+        path === '/project/.codapult/plugins/codapult-plugin-both/codapult-plugin.json'
+      );
+    });
+    mockedRead.mockReturnValue(validManifest);
+
+    const result = resolveManifest(ROOT, 'both');
+
+    expect(result).not.toBeNull();
+    expect(result!.pluginDir).toBe('/codapult-plugin-both');
+  });
+
   it('returns null for invalid JSON manifest', () => {
     mockedExists.mockReturnValue(true);
     mockedRead.mockReturnValue('not valid json {{{');

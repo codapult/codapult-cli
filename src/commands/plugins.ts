@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
 import { resolveManifest } from '../utils/manifest.js';
+import { clonePlugin } from '../utils/git.js';
 import {
   patchSchemaImports,
   patchSchemaTables,
@@ -28,7 +29,7 @@ function execQuiet(cmd: string, cwd: string): boolean {
 // codapult plugins add <name>
 // ---------------------------------------------------------------------------
 
-export async function pluginsAddCommand(name: string): Promise<void> {
+export async function pluginsAddCommand(name: string, options: { from?: string }): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -37,6 +38,19 @@ export async function pluginsAddCommand(name: string): Promise<void> {
 
   heading(`Installing plugin: ${name}`);
 
+  // Clone from a git URL when --from is provided
+  if (options.from) {
+    info(`Cloning from ${options.from}...`);
+    try {
+      const { pluginDir } = clonePlugin(root, options.from);
+      success(`Cloned to ${pluginDir}`);
+    } catch (err) {
+      fail(`Git clone failed: ${err instanceof Error ? err.message : String(err)}`);
+      dim('Make sure you have access to the repository and git is installed.');
+      process.exit(1);
+    }
+  }
+
   const result = resolveManifest(root, name);
   if (!result) {
     fail(`Plugin "${name}" not found.`);
@@ -44,6 +58,11 @@ export async function pluginsAddCommand(name: string): Promise<void> {
     dim(`  ../codapult-plugin-${name}/`);
     dim(`  ../codapult-${name}/`);
     dim(`  ../${name}/`);
+    dim(`  .codapult/plugins/codapult-plugin-${name}/`);
+    if (!options.from) {
+      dim('');
+      dim('Tip: use --from <git-url> to install from a remote repository.');
+    }
     process.exit(1);
   }
 
