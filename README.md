@@ -102,7 +102,7 @@ pnpm run release -- major # major bump (0.1.0 → 1.0.0)
 Preview what a release would do without making any changes:
 
 ```bash
-pnpm run release -- --dry-run
+pnpm run release --dry-run
 ```
 
 ### Prerequisites
