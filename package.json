@@ -1,6 +1,6 @@
 {
   "name": "@codapult/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Codapult CLI — manage, update, and diagnose your Codapult SaaS project",
   "license": "MIT",
   "type": "module",
