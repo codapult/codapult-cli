@@ -7,6 +7,10 @@ import {
   regenerateBarrel,
   createPluginRegistration,
   patchPages,
+  findPageConflicts,
+  findPageBackups,
+  readPageExtensions,
+  PageConflictError,
   patchEnvFile,
   patchPackageJson,
 } from './patchers.js';
@@ -14,16 +18,27 @@ import type { PluginManifest } from './manifest.js';
 
 vi.mock('node:fs');
 
-const { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, rmdirSync } =
-  await import('node:fs');
+const {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  rmdirSync,
+  statSync,
+} = await import('node:fs');
 
 const mockedExists = vi.mocked(existsSync);
 const mockedRead = vi.mocked(readFileSync);
 const mockedWrite = vi.mocked(writeFileSync);
 const mockedMkdir = vi.mocked(mkdirSync);
 const mockedReaddir = vi.mocked(readdirSync);
+const mockedRename = vi.mocked(renameSync);
 const mockedRm = vi.mocked(rmSync);
 const mockedRmdir = vi.mocked(rmdirSync);
+const mockedStat = vi.mocked(statSync);
 
 const ROOT = '/project';
 
@@ -440,6 +455,281 @@ describe('patchPages', () => {
 
     expect(mockedRm).toHaveBeenCalled();
     expect(mockedRmdir).toHaveBeenCalled();
+  });
+
+  it('backs up a user-written page at a different extension before writing the stub', () => {
+    const pages = {
+      'src/app/[locale]/(marketing)/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+    const userTsx = '/project/src/app/[locale]/(marketing)/welcome/page.tsx';
+
+    // Only the .tsx sibling exists on disk; no backup file yet.
+    mockedExists.mockImplementation((p) => (p as string) === userTsx);
+    mockedRead.mockReturnValue(
+      'export default function Welcome(): JSX.Element { return <div>old</div>; }',
+    );
+
+    patchPages(ROOT, 'onboarding', pages, 'add');
+
+    expect(mockedRename).toHaveBeenCalledWith(userTsx, `${userTsx}.codapult-bak-onboarding`);
+    const writtenPath = mockedWrite.mock.calls[0][0] as string;
+    const writtenContent = mockedWrite.mock.calls[0][1] as string;
+    expect(writtenPath).toContain('page.ts');
+    expect(writtenPath).not.toMatch(/page\.tsx$/);
+    expect(writtenContent).toContain(
+      "export { default } from '@codapult/plugin-onboarding/pages/welcome';",
+    );
+  });
+
+  it('does not re-backup when a backup already exists (idempotent re-install)', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+    const userTsx = '/project/src/app/welcome/page.tsx';
+    const backup = `${userTsx}.codapult-bak-onboarding`;
+
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return path === userTsx || path === backup;
+    });
+    mockedRead.mockReturnValue('export default function UserPage() {}');
+
+    patchPages(ROOT, 'onboarding', pages, 'add');
+
+    expect(mockedRename).not.toHaveBeenCalled();
+    expect(mockedRm).toHaveBeenCalledWith(userTsx);
+  });
+
+  it('silently overwrites sibling plugin stubs without creating a backup', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+    const siblingStub = '/project/src/app/welcome/page.tsx';
+
+    mockedExists.mockImplementation((p) => (p as string) === siblingStub);
+    mockedRead.mockReturnValue("export { default } from 'some-other-package/pages/welcome';\n");
+
+    patchPages(ROOT, 'onboarding', pages, 'add');
+
+    expect(mockedRename).not.toHaveBeenCalled();
+    expect(mockedRm).toHaveBeenCalledWith(siblingStub);
+  });
+
+  it('is idempotent when the same stub was written previously', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+    const targetPath = '/project/src/app/welcome/page.ts';
+    const stub = "export { default } from '@codapult/plugin-onboarding/pages/welcome';\n";
+
+    mockedExists.mockImplementation((p) => (p as string) === targetPath);
+    mockedRead.mockReturnValue(stub);
+
+    patchPages(ROOT, 'onboarding', pages, 'add');
+
+    expect(mockedRename).not.toHaveBeenCalled();
+    expect(mockedRm).not.toHaveBeenCalled();
+    // Still writes (idempotent re-write of identical content)
+    expect(mockedWrite).toHaveBeenCalled();
+  });
+
+  it('throws PageConflictError when onConflict is "fail"', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+    const userTsx = '/project/src/app/welcome/page.tsx';
+
+    mockedExists.mockImplementation((p) => (p as string) === userTsx);
+    mockedRead.mockReturnValue('export default function User() {}');
+
+    expect(() => patchPages(ROOT, 'onboarding', pages, 'add', { onConflict: 'fail' })).toThrow(
+      PageConflictError,
+    );
+    expect(mockedRename).not.toHaveBeenCalled();
+    expect(mockedWrite).not.toHaveBeenCalled();
+  });
+
+  it('restores backup files on remove', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+
+    // Target page.ts exists; its directory has one matching backup entry.
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return (
+        path === '/project/src/app/welcome/page.ts' ||
+        path === '/project/src/app/welcome' ||
+        path.endsWith('src/app')
+      );
+    });
+    mockedReaddir.mockImplementation((d) => {
+      const dir = d as string;
+      if (dir === '/project/src/app/welcome') {
+        return ['page.tsx.codapult-bak-onboarding'] as unknown as ReturnType<typeof readdirSync>;
+      }
+      return [] as unknown as ReturnType<typeof readdirSync>;
+    });
+
+    patchPages(ROOT, 'onboarding', pages, 'remove');
+
+    expect(mockedRm).toHaveBeenCalledWith('/project/src/app/welcome/page.ts');
+    expect(mockedRename).toHaveBeenCalledWith(
+      '/project/src/app/welcome/page.tsx.codapult-bak-onboarding',
+      '/project/src/app/welcome/page.tsx',
+    );
+  });
+
+  it('does not restore a backup when a live file already occupies its target name', () => {
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
+
+    const live = '/project/src/app/welcome/page.tsx';
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return (
+        path === '/project/src/app/welcome/page.ts' ||
+        path === live ||
+        path === '/project/src/app/welcome'
+      );
+    });
+    mockedReaddir.mockImplementation((d) => {
+      const dir = d as string;
+      if (dir === '/project/src/app/welcome') {
+        return ['page.ts', 'page.tsx', 'page.tsx.codapult-bak-onboarding'] as unknown as ReturnType<
+          typeof readdirSync
+        >;
+      }
+      return [] as unknown as ReturnType<typeof readdirSync>;
+    });
+
+    patchPages(ROOT, 'onboarding', pages, 'remove');
+
+    expect(mockedRename).not.toHaveBeenCalled();
+  });
+});
+
+describe('findPageConflicts', () => {
+  it('reports a sibling file at a different Next.js page extension', () => {
+    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const sibling = '/project/src/app/welcome/page.tsx';
+
+    mockedExists.mockImplementation((p) => (p as string) === sibling);
+    mockedRead.mockReturnValue('export default function User() {}');
+
+    const conflicts = findPageConflicts(ROOT, pages);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].isStub).toBe(false);
+    expect(conflicts[0].isExactPath).toBe(false);
+    expect(conflicts[0].conflictRel).toBe('src/app/welcome/page.tsx');
+  });
+
+  it('returns [] when the only file at the target path is our own stub', () => {
+    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const target = '/project/src/app/welcome/page.ts';
+
+    mockedExists.mockImplementation((p) => (p as string) === target);
+    mockedRead.mockReturnValue(
+      "export { default } from '@codapult/plugin-onboarding/pages/welcome';\n",
+    );
+
+    expect(findPageConflicts(ROOT, pages)).toEqual([]);
+  });
+
+  it('flags foreign stubs as conflicts but marks them isStub=true', () => {
+    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const sibling = '/project/src/app/welcome/page.tsx';
+
+    mockedExists.mockImplementation((p) => (p as string) === sibling);
+    mockedRead.mockReturnValue("export { default } from 'some-other/pages/welcome';\n");
+
+    const conflicts = findPageConflicts(ROOT, pages);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].isStub).toBe(true);
+  });
+});
+
+describe('readPageExtensions', () => {
+  it('reads a custom pageExtensions array from next.config.ts', () => {
+    const config = `import type { NextConfig } from 'next';
+const nextConfig: NextConfig = {
+  pageExtensions: ['mdx', 'ts', 'tsx'],
+  output: 'standalone',
+};
+export default nextConfig;
+`;
+    mockedExists.mockImplementation((p) => (p as string).endsWith('next.config.ts'));
+    mockedRead.mockReturnValue(config);
+
+    expect(readPageExtensions(ROOT)).toEqual(['mdx', 'ts', 'tsx']);
+  });
+
+  it('supports assignment syntax (`pageExtensions = [...]`)', () => {
+    const config = `const pageExtensions = ['page.ts', 'ts', 'tsx'];`;
+    mockedExists.mockImplementation((p) => (p as string).endsWith('next.config.js'));
+    mockedRead.mockReturnValue(config);
+
+    // 'page.ts' is rejected (contains a dot); the rest pass the shape check.
+    expect(readPageExtensions(ROOT)).toEqual(['ts', 'tsx']);
+  });
+
+  it('falls back to defaults when the declaration is inside a comment', () => {
+    const config = `const nextConfig = {
+  // pageExtensions: ['mdx'],
+  output: 'standalone',
+};`;
+    mockedExists.mockImplementation((p) => (p as string).endsWith('next.config.ts'));
+    mockedRead.mockReturnValue(config);
+
+    expect(readPageExtensions(ROOT)).toEqual(['tsx', 'ts', 'jsx', 'js', 'mjs', 'cjs']);
+  });
+
+  it('falls back to defaults when next.config is missing', () => {
+    mockedExists.mockReturnValue(false);
+    expect(readPageExtensions(ROOT)).toEqual(['tsx', 'ts', 'jsx', 'js', 'mjs', 'cjs']);
+  });
+
+  it('falls back to defaults when the array cannot be parsed', () => {
+    const config = `const nextConfig = { pageExtensions: computeExts() };`;
+    mockedExists.mockImplementation((p) => (p as string).endsWith('next.config.ts'));
+    mockedRead.mockReturnValue(config);
+
+    expect(readPageExtensions(ROOT)).toEqual(['tsx', 'ts', 'jsx', 'js', 'mjs', 'cjs']);
+  });
+});
+
+describe('findPageBackups', () => {
+  it('walks src/app and returns every backup file', () => {
+    mockedExists.mockImplementation((p) => {
+      const path = p as string;
+      return path === '/project/src/app' || path.startsWith('/project/src/app');
+    });
+    mockedReaddir.mockImplementation((d) => {
+      const dir = d as string;
+      if (dir === '/project/src/app') {
+        return ['welcome', 'other.txt'] as unknown as ReturnType<typeof readdirSync>;
+      }
+      if (dir === '/project/src/app/welcome') {
+        return ['page.ts', 'page.tsx.codapult-bak-onboarding'] as unknown as ReturnType<
+          typeof readdirSync
+        >;
+      }
+      return [] as unknown as ReturnType<typeof readdirSync>;
+    });
+    mockedStat.mockImplementation((p) => {
+      const path = p as string;
+      const isDir = path === '/project/src/app/welcome';
+      return { isDirectory: () => isDir } as unknown as ReturnType<typeof statSync>;
+    });
+
+    const backups = findPageBackups(ROOT);
+    expect(backups).toEqual(['src/app/welcome/page.tsx.codapult-bak-onboarding']);
+  });
+
+  it('returns [] when src/app does not exist', () => {
+    mockedExists.mockReturnValue(false);
+    expect(findPageBackups(ROOT)).toEqual([]);
   });
 });
 

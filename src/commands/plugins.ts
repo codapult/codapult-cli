@@ -11,6 +11,7 @@ import {
   patchNextConfig,
   createPluginRegistration,
   patchPages,
+  findPageConflicts,
   patchEnvFile,
   patchPackageJson,
 } from '../utils/patchers.js';
@@ -138,9 +139,43 @@ export async function pluginsAddCommand(
 
   // 7. Create page wrappers
   if (manifest.install.pages && Object.keys(manifest.install.pages).length > 0) {
+    const pageEntries = manifest.install.pages;
+    const conflicts = findPageConflicts(root, pageEntries);
+    const nonStubConflicts = conflicts.filter((c) => !c.isStub);
+
+    if (nonStubConflicts.length > 0) {
+      warn(
+        `Found ${nonStubConflicts.length} existing page file(s) that would collide with the plugin:`,
+      );
+      for (const c of nonStubConflicts) {
+        const hint = c.isExactPath ? 'same path' : 'same route, different extension';
+        dim(`  ${c.conflictRel}  (${hint})`);
+      }
+
+      if (options.ci) {
+        info(`CI mode: backing up conflicting files as *.codapult-bak-${manifest.name}`);
+      } else {
+        const proceed = await confirm(
+          `Back up conflicting files as *.codapult-bak-${manifest.name} and install?`,
+          true,
+        );
+        if (!proceed) {
+          fail('Aborted by user. Resolve conflicts manually, then re-run.');
+          dim('To restore later, rename *.codapult-bak-* back or reinstall the plugin.');
+          process.exit(1);
+        }
+      }
+    }
+
     info('Creating page wrappers...');
-    patchPages(root, manifest.name, manifest.install.pages, 'add');
-    success(`${Object.keys(manifest.install.pages).length} page(s) created`);
+    patchPages(root, manifest.name, pageEntries, 'add', { onConflict: 'backup' });
+    success(`${Object.keys(pageEntries).length} page(s) created`);
+    if (nonStubConflicts.length > 0) {
+      dim(
+        `Original files preserved as *.codapult-bak-${manifest.name}. ` +
+          `They are restored automatically when you run: codapult plugins remove ${manifest.name}`,
+      );
+    }
   }
 
   // 8. Register plugin (src/plugins/<name>.ts + regenerate barrel)

@@ -4,10 +4,12 @@ import {
   writeFileSync,
   mkdirSync,
   readdirSync,
+  renameSync,
   rmSync,
   rmdirSync,
+  statSync,
 } from 'node:fs';
-import { resolve, dirname, relative } from 'node:path';
+import { resolve, dirname, relative, basename, extname, join } from 'node:path';
 import type { PluginManifest } from './manifest.js';
 
 const MARKER_START = (name: string): string => `// --- plugin:${name}:start ---`;
@@ -313,19 +315,272 @@ export function createPluginRegistration(
 // Page wrappers — create/remove re-export files
 // ---------------------------------------------------------------------------
 
+// Next.js default `pageExtensions`. Ordered by resolution priority — the first
+// extension with an existing file wins at routing time, regardless of what the
+// plugin manifest asked for. Used as a fallback when `next.config.*` cannot be
+// parsed or does not declare a custom list.
+const DEFAULT_PAGE_EXTENSIONS = ['tsx', 'ts', 'jsx', 'js', 'mjs', 'cjs'] as const;
+
+const NEXT_CONFIG_CANDIDATES = [
+  'next.config.ts',
+  'next.config.mts',
+  'next.config.js',
+  'next.config.mjs',
+  'next.config.cjs',
+] as const;
+
+const PAGE_EXT_NAME_RE = /^[a-z0-9]+$/i;
+
+/**
+ * Strip `//` line comments and `/* ... *\/` block comments from a JS/TS
+ * source. Very rough — good enough so that commented-out `pageExtensions`
+ * declarations do not confuse the extractor.
+ */
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:/])\/\/[^\n]*/g, (_m, prefix: string) => prefix);
+}
+
+/**
+ * Read `pageExtensions` declared in `next.config.*`. Falls back to the
+ * Next.js defaults when no config exists, no explicit `pageExtensions` is
+ * declared, or parsing fails for any reason.
+ *
+ * The parser is intentionally text-based: dynamically evaluating user
+ * `next.config.ts` would drag in the whole Next/plugin graph and is far
+ * beyond the CLI's remit.
+ */
+export function readPageExtensions(projectRoot: string): readonly string[] {
+  for (const candidate of NEXT_CONFIG_CANDIDATES) {
+    const configPath = resolve(projectRoot, candidate);
+    if (!existsSync(configPath)) continue;
+
+    let raw: string;
+    try {
+      raw = readFileSync(configPath, 'utf-8');
+    } catch {
+      continue;
+    }
+
+    const source = stripComments(raw);
+    const match = /pageExtensions\s*[:=]\s*\[([\s\S]*?)\]/.exec(source);
+    if (!match) return [...DEFAULT_PAGE_EXTENSIONS];
+
+    const literals = [...match[1].matchAll(/['"`]([^'"`]+)['"`]/g)]
+      .map((m) => m[1].trim().toLowerCase())
+      .filter((ext) => PAGE_EXT_NAME_RE.test(ext));
+
+    if (literals.length === 0) return [...DEFAULT_PAGE_EXTENSIONS];
+
+    return Array.from(new Set(literals));
+  }
+
+  return [...DEFAULT_PAGE_EXTENSIONS];
+}
+
+const PAGE_BACKUP_SUFFIX = '.codapult-bak';
+
+/**
+ * Content of the stub file that `patchPages` writes. Kept in sync with
+ * the writeFileSync call below so that conflict detection can distinguish
+ * an auto-generated stub from hand-written page code.
+ */
+function makeStubContent(exportFrom: string): string {
+  return `export { default } from '${exportFrom}';\n`;
+}
+
+const STUB_RE = /^\s*export\s*\{\s*default\s*\}\s*from\s*['"]([^'"]+)['"];?\s*$/;
+
+interface StubInfo {
+  exportFrom: string;
+}
+
+function parseStub(content: string): StubInfo | null {
+  const match = STUB_RE.exec(content.trim());
+  if (!match) return null;
+  return { exportFrom: match[1] };
+}
+
+function backupPathFor(filePath: string, pluginName: string): string {
+  return `${filePath}${PAGE_BACKUP_SUFFIX}-${pluginName}`;
+}
+
+function restoreBackupsFor(projectRoot: string, pluginName: string, pagePath: string): string[] {
+  const fullPath = resolve(projectRoot, pagePath);
+  const dir = dirname(fullPath);
+  if (!existsSync(dir)) return [];
+
+  const stubBase = basename(fullPath, extname(fullPath));
+  const suffix = `${PAGE_BACKUP_SUFFIX}-${pluginName}`;
+  const restored: string[] = [];
+
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return [];
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith(suffix)) continue;
+    const originalName = entry.slice(0, -suffix.length);
+    // Only restore siblings for the same page slot (e.g. page.*, layout.*).
+    const originalBase = basename(originalName, extname(originalName));
+    if (originalBase !== stubBase) continue;
+
+    const src = join(dir, entry);
+    const dst = join(dir, originalName);
+    if (existsSync(dst)) {
+      // The stub was replaced with something else since — leave the backup
+      // in place rather than silently overwriting user code.
+      continue;
+    }
+    try {
+      renameSync(src, dst);
+      restored.push(relative(projectRoot, dst));
+    } catch {
+      // Best-effort restore; ignore failures
+    }
+  }
+  return restored;
+}
+
+export interface PageConflict {
+  /** Path declared in the manifest (relative to project root). */
+  pagePath: string;
+  /** Conflicting sibling file that Next.js may resolve instead (absolute). */
+  conflictPath: string;
+  /** Same path, relative to project root (for logs). */
+  conflictRel: string;
+  /** The conflict is also at the exact manifest path (same extension). */
+  isExactPath: boolean;
+  /** Existing file is a plugin stub (auto-generated re-export). */
+  isStub: boolean;
+  /** Existing file is our own stub for the current plugin. */
+  isOwnStub: boolean;
+}
+
+function collectConflictsForEntry(
+  projectRoot: string,
+  pagePath: string,
+  exportFrom: string,
+  extensions: readonly string[],
+): PageConflict[] {
+  const fullPath = resolve(projectRoot, pagePath);
+  const dir = dirname(fullPath);
+  const stubBase = basename(fullPath, extname(fullPath));
+  const targetExt = extname(fullPath).slice(1);
+
+  const conflicts: PageConflict[] = [];
+  const expectedStub = makeStubContent(exportFrom);
+
+  for (const ext of extensions) {
+    const candidate = join(dir, `${stubBase}.${ext}`);
+    if (!existsSync(candidate)) continue;
+
+    let content: string;
+    try {
+      content = readFileSync(candidate, 'utf-8');
+    } catch {
+      continue;
+    }
+
+    const stub = parseStub(content);
+    const isStub = stub !== null;
+    const isOwnStub = isStub && (content === expectedStub || stub.exportFrom === exportFrom);
+    const isExactPath = ext === targetExt;
+
+    // Our own freshly-written stub is not a conflict. It's how idempotent
+    // re-installs are supposed to look.
+    if (isExactPath && isOwnStub) continue;
+
+    conflicts.push({
+      pagePath,
+      conflictPath: candidate,
+      conflictRel: relative(projectRoot, candidate),
+      isExactPath,
+      isStub,
+      isOwnStub,
+    });
+  }
+
+  return conflicts;
+}
+
+/**
+ * Inspect the project tree and report every existing page file that would
+ * collide with the stubs declared in `pages`. Includes collisions at the
+ * exact manifest path AND at sibling paths with a different Next.js page
+ * extension (e.g. `page.ts` vs `page.tsx`). Returns an empty array when
+ * there is nothing to worry about.
+ *
+ * `pageExtensions` defaults to values read from `next.config.*`, falling
+ * back to the Next.js built-in defaults. Tests or advanced callers can
+ * pass an explicit list.
+ */
+export function findPageConflicts(
+  projectRoot: string,
+  pages: Record<string, string>,
+  pageExtensions?: readonly string[],
+): PageConflict[] {
+  const exts = pageExtensions ?? readPageExtensions(projectRoot);
+  const all: PageConflict[] = [];
+  for (const [pagePath, exportFrom] of Object.entries(pages)) {
+    all.push(...collectConflictsForEntry(projectRoot, pagePath, exportFrom, exts));
+  }
+  return all;
+}
+
+export interface PatchPagesOptions {
+  /**
+   * What to do when an existing page file would collide with the stub.
+   * - 'backup' (default): rename the conflicting file to
+   *   `<name>.codapult-bak-<plugin>` before writing the stub.
+   * - 'fail': throw an Error listing the conflicts. Callers can catch and
+   *   re-prompt, or re-throw to abort.
+   */
+  onConflict?: 'backup' | 'fail';
+  /**
+   * Override the list of page extensions considered when detecting
+   * conflicts. Defaults to `pageExtensions` read from `next.config.*`
+   * (Next.js defaults as fallback).
+   */
+  pageExtensions?: readonly string[];
+}
+
+export class PageConflictError extends Error {
+  readonly conflicts: PageConflict[];
+  constructor(conflicts: PageConflict[]) {
+    super(
+      `Page conflict${conflicts.length === 1 ? '' : 's'} detected: ${conflicts
+        .map((c) => c.conflictRel)
+        .join(', ')}`,
+    );
+    this.name = 'PageConflictError';
+    this.conflicts = conflicts;
+  }
+}
+
 export function patchPages(
   projectRoot: string,
   pluginName: string,
   pages: Record<string, string>,
   action: 'add' | 'remove',
+  options: PatchPagesOptions = {},
 ): void {
-  for (const [pagePath, exportFrom] of Object.entries(pages)) {
-    const fullPath = resolve(projectRoot, pagePath);
+  const strategy = options.onConflict ?? 'backup';
 
-    if (action === 'remove') {
+  if (action === 'remove') {
+    for (const [pagePath] of Object.entries(pages)) {
+      const fullPath = resolve(projectRoot, pagePath);
+
       if (existsSync(fullPath)) {
         rmSync(fullPath);
       }
+
+      restoreBackupsFor(projectRoot, pluginName, pagePath);
+
       try {
         let dir = dirname(fullPath);
         const srcDir = resolve(projectRoot, 'src');
@@ -341,13 +596,95 @@ export function patchPages(
       } catch {
         // Ignore cleanup errors
       }
-      continue;
+    }
+    return;
+  }
+
+  // action === 'add'
+  const extensions = options.pageExtensions ?? readPageExtensions(projectRoot);
+
+  const allConflicts: PageConflict[] = [];
+  for (const [pagePath, exportFrom] of Object.entries(pages)) {
+    allConflicts.push(...collectConflictsForEntry(projectRoot, pagePath, exportFrom, extensions));
+  }
+
+  // Plugin stubs (from us or other plugins) can be safely overwritten. Only
+  // hand-written pages force us into conflict-resolution mode.
+  const nonStubConflicts = allConflicts.filter((c) => !c.isStub);
+
+  if (nonStubConflicts.length > 0 && strategy === 'fail') {
+    throw new PageConflictError(nonStubConflicts);
+  }
+
+  for (const [pagePath, exportFrom] of Object.entries(pages)) {
+    const fullPath = resolve(projectRoot, pagePath);
+    const content = makeStubContent(exportFrom);
+
+    const conflicts = collectConflictsForEntry(projectRoot, pagePath, exportFrom, extensions);
+
+    for (const conflict of conflicts) {
+      if (conflict.isStub) {
+        // Drop sibling stubs at a different extension so Next.js does not
+        // pick an older one. The target-path stub will be overwritten below.
+        if (!conflict.isExactPath) {
+          rmSync(conflict.conflictPath);
+        }
+        continue;
+      }
+
+      // Non-stub user code: move it aside.
+      const backup = backupPathFor(conflict.conflictPath, pluginName);
+      if (existsSync(backup)) {
+        // A previous install already preserved the original — keep that
+        // backup untouched and just remove the live file.
+        rmSync(conflict.conflictPath);
+      } else {
+        renameSync(conflict.conflictPath, backup);
+      }
     }
 
     mkdirSync(dirname(fullPath), { recursive: true });
-    const content = `export { default } from '${exportFrom}';\n`;
     writeFileSync(fullPath, content, 'utf-8');
   }
+}
+
+/**
+ * Find every `*.codapult-bak-*` file below `src/app`. Used by `codapult
+ * doctor` to surface orphaned backups left over after a failed install.
+ */
+export function findPageBackups(projectRoot: string): string[] {
+  const root = resolve(projectRoot, 'src/app');
+  if (!existsSync(root)) return [];
+
+  const found: string[] = [];
+  const stack: string[] = [root];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    if (!dir) continue;
+    let entries: string[];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const full = join(dir, entry);
+      let isDir: boolean;
+      try {
+        isDir = statSync(full).isDirectory();
+      } catch {
+        continue;
+      }
+      if (isDir) {
+        stack.push(full);
+        continue;
+      }
+      if (entry.includes(PAGE_BACKUP_SUFFIX)) {
+        found.push(relative(projectRoot, full));
+      }
+    }
+  }
+  return found;
 }
 
 // ---------------------------------------------------------------------------

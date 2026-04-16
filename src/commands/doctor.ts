@@ -1,7 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
+import { resolveManifest } from '../utils/manifest.js';
+import { findPageConflicts, findPageBackups } from '../utils/patchers.js';
 import { heading, success, fail, warn, info, dim, label } from '../utils/ui.js';
 
 function checkExists(root: string, path: string, description: string): boolean {
@@ -118,6 +120,49 @@ export function doctorCommand(): void {
     warnings += 1;
   } else {
     success('TypeScript compiles cleanly');
+  }
+  console.log();
+
+  // --- Plugins ---
+  info('Plugins');
+  const pluginsDir = resolve(root, 'src/plugins');
+  const installedPlugins = existsSync(pluginsDir)
+    ? readdirSync(pluginsDir)
+        .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+        .map((f) => f.replace('.ts', ''))
+    : [];
+
+  if (installedPlugins.length === 0) {
+    dim('No plugins installed.');
+  } else {
+    let pluginProblems = 0;
+    for (const pName of installedPlugins) {
+      const resolved = resolveManifest(root, pName);
+      if (!resolved?.manifest.install.pages) continue;
+      const conflicts = findPageConflicts(root, resolved.manifest.install.pages).filter(
+        (c) => !c.isStub,
+      );
+      if (conflicts.length === 0) continue;
+      pluginProblems += 1;
+      warn(`${pName}: ${conflicts.length} page conflict(s) shadow plugin stubs`);
+      for (const c of conflicts) {
+        dim(`  ${c.conflictRel}  (shadows ${c.pagePath})`);
+      }
+      dim(`  Fix: codapult plugins add ${pName} (will back up and overwrite)`);
+    }
+    if (pluginProblems === 0) {
+      success(`${installedPlugins.length} plugin(s): no page conflicts`);
+    } else {
+      issues += pluginProblems;
+    }
+
+    const orphanBackups = findPageBackups(root);
+    if (orphanBackups.length > 0) {
+      warn(`${orphanBackups.length} page backup file(s) found:`);
+      for (const b of orphanBackups) dim(`  ${b}`);
+      dim('  These are restored automatically when the owning plugin is removed.');
+      warnings += 1;
+    }
   }
   console.log();
 

@@ -11,6 +11,7 @@ import {
   patchNextConfig,
   createPluginRegistration,
   patchPages,
+  findPageConflicts,
   patchEnvFile,
   patchPackageJson,
 } from '../../utils/patchers.js';
@@ -104,9 +105,17 @@ export function registerPluginTools(server: McpServer): void {
         patchNextConfig(root, manifest.name, manifest, 'add');
         steps.push('next.config.ts updated');
       }
+      let backedUp: string[] = [];
       if (manifest.install.pages && Object.keys(manifest.install.pages).length > 0) {
-        patchPages(root, manifest.name, manifest.install.pages, 'add');
+        const conflicts = findPageConflicts(root, manifest.install.pages);
+        backedUp = conflicts.filter((c) => !c.isStub).map((c) => c.conflictRel);
+        patchPages(root, manifest.name, manifest.install.pages, 'add', { onConflict: 'backup' });
         steps.push(`${Object.keys(manifest.install.pages).length} page(s) created`);
+        if (backedUp.length > 0) {
+          steps.push(
+            `Backed up ${backedUp.length} existing page file(s) as *.codapult-bak-${manifest.name}`,
+          );
+        }
       }
       createPluginRegistration(root, manifest.name, manifest.package, 'add');
       steps.push('Plugin registered');
@@ -121,6 +130,7 @@ export function registerPluginTools(server: McpServer): void {
         package: manifest.package,
         version: manifest.version,
         steps,
+        backedUpPages: backedUp,
         nextSteps: [
           'Run: pnpm install --no-frozen-lockfile',
           'Run: pnpm db:push (if schema changed)',
