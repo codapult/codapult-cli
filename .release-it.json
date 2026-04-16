@@ -12,7 +12,7 @@
     "publish": false
   },
   "hooks": {
-    "before:init": ["pnpm run lint", "pnpm run typecheck", "pnpm run test"]
+    "before:init": ["pnpm run lint", "pnpm format:check", "pnpm run typecheck", "pnpm run test"]
   },
   "plugins": {
     "@release-it/conventional-changelog": {
