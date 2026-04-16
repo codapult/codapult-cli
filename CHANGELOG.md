@@ -1,0 +1,26 @@
+# Changelog
+
+## 0.1.1 (2026-04-16)
+
+### Features
+
+* **cli:** add generate, db, env, and deploy commands a9b9ea2
+* **cli:** add MCP server for AI assistant integration 415e25e
+* initial launchkit-cli release 137e94c
+* **mcp:** add resources, context-aware prompts, auto-generate mcp.json 8950efd
+* **plugins:** add `plugins migrate` command for schema updates 4ce3219
+* **plugins:** add git clone utility and manifest validation improvements 667c227
+* **plugins:** add plugins add/remove/list commands 0268ffd
+* **setup:** add --preset flag for non-interactive builds e06c0f4
+* **setup:** add feature toggle env vars and changelog to CLI presets 86e7d0e
+
+### Bug Fixes
+
+* **deps:** align @js-toolkit/eslint-config and @types/node with codapult 59437a3
+* fix UPSTREAM_URL ec1ec56
+* **plugins:** prevent duplicate transpilePackages and dbReExports 5edb529
+* **plugins:** skip confirm prompt when stdin is not a TTY 7c48937
+* resolve type errors from lint auto-fixes ae445d5
+* **security:** mask secrets in MCP, prevent injection, path traversal ba41ecc
+* **setup:** disable changelog in marketing preset 7337abf
+* **setup:** update FeatureBoard path after component relocation 9ed538f
