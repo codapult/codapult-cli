@@ -107,7 +107,7 @@ pnpm run release -- --dry-run
 
 ### Prerequisites
 
-- **`NPM_TOKEN`** — GitHub repo secret, required for the publish workflow.
+- **`NPM_TOKEN`** — GitHub repo secret, required for the publish workflow. Or use npm trusted publishing.
 - Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/) for meaningful changelogs (e.g. `feat:`, `fix:`, `chore:`).
 
 ## License
