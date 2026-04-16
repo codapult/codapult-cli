@@ -31,6 +31,10 @@
     "nextjs"
   ],
   "homepage": "https://codapult.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codapult/codapult-cli.git"
+  },
   "publishConfig": {
     "access": "public"
   },
