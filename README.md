@@ -102,16 +102,11 @@ pnpm run release -- major # major bump (0.1.0 → 1.0.0)
 Preview what a release would do without making any changes:
 
 ```bash
-pnpm run release --dry-run
+pnpm run release -- --dry-run
 ```
 
 ### Prerequisites
 
-- **`GITHUB_TOKEN`** — required for creating GitHub Releases. Set it before running the release command:
-  ```bash
-  export GITHUB_TOKEN=$(gh auth token)
-  ```
-  Or add this line to your shell profile (`~/.bashrc`, `~/.zshrc`) to have it always available.
 - **`NPM_TOKEN`** — GitHub repo secret, required for the publish workflow.
 - Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/) for meaningful changelogs (e.g. `feat:`, `fix:`, `chore:`).
 
