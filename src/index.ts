@@ -75,6 +75,7 @@ plugins
   .command('add <name>')
   .description('install a plugin (local or remote)')
   .option('--from <url>', 'git URL to clone the plugin from')
+  .option('--ci', 'CI/Vercel mode: skip pnpm install, db:push, env patching, and interactive prompts')
   .action(pluginsAddCommand);
 
 plugins.command('remove <name>').description('uninstall a plugin').action(pluginsRemoveCommand);

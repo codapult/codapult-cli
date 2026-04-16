@@ -29,7 +29,10 @@ function execQuiet(cmd: string, cwd: string): boolean {
 // codapult plugins add <name>
 // ---------------------------------------------------------------------------
 
-export async function pluginsAddCommand(name: string, options: { from?: string }): Promise<void> {
+export async function pluginsAddCommand(
+  name: string,
+  options: { from?: string; ci?: boolean },
+): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -145,11 +148,20 @@ export async function pluginsAddCommand(name: string, options: { from?: string }
   createPluginRegistration(root, manifest.name, manifest.package, 'add');
   success(`src/plugins/${manifest.name}.ts created`);
 
-  // 9. Append env vars
-  if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
+  // 9. Append env vars (skipped in CI — env vars are configured in the hosting dashboard)
+  if (!options.ci && manifest.install.env && Object.keys(manifest.install.env).length > 0) {
     info('Adding environment variables...');
     patchEnvFile(root, manifest.name, manifest.install.env, 'add');
     success('Environment variables added to .env.local');
+  }
+
+  if (options.ci) {
+    heading('Done!');
+    success(`Plugin "${manifest.name}" installed (CI mode).`);
+    dim('Skipped: pnpm install, db:push, env patching, optional deps.');
+    dim('Run pnpm install separately after this command.');
+    console.log();
+    return;
   }
 
   // 10. pnpm install
