@@ -304,7 +304,7 @@ export function createPluginRegistration(
       rmSync(regFile);
     }
   } else {
-    const content = `import { registerPlugin } from '@/lib/plugins';\nimport plugin from '${packageName}';\n\nregisterPlugin(plugin);\n`;
+    const content = `import plugin from '${packageName}';\nimport { registerPlugin } from '@/lib/plugins';\n\nregisterPlugin(plugin);\n`;
     writeFileSync(regFile, content, 'utf-8');
   }
 
