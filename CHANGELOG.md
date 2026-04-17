@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0](///compare/v0.2.0...v0.3.0) (2026-04-17)
+
+### Features
+
+* **plugins:** detect and back up page conflicts on install 9ed8c13
+
 ## [0.2.0](///compare/v0.1.4...v0.2.0) (2026-04-16)
 
 ### Features
