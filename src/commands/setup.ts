@@ -71,6 +71,11 @@ interface ProjectConfig {
   enableAnalytics: boolean;
   enableChangelog: boolean;
   enableRAG: boolean;
+  enableWebhooks: boolean;
+  enableAuditLog: boolean;
+  enableReports: boolean;
+  enableBranding: boolean;
+  enableTwoFactor: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +83,8 @@ interface ProjectConfig {
 // ---------------------------------------------------------------------------
 
 const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
+  // Showcase / marketing-only site: navbar shows only Pricing, Plugins, Docs.
+  // `enableHelpCenter` stays true (powers /docs).
   marketing: {
     authProvider: 'none',
     enableAuth: false,
@@ -96,6 +103,14 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableDripCampaigns: false,
     enableApiDocs: false,
     enableChangelog: false,
+    enableBlog: false,
+    enableWaitlist: false,
+    enableFeatureRequests: false,
+    enableWebhooks: false,
+    enableAuditLog: false,
+    enableReports: false,
+    enableBranding: false,
+    enableTwoFactor: false,
   },
   demo: {
     authProvider: 'better-auth',
@@ -130,6 +145,11 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableAnalytics: true,
   enableChangelog: true,
   enableRAG: true,
+  enableWebhooks: true,
+  enableAuditLog: true,
+  enableReports: true,
+  enableBranding: true,
+  enableTwoFactor: true,
 };
 
 function parsePresetValue(raw: string): Partial<ProjectConfig> {
@@ -178,6 +198,11 @@ function resolvePreset(raw: string): ProjectConfig {
   return config;
 }
 
+// All app-router paths are under `src/app/[locale]/...` (next-intl).
+// API routes (`src/app/api/...`) and `src/lib`/`src/components` paths
+// are NOT under [locale].
+const APP = 'src/app/[locale]';
+
 const MODULE_REMOVALS: {
   key: keyof ProjectConfig;
   paths: string[];
@@ -186,11 +211,11 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAuth',
     paths: [
-      'src/app/(auth)',
-      'src/app/(dashboard)',
-      'src/app/admin',
+      `${APP}/(auth)`,
+      `${APP}/(dashboard)`,
+      `${APP}/admin`,
+      `${APP}/invite`,
       'src/app/api/auth',
-      'src/app/invite',
       'src/lib/auth/better-auth.ts',
       'src/lib/auth/kinde.ts',
       'src/components/auth',
@@ -202,13 +227,13 @@ const MODULE_REMOVALS: {
   },
   {
     key: 'enableAI',
-    paths: ['src/app/(dashboard)/dashboard/ai-chat', 'src/app/api/chat', 'src/components/ai'],
+    paths: [`${APP}/(dashboard)/dashboard/ai-chat`, 'src/app/api/chat', 'src/components/ai'],
     label: 'AI Chat',
   },
   {
     key: 'enableBlog',
     paths: [
-      'src/app/(marketing)/blog',
+      `${APP}/(marketing)/blog`,
       'src/components/blog',
       'src/lib/blog',
       'content/blog',
@@ -219,8 +244,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableTeams',
     paths: [
-      'src/app/(dashboard)/dashboard/teams',
-      'src/app/invite',
+      `${APP}/(dashboard)/dashboard/teams`,
+      `${APP}/invite`,
       'src/components/dashboard/TeamSwitcher.tsx',
       'src/components/dashboard/TeamSettings.tsx',
       'src/components/dashboard/AcceptInvitationButton.tsx',
@@ -232,10 +257,10 @@ const MODULE_REMOVALS: {
   {
     key: 'enableWaitlist',
     paths: [
-      'src/app/(marketing)/waitlist',
+      `${APP}/(marketing)/waitlist`,
+      `${APP}/admin/waitlist`,
       'src/components/marketing/WaitlistForm.tsx',
       'src/lib/actions/waitlist.ts',
-      'src/app/admin/waitlist',
     ],
     label: 'Waitlist',
   },
@@ -247,10 +272,10 @@ const MODULE_REMOVALS: {
   {
     key: 'enableSSO',
     paths: [
+      `${APP}/admin/sso`,
       'src/lib/sso',
       'src/app/api/auth/sso',
       'src/app/api/admin/sso',
-      'src/app/admin/sso',
       'src/components/admin/SSOManager.tsx',
     ],
     label: 'Enterprise SSO',
@@ -258,8 +283,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableApiDocs',
     paths: [
+      `${APP}/(marketing)/docs/api`,
       'src/lib/api-docs.ts',
-      'src/app/(marketing)/docs/api',
       'src/components/docs/ApiReference.tsx',
     ],
     label: 'API Docs',
@@ -267,19 +292,28 @@ const MODULE_REMOVALS: {
   {
     key: 'enableHelpCenter',
     paths: [
+      `${APP}/(marketing)/docs`,
       'src/lib/docs',
-      'src/app/(marketing)/docs',
       'src/components/docs/HelpDocSearch.tsx',
       'content/docs',
     ],
     label: 'Documentation',
   },
   {
+    key: 'enableChangelog',
+    paths: [
+      `${APP}/(marketing)/changelog`,
+      'src/app/api/changelog',
+      'src/components/dashboard/ChangelogWidget.tsx',
+    ],
+    label: 'Changelog',
+  },
+  {
     key: 'enableExperiments',
     paths: [
+      `${APP}/admin/experiments`,
       'src/lib/experiments',
       'src/app/api/admin/experiments',
-      'src/app/admin/experiments',
       'src/components/admin/ExperimentManager.tsx',
     ],
     label: 'A/B Testing',
@@ -287,19 +321,19 @@ const MODULE_REMOVALS: {
   {
     key: 'enableFeatureRequests',
     paths: [
+      `${APP}/(marketing)/feature-requests`,
       'src/lib/feature-requests',
       'src/app/api/feature-requests',
-      'src/app/(marketing)/feature-requests',
-      'src/components/feature-requests/FeatureBoard.tsx',
+      'src/components/feature-requests',
     ],
     label: 'Feature Requests',
   },
   {
     key: 'enableConnect',
     paths: [
+      `${APP}/(dashboard)/dashboard/connect`,
       'src/lib/payments/connect.ts',
       'src/app/api/connect',
-      'src/app/(dashboard)/dashboard/connect',
       'src/components/dashboard/ConnectDashboard.tsx',
     ],
     label: 'Stripe Connect',
@@ -313,9 +347,9 @@ const MODULE_REMOVALS: {
   {
     key: 'enableDripCampaigns',
     paths: [
+      `${APP}/admin/drip-campaigns`,
       'src/lib/drip-campaigns',
       'src/app/api/admin/drip-campaigns',
-      'src/app/admin/drip-campaigns',
       'src/components/admin/DripCampaignManager.tsx',
     ],
     label: 'Drip Campaigns',
@@ -323,18 +357,20 @@ const MODULE_REMOVALS: {
   {
     key: 'enableOnboarding',
     paths: [
+      `${APP}/(dashboard)/dashboard/onboarding`,
       'src/lib/onboarding',
       'src/app/api/onboarding',
       'src/components/dashboard/OnboardingTour.tsx',
+      'src/components/dashboard/OnboardingForm.tsx',
     ],
     label: 'Onboarding Tours',
   },
   {
     key: 'enableWorkflows',
     paths: [
+      `${APP}/(dashboard)/dashboard/workflows`,
       'src/lib/workflows',
       'src/app/api/workflows',
-      'src/app/(dashboard)/dashboard/workflows',
       'src/components/dashboard/WorkflowBuilder.tsx',
     ],
     label: 'Workflow Automation',
@@ -342,9 +378,9 @@ const MODULE_REMOVALS: {
   {
     key: 'enableReferrals',
     paths: [
+      `${APP}/(dashboard)/dashboard/referrals`,
       'src/lib/referrals',
       'src/app/api/referrals',
-      'src/app/(dashboard)/dashboard/referrals',
       'src/components/dashboard/ReferralDashboard.tsx',
     ],
     label: 'Referral Program',
@@ -352,9 +388,9 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAnalytics',
     paths: [
+      `${APP}/(dashboard)/dashboard/analytics`,
       'src/lib/analytics',
       'src/app/api/analytics',
-      'src/app/(dashboard)/dashboard/analytics',
       'src/components/dashboard/AnalyticsDashboard.tsx',
     ],
     label: 'Built-in Analytics',
@@ -370,13 +406,90 @@ const MODULE_REMOVALS: {
     ],
     label: 'RAG Pipeline',
   },
+  {
+    key: 'enableWebhooks',
+    paths: [
+      `${APP}/(dashboard)/dashboard/webhooks`,
+      `${APP}/admin/webhooks`,
+      'src/app/api/webhooks',
+      'src/lib/outgoing-webhooks',
+      'src/lib/webhook-log.ts',
+      'src/lib/webhook-log.test.ts',
+      'src/components/dashboard/OutgoingWebhooks.tsx',
+    ],
+    label: 'Outgoing Webhooks',
+  },
+  {
+    key: 'enableAuditLog',
+    paths: [
+      `${APP}/(dashboard)/dashboard/audit-log`,
+      `${APP}/admin/activity`,
+      'src/app/api/audit-log',
+      'src/lib/activity-log.ts',
+      'src/components/dashboard/AuditLog.tsx',
+    ],
+    label: 'Audit Log',
+  },
+  {
+    key: 'enableReports',
+    paths: [
+      `${APP}/(dashboard)/dashboard/reports`,
+      'src/app/api/reports',
+      'src/lib/scheduled-reports',
+      'src/components/dashboard/ReportSchedules.tsx',
+    ],
+    label: 'Scheduled Reports',
+  },
+  {
+    key: 'enableBranding',
+    paths: [
+      `${APP}/(dashboard)/dashboard/branding`,
+      'src/app/api/branding',
+      'src/lib/white-label',
+      'src/components/dashboard/BrandingSettings.tsx',
+      'src/components/dashboard/BrandingProvider.tsx',
+    ],
+    label: 'White-label Branding',
+  },
+  {
+    key: 'enableTwoFactor',
+    // 2FA is implemented as a Better Auth plugin — only the UI control needs
+    // to be removed; auth route handlers stay since the plugin is loaded at
+    // runtime when ENABLE_TWO_FACTOR is set.
+    paths: ['src/components/dashboard/TwoFactorSettings.tsx'],
+    label: 'Two-factor Authentication (UI)',
+  },
 ];
 
 // Maps CLI enable* flags → server-side ENABLE_* env var names.
+// Only flags that actually toggle runtime behavior via env.features belong here;
+// everything else is removed from disk by `removeModules`.
+//
+// Install-time-only features (no runtime ENABLE_* — file removal only):
+//   enableGraphQL, enableEventStore, enableOtel, enableRAG, enableConnect.
+// These are infrastructure-flavoured and either always-on or only meaningful
+// at build-time, so they don't expose a user-facing env toggle.
 const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableApiDocs: 'ENABLE_API_DOCS',
   enableHelpCenter: 'ENABLE_HELP_CENTER',
   enableChangelog: 'ENABLE_CHANGELOG',
+  enableBlog: 'ENABLE_BLOG',
+  enableWaitlist: 'ENABLE_WAITLIST',
+  enableFeatureRequests: 'ENABLE_FEATURE_REQUESTS',
+  enableAI: 'ENABLE_AI_CHAT',
+  enableTeams: 'ENABLE_TEAMS',
+  enableReferrals: 'ENABLE_REFERRALS',
+  enableAnalytics: 'ENABLE_ANALYTICS',
+  enableWorkflows: 'ENABLE_WORKFLOWS',
+  enableSSO: 'ENABLE_SSO',
+  enableExperiments: 'ENABLE_EXPERIMENTS',
+  enableDripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
+  enableOnboarding: 'ENABLE_ONBOARDING',
+  enableWebhooks: 'ENABLE_WEBHOOKS',
+  enableAuditLog: 'ENABLE_AUDIT_LOG',
+  enableReports: 'ENABLE_REPORTS',
+  enableBranding: 'ENABLE_BRANDING',
+  enableTwoFactor: 'ENABLE_TWO_FACTOR',
 };
 
 function generateEnvFile(root: string, config: ProjectConfig): void {
@@ -451,12 +564,22 @@ function removeModules(root: string, config: ProjectConfig): void {
     if (config[removal.key]) continue;
 
     dim(`Removing ${removal.label}...`);
+    let removed = 0;
+    const missing: string[] = [];
     for (const p of removal.paths) {
       const fullPath = resolve(root, p);
       if (existsSync(fullPath)) {
         rmSync(fullPath, { recursive: true });
         dim(`  deleted ${p}`);
+        removed += 1;
+      } else {
+        missing.push(p);
       }
+    }
+    // Surface stale paths so removals don't silently no-op when the host
+    // project's file layout changes (e.g. moving routes under [locale]).
+    if (removed === 0 && missing.length > 0) {
+      dim(`  no matching files found (expected ${missing.length} path(s))`);
     }
   }
 }
@@ -517,6 +640,18 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableAnalytics: await confirmPrompt(iface, 'Enable built-in analytics?'),
     enableChangelog: await confirmPrompt(iface, 'Enable Changelog page?'),
     enableRAG: await confirmPrompt(iface, 'Enable RAG pipeline (vector search)?'),
+    enableWebhooks:
+      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable outgoing webhooks?')),
+    enableAuditLog:
+      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable audit log / activity feed?')),
+    enableReports:
+      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable scheduled email reports?')),
+    enableBranding:
+      authProvider !== 'none' &&
+      (await confirmPrompt(iface, 'Enable per-org branding (white-label)?')),
+    enableTwoFactor:
+      authProvider !== 'none' &&
+      (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
   };
 
   if (await confirmPrompt(iface, 'Remove unused module code?', false)) {

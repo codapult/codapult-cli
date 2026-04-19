@@ -1,28 +1,34 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
+import {
+  getAdapters,
+  getAuthMethods,
+  getFeatures,
+  getOauthProviders,
+  FEATURE_ENV,
+} from '../utils/env-config.js';
 import { heading, success, fail, info, dim, label } from '../utils/ui.js';
 
+/** Extracts a quoted string from a TS object literal: `field: 'value'` or `field: "value"`. */
 function extractTsObjectField(content: string, field: string): string | null {
-  const regex = new RegExp(`${field}:\\s*['"\`]([^'"\`]+)['"\`]`);
+  const regex = new RegExp(`\\b${field}\\s*:\\s*['"\`]([^'"\`]+)['"\`]`);
   const match = regex.exec(content);
   return match?.[1] ?? null;
 }
 
-function extractTsBooleanFields(content: string): Record<string, boolean> {
-  const result: Record<string, boolean> = {};
-  const regex = /(\w+):\s*(true|false)/g;
-  let match;
-  while ((match = regex.exec(content)) !== null) {
-    result[match[1]] = match[2] === 'true';
-  }
-  return result;
+/** Extracts a numeric literal: `field: 123` or `field: 0.5`. */
+function extractTsNumericField(content: string, field: string): string | null {
+  const regex = new RegExp(`\\b${field}\\s*:\\s*([\\d.]+)`);
+  const match = regex.exec(content);
+  return match?.[1] ?? null;
 }
 
-function extractEnvValue(envContent: string, key: string): string | null {
-  const regex = new RegExp(`^${key}=(.*)$`, 'm');
-  const match = regex.exec(envContent);
-  return match?.[1]?.trim() ?? null;
+/** Extracts a boolean literal: `field: true|false`. */
+function extractTsBoolField(content: string, field: string): boolean | null {
+  const regex = new RegExp(`\\b${field}\\s*:\\s*(true|false)`);
+  const match = regex.exec(content);
+  return match ? match[1] === 'true' : null;
 }
 
 export function configShowCommand(): void {
@@ -43,6 +49,9 @@ export function configShowCommand(): void {
   }
   console.log();
 
+  const envPath = resolve(root, '.env.local');
+  const envContent = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
+
   // --- App config (src/config/app.ts) ---
   const appConfigPath = resolve(root, 'src/config/app.ts');
   if (existsSync(appConfigPath)) {
@@ -51,71 +60,71 @@ export function configShowCommand(): void {
     info('Brand');
     const name = extractTsObjectField(content, 'name');
     const description = extractTsObjectField(content, 'description');
-    const url = extractTsObjectField(content, 'url');
-    const supportEmail = extractTsObjectField(content, 'supportEmail');
-
+    const logo = extractTsObjectField(content, 'logo');
+    const favicon = extractTsObjectField(content, 'favicon');
     if (name) label('  Name', name);
     if (description) label('  Description', description);
-    if (url) label('  URL', url);
-    if (supportEmail) label('  Support email', supportEmail);
+    if (logo) label('  Logo', logo);
+    if (favicon) label('  Favicon', favicon);
     console.log();
 
-    info('Features');
-    const features = extractTsBooleanFields(content);
-    const featureKeys = Object.keys(features).filter(
-      (k) => !['magicLink', 'passkeys', 'twoFactor'].includes(k),
-    );
-    const enabled = featureKeys.filter((k) => features[k]);
-    const disabled = featureKeys.filter((k) => !features[k]);
-
-    if (enabled.length > 0) {
-      for (const f of enabled) success(f);
-    }
-    if (disabled.length > 0) {
-      for (const f of disabled) dim(`  ○ ${f}`);
-    }
+    info('Company');
+    const contactEmail = extractTsObjectField(content, 'contactEmail');
+    const githubUrl = extractTsObjectField(content, 'githubUrl');
+    if (contactEmail) label('  Contact email', contactEmail);
+    if (githubUrl) label('  GitHub', githubUrl);
     console.log();
 
-    info('Auth');
-    const magicLink = features.magicLink;
-    const passkeys = features.passkeys;
-    const twoFactor = features.twoFactor;
-    if (magicLink !== undefined) label('  Magic Link', magicLink ? 'enabled' : 'disabled');
-    if (passkeys !== undefined) label('  Passkeys', passkeys ? 'enabled' : 'disabled');
-    if (twoFactor !== undefined) label('  2FA (TOTP)', twoFactor ? 'enabled' : 'disabled');
-
-    const oauthMatch = /oauthProviders:\s*\[([^\]]*)\]/.exec(content);
-    if (oauthMatch) {
-      const providers = oauthMatch[1]
-        .split(',')
-        .map((s) => s.trim().replace(/['"]/g, ''))
-        .filter(Boolean);
-      label('  OAuth providers', providers.join(', ') || 'none');
-    }
+    info('AI');
+    const defaultModel = extractTsObjectField(content, 'defaultModel');
+    const ragEnabled = extractTsBoolField(content, 'ragEnabled');
+    const ragMaxChunks = extractTsNumericField(content, 'ragMaxChunks');
+    const ragMinScore = extractTsNumericField(content, 'ragMinScore');
+    if (defaultModel) label('  Default model', defaultModel);
+    if (ragEnabled !== null) label('  RAG', ragEnabled ? 'enabled' : 'disabled');
+    if (ragMaxChunks) label('  RAG max chunks', ragMaxChunks);
+    if (ragMinScore) label('  RAG min score', ragMinScore);
   } else {
     dim('src/config/app.ts not found — run `codapult setup`');
   }
   console.log();
 
-  // --- Adapters from .env.local ---
-  info('Adapters');
-  const envPath = resolve(root, '.env.local');
-  if (existsSync(envPath)) {
-    const envContent = readFileSync(envPath, 'utf-8');
-    const adapters = [
-      ['AUTH_PROVIDER', 'Auth'],
-      ['PAYMENT_PROVIDER', 'Payments'],
-      ['STORAGE_PROVIDER', 'Storage'],
-      ['NOTIFICATION_TRANSPORT', 'Notifications'],
-      ['JOB_PROVIDER', 'Background jobs'],
-    ] as const;
-
-    for (const [key, name] of adapters) {
-      const value = extractEnvValue(envContent, key);
-      label(`  ${name}`, value ?? 'not set');
-    }
-  } else {
-    dim('.env.local not found');
+  if (!existsSync(envPath)) {
+    dim('.env.local not found — adapters / features / auth methods unavailable');
+    console.log();
+    return;
   }
+
+  // --- Adapters (from .env.local) ---
+  info('Adapters');
+  const adapters = getAdapters(envContent);
+  label('  Database', adapters.database);
+  label('  Auth', adapters.auth);
+  label('  Payments', adapters.payments);
+  label('  Storage', adapters.storage);
+  label('  Background jobs', adapters.jobs);
+  label('  Notifications', adapters.notifications);
+  label('  Embedding', adapters.embedding);
+  label('  Vector store', adapters.vectorStore);
+  console.log();
+
+  // --- Auth methods (from .env.local) ---
+  info('Auth methods');
+  const authMethods = getAuthMethods(envContent);
+  label('  Magic Link', authMethods.magicLink ? 'enabled' : 'disabled');
+  label('  Passkeys', authMethods.passkeys ? 'enabled' : 'disabled');
+  label('  2FA (TOTP)', authMethods.twoFactor ? 'enabled' : 'disabled');
+  const oauth = getOauthProviders(envContent);
+  label('  OAuth providers', oauth.length > 0 ? oauth.join(', ') : 'none');
+  console.log();
+
+  // --- Feature toggles (from .env.local + ENABLE_* defaults) ---
+  info('Features');
+  const features = getFeatures(envContent);
+  const featureKeys = Object.keys(FEATURE_ENV);
+  const enabled = featureKeys.filter((k) => features[k]);
+  const disabled = featureKeys.filter((k) => !features[k]);
+  for (const f of enabled) success(f);
+  for (const f of disabled) dim(`  ○ ${f}`);
   console.log();
 }

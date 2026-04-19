@@ -4,6 +4,12 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import {
+  getAdapters,
+  getAuthMethods,
+  getFeatures,
+  getOauthProviders,
+} from '../../utils/env-config.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -28,10 +34,6 @@ export function registerProjectTools(server: McpServer): void {
       >;
 
       const envContent = readProjectFile(root, '.env.local') ?? '';
-      const getEnv = (key: string, fallback: string): string => {
-        const m = new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm').exec(envContent);
-        return m?.[1] ?? fallback;
-      };
 
       const pluginsDir = resolve(root, 'src/plugins');
       const plugins = existsSync(pluginsDir)
@@ -54,25 +56,19 @@ export function registerProjectTools(server: McpServer): void {
         /* not a git repo */
       }
 
-      const configContent = readProjectFile(root, 'src/config/app.ts') ?? '';
-      const features: string[] = [];
-      for (const m of configContent.matchAll(/(\w+):\s*true/g)) {
-        features.push(m[1]);
-      }
+      const features = getFeatures(envContent);
 
       const result = {
         name: pkg.name as string,
         version: pkg.version as string,
-        adapters: {
-          auth: getEnv('AUTH_PROVIDER', 'better-auth'),
-          payments: getEnv('PAYMENT_PROVIDER', 'stripe'),
-          storage: getEnv('STORAGE_PROVIDER', 'local'),
-          database: getEnv('DB_PROVIDER', 'turso'),
-          notifications: getEnv('NOTIFICATION_TRANSPORT', 'poll'),
-          jobs: getEnv('JOB_PROVIDER', 'memory'),
-        },
+        adapters: getAdapters(envContent),
+        authMethods: getAuthMethods(envContent),
+        oauthProviders: getOauthProviders(envContent),
         plugins,
-        features,
+        features: {
+          enabled: Object.keys(features).filter((k) => features[k]),
+          disabled: Object.keys(features).filter((k) => !features[k]),
+        },
         git: { branch: gitBranch, dirty: gitDirty },
       };
 

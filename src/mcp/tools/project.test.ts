@@ -65,8 +65,14 @@ describe('registerProjectTools', () => {
       mockedRead.mockReturnValue(JSON.stringify({ name: 'codapult', version: '1.0.0' }));
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === '.env.local')
-          return 'AUTH_PROVIDER=kinde\nPAYMENT_PROVIDER=lemonsqueezy\nSTORAGE_PROVIDER=s3\n';
-        if (path === 'src/config/app.ts') return 'ai: true,\nblog: true,\nteams: false,';
+          return [
+            'AUTH_PROVIDER=kinde',
+            'PAYMENT_PROVIDER=lemonsqueezy',
+            'STORAGE_PROVIDER=s3',
+            'ENABLE_TEAMS=false',
+            'GOOGLE_CLIENT_ID=abc',
+            'GOOGLE_CLIENT_SECRET=def',
+          ].join('\n');
         return null;
       });
       mockedExists.mockReturnValue(true);
@@ -84,8 +90,9 @@ describe('registerProjectTools', () => {
       const parsed = JSON.parse(result.content[0].text) as {
         name: string;
         adapters: Record<string, string>;
+        oauthProviders: string[];
         plugins: string[];
-        features: string[];
+        features: { enabled: string[]; disabled: string[] };
         git: { branch: string; dirty: boolean };
       };
 
@@ -93,10 +100,14 @@ describe('registerProjectTools', () => {
       expect(parsed.adapters.auth).toBe('kinde');
       expect(parsed.adapters.payments).toBe('lemonsqueezy');
       expect(parsed.adapters.storage).toBe('s3');
+      expect(parsed.adapters.database).toBe('turso');
+      expect(parsed.adapters.embedding).toBe('openai');
+      expect(parsed.adapters.vectorStore).toBe('sqlite');
+      expect(parsed.oauthProviders).toEqual(['google']);
       expect(parsed.plugins).toEqual(['ai-kit', 'crm']);
-      expect(parsed.features).toContain('ai');
-      expect(parsed.features).toContain('blog');
-      expect(parsed.features).not.toContain('teams');
+      expect(parsed.features.enabled).toContain('aiChat');
+      expect(parsed.features.enabled).toContain('blog');
+      expect(parsed.features.disabled).toContain('teams');
       expect(parsed.git.branch).toBe('main');
       expect(parsed.git.dirty).toBe(false);
     });

@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
 import { resolveManifest } from '../utils/manifest.js';
 import { findPageConflicts, findPageBackups } from '../utils/patchers.js';
+import { findProviderIssues, getAdapters, readEnvVar } from '../utils/env-config.js';
 import { heading, success, fail, warn, info, dim, label } from '../utils/ui.js';
 
 function checkExists(root: string, path: string, description: string): boolean {
@@ -14,17 +15,6 @@ function checkExists(root: string, path: string, description: string): boolean {
     fail(`${description} — missing: ${path}`);
   }
   return exists;
-}
-
-function checkEnvVar(envContent: string, key: string, description: string): boolean {
-  const regex = new RegExp(`^${key}=.+`, 'm');
-  const found = regex.test(envContent);
-  if (found) {
-    success(description);
-  } else {
-    warn(`${description} — not set: ${key}`);
-  }
-  return found;
 }
 
 function tryExec(cmd: string, cwd: string): string | null {
@@ -71,10 +61,33 @@ export function doctorCommand(): void {
     success('.env.local exists');
     const envContent = readFileSync(envPath, 'utf-8');
 
-    if (!checkEnvVar(envContent, 'TURSO_DATABASE_URL', 'Database URL')) issues += 1;
-    if (!checkEnvVar(envContent, 'BETTER_AUTH_SECRET', 'Auth secret')) warnings += 1;
-    if (!checkEnvVar(envContent, 'AUTH_PROVIDER', 'Auth provider')) warnings += 1;
-    if (!checkEnvVar(envContent, 'PAYMENT_PROVIDER', 'Payment provider')) warnings += 1;
+    const adapters = getAdapters(envContent);
+    label('  DB_PROVIDER', adapters.database);
+    label('  AUTH_PROVIDER', adapters.auth);
+    label('  PAYMENT_PROVIDER', adapters.payments);
+    label('  STORAGE_PROVIDER', adapters.storage);
+    label('  JOB_PROVIDER', adapters.jobs);
+    label('  NOTIFICATION_TRANSPORT', adapters.notifications);
+
+    const providerIssues = findProviderIssues(envContent);
+    if (providerIssues.length === 0) {
+      success('All provider-conditional env vars are set');
+    } else {
+      for (const i of providerIssues) {
+        if (i.severity === 'error') {
+          fail(`${i.key}: ${i.message}`);
+          issues += 1;
+        } else {
+          warn(`${i.key}: ${i.message}`);
+          warnings += 1;
+        }
+      }
+    }
+
+    if (!readEnvVar(envContent, 'NEXT_PUBLIC_APP_URL')) {
+      warn('NEXT_PUBLIC_APP_URL not set — defaults to http://localhost:3000');
+      warnings += 1;
+    }
   }
   console.log();
 
