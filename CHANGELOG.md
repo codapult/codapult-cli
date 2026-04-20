@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0](///compare/v0.3.0...v0.4.0) (2026-04-20)
+
+### Features
+
+* **cli:** add enablePlugins to setup wizard and ENABLE_PLUGINS mapping b65ce0a
+
 ## [0.3.0](///compare/v0.2.0...v0.3.0) (2026-04-17)
 
 ### Features
