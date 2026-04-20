@@ -39,6 +39,7 @@ export const FEATURE_ENV: Readonly<Record<string, string>> = {
   sso: 'ENABLE_SSO',
   experiments: 'ENABLE_EXPERIMENTS',
   dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
+  plugins: 'ENABLE_PLUGINS',
 };
 
 /** Auth-gated features: when AUTH_PROVIDER=none, these are forced off. */

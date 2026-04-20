@@ -76,6 +76,7 @@ interface ProjectConfig {
   enableReports: boolean;
   enableBranding: boolean;
   enableTwoFactor: boolean;
+  enablePlugins: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,6 +112,8 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableReports: false,
     enableBranding: false,
     enableTwoFactor: false,
+    // Plugins page stays in marketing navbar by default — preset keeps the
+    // feature on. Override with `marketing;enablePlugins=false` to drop it.
   },
   demo: {
     authProvider: 'better-auth',
@@ -150,6 +153,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableReports: true,
   enableBranding: true,
   enableTwoFactor: true,
+  enablePlugins: true,
 };
 
 function parsePresetValue(raw: string): Partial<ProjectConfig> {
@@ -459,6 +463,19 @@ const MODULE_REMOVALS: {
     paths: ['src/components/dashboard/TwoFactorSettings.tsx'],
     label: 'Two-factor Authentication (UI)',
   },
+  {
+    key: 'enablePlugins',
+    paths: [
+      `${APP}/(marketing)/plugins`,
+      `${APP}/(dashboard)/dashboard/plugins`,
+      'src/app/api/plugins',
+      'src/lib/plugins',
+      'src/components/marketing/PluginsShowcase.tsx',
+      'src/components/marketing/PluginDetail.tsx',
+      'src/components/dashboard/PluginMarketplace.tsx',
+    ],
+    label: 'Plugin Marketplace',
+  },
 ];
 
 // Maps CLI enable* flags → server-side ENABLE_* env var names.
@@ -490,6 +507,7 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableReports: 'ENABLE_REPORTS',
   enableBranding: 'ENABLE_BRANDING',
   enableTwoFactor: 'ENABLE_TWO_FACTOR',
+  enablePlugins: 'ENABLE_PLUGINS',
 };
 
 function generateEnvFile(root: string, config: ProjectConfig): void {
@@ -652,6 +670,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableTwoFactor:
       authProvider !== 'none' &&
       (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
+    enablePlugins: await confirmPrompt(iface, 'Enable plugin marketplace (/plugins)?'),
   };
 
   if (await confirmPrompt(iface, 'Remove unused module code?', false)) {
