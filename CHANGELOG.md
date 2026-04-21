@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1](https://github.com/codapult/codapult-cli/compare/v0.4.0...v0.4.1) (2026-04-21)
+
+### Bug Fixes
+
+* remove extra newline symbol from barrel ([1c052ef](https://github.com/codapult/codapult-cli/commit/1c052efb4b537d1bb389f58bacf0afc33114b5e8))
+
 ## [0.4.0](///compare/v0.3.0...v0.4.0) (2026-04-20)
 
 ### Features
