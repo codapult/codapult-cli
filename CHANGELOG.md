@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.2](https://github.com/codapult/codapult-cli/compare/v0.4.1...v0.4.2) (2026-04-21)
+
 ## [0.4.1](https://github.com/codapult/codapult-cli/compare/v0.4.0...v0.4.1) (2026-04-21)
 
 ### Bug Fixes
