@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0](https://github.com/codapult/codapult-cli/compare/v0.4.2...v0.5.0) (2026-04-23)
+
+### Features
+
+* add runtime env source support to CLI ([3ea445a](https://github.com/codapult/codapult-cli/commit/3ea445acb703c2feeb70c82dbe87106c7712a9f7))
+
 ## [0.4.2](https://github.com/codapult/codapult-cli/compare/v0.4.1...v0.4.2) (2026-04-21)
 
 ## [0.4.1](https://github.com/codapult/codapult-cli/compare/v0.4.0...v0.4.1) (2026-04-21)
