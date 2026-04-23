@@ -9,7 +9,10 @@ vi.mock('../../utils/project.js', () => ({
 }));
 vi.mock('../../utils/project-env.js', () => ({
   ENV_FILE_NAME: '.env.local',
-  getProjectEnvSource: vi.fn(() => 'file'),
+  getProjectEnvOptions: vi.fn((envSource?: string) => ({ envFile: envSource !== 'process' })),
+  getProjectEnvSource: vi.fn((options?: { envFile?: boolean }) =>
+    options?.envFile === false ? 'process' : 'file',
+  ),
   loadProjectEnv: vi.fn(),
 }));
 
@@ -40,7 +43,7 @@ beforeEach(() => {
 
 interface ToolRegistration {
   name: string;
-  handler: (args: Record<string, string[]>) => {
+  handler: (args: Record<string, unknown>) => {
     content: { type: string; text: string }[];
   };
 }
@@ -126,6 +129,28 @@ describe('registerProjectTools', () => {
       expect(parsed.git.branch).toBe('main');
       expect(parsed.git.dirty).toBe(false);
     });
+
+    it('uses process env when requested', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedRead.mockReturnValue(JSON.stringify({ name: 'codapult', version: '1.0.0' }));
+      mockedLoadProjectEnv.mockReturnValue({
+        source: 'process',
+        filePath: `/project/${ENV_FILE_NAME}`,
+        fileExists: false,
+        content: 'AUTH_PROVIDER=none\nENABLE_BLOG=false',
+      });
+      mockedExists.mockReturnValue(true);
+      mockedReaddir.mockReturnValue([] as unknown as ReturnType<typeof readdirSync>);
+
+      const handler = server.tools.find((t) => t.name === 'codapult_project_status')!.handler;
+      const result = handler({ env_source: 'process' });
+      const parsed = JSON.parse(result.content[0].text) as { adapters: { auth: string } };
+
+      expect(parsed.adapters.auth).toBe('none');
+      expect(mockedLoadProjectEnv).toHaveBeenCalledWith('/project', { envFile: false });
+    });
   });
 
   describe('codapult_project_config', () => {
@@ -195,6 +220,24 @@ describe('registerProjectTools', () => {
 
       const failedChecks = parsed.filter((c) => c.status === 'fail');
       expect(failedChecks.length).toBeGreaterThan(0);
+    });
+
+    it('reports process env source when requested', () => {
+      const server = createMockServer();
+      registerProjectTools(server as never);
+
+      mockedExists.mockReturnValue(true);
+      mockedExec.mockReturnValue(Buffer.from(''));
+
+      const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
+      const result = handler({ env_source: 'process' });
+      const parsed = JSON.parse(result.content[0].text) as {
+        name: string;
+        detail: string;
+      }[];
+
+      const envCheck = parsed.find((c) => c.name === 'Environment source');
+      expect(envCheck?.detail).toBe('process.env');
     });
   });
 });

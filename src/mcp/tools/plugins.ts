@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot } from '../../utils/project.js';
-import { ENV_FILE_NAME, getProjectEnvSource } from '../../utils/project-env.js';
+import { ENV_FILE_NAME } from '../../utils/project-env.js';
 import { resolveManifest } from '../../utils/manifest.js';
 import {
   patchSchemaImports,
@@ -16,6 +16,7 @@ import {
   patchEnvFile,
   patchPackageJson,
 } from '../../utils/patchers.js';
+import { envSourceSchema } from './schemas.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -67,9 +68,10 @@ export function registerPluginTools(server: McpServer): void {
         'Install a Codapult plugin by name. Patches schema, config, pages, and env automatically.',
       inputSchema: {
         name: z.string().describe('Plugin name (e.g. "ai-kit", "video-player")'),
+        env_source: envSourceSchema.optional(),
       },
     },
-    ({ name }) => {
+    ({ name, env_source }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       if (!result) {
@@ -122,7 +124,7 @@ export function registerPluginTools(server: McpServer): void {
       steps.push('Plugin registered');
 
       if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
-        if (getProjectEnvSource() === 'process') {
+        if (env_source === 'process') {
           steps.push('Project uses process.env; add plugin env vars outside the CLI');
         } else {
           patchEnvFile(root, manifest.name, manifest.install.env, 'add');
@@ -153,9 +155,10 @@ export function registerPluginTools(server: McpServer): void {
       description: 'Uninstall a Codapult plugin by name. Reverts all patches.',
       inputSchema: {
         name: z.string().describe('Plugin name to remove'),
+        env_source: envSourceSchema.optional(),
       },
     },
-    ({ name }) => {
+    ({ name, env_source }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       const manifest = result?.manifest ?? {
@@ -195,7 +198,7 @@ export function registerPluginTools(server: McpServer): void {
         steps.push('next.config.ts reverted');
       }
       if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
-        if (getProjectEnvSource() === 'process') {
+        if (env_source === 'process') {
           steps.push(`Project uses process.env; no ${ENV_FILE_NAME} env vars were removed`);
         } else {
           patchEnvFile(root, manifest.name, manifest.install.env, 'remove');

@@ -4,13 +4,14 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
-import { ENV_FILE_NAME, getProjectEnvSource, loadProjectEnv } from '../../utils/project-env.js';
+import { ENV_FILE_NAME, getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
 import {
   getAdapters,
   getAuthMethods,
   getFeatures,
   getOauthProviders,
 } from '../../utils/env-config.js';
+import { envSourceSchema } from './schemas.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -25,16 +26,18 @@ export function registerProjectTools(server: McpServer): void {
       title: 'Project Status',
       description:
         'Get Codapult project status: variant, adapters, installed plugins, enabled features, git status',
-      inputSchema: {},
+      inputSchema: {
+        env_source: envSourceSchema.optional(),
+      },
     },
-    () => {
+    ({ env_source }) => {
       const root = getRoot();
       const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
         string,
         unknown
       >;
 
-      const envContent = loadProjectEnv(root).content;
+      const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
 
       const pluginsDir = resolve(root, 'src/plugins');
       const plugins = existsSync(pluginsDir)
@@ -82,7 +85,6 @@ export function registerProjectTools(server: McpServer): void {
     {
       title: 'Project Config',
       description: 'Read the app configuration from src/config/app.ts (brand, auth, features)',
-      inputSchema: {},
     },
     () => {
       const root = getRoot();
@@ -138,9 +140,11 @@ export function registerProjectTools(server: McpServer): void {
       title: 'Doctor',
       description:
         'Run project health checks: file structure, env vars, dependencies, TypeScript, git',
-      inputSchema: {},
+      inputSchema: {
+        env_source: envSourceSchema.optional(),
+      },
     },
-    () => {
+    ({ env_source }) => {
       const root = getRoot();
       const checks: { name: string; status: 'ok' | 'warn' | 'fail'; detail: string }[] = [];
 
@@ -160,8 +164,7 @@ export function registerProjectTools(server: McpServer): void {
         });
       }
 
-      const envSource = getProjectEnvSource();
-      if (envSource === 'process') {
+      if (env_source === 'process') {
         checks.push({
           name: 'Environment source',
           status: 'ok',

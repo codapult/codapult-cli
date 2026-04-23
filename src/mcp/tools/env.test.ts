@@ -113,8 +113,9 @@ DATABASE_URL=sqlite://local.db
       const envLocal = `AUTH_PROVIDER=better-auth\nSTRIPE_SECRET_KEY=your-key-here\n`;
       const envExample = `AUTH_PROVIDER=better-auth\nSTRIPE_SECRET_KEY=\nDATABASE_URL=\n`;
 
+      mockedExists.mockReturnValue(true);
+      mockedRead.mockReturnValue(envLocal);
       mockedReadProject.mockImplementation((_root, path) => {
-        if (path === ENV_FILE_NAME) return envLocal;
         if (path === ENV_EXAMPLE_FILE_NAME) return envExample;
         return null;
       });
@@ -129,6 +130,27 @@ DATABASE_URL=sqlite://local.db
 
       expect(parsed.missing).toContain('DATABASE_URL');
       expect(parsed.unconfigured).toContain('STRIPE_SECRET_KEY');
+    });
+
+    it('can read from process env', () => {
+      const server = createMockServer();
+      registerEnvTools(server as never);
+
+      vi.stubEnv('AUTH_PROVIDER', 'better-auth');
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_live_123');
+      mockedReadProject.mockImplementation((_root, path) => {
+        if (path === ENV_EXAMPLE_FILE_NAME)
+          return `AUTH_PROVIDER=better-auth\nSTRIPE_SECRET_KEY=\nDATABASE_URL=\n`;
+        return null;
+      });
+
+      const handler = server.tools.find((t) => t.name === 'codapult_env_read')!.handler;
+      const result = handler({ env_source: 'process' });
+      const parsed = JSON.parse(result.content[0].text) as {
+        variables: { key: string; value: string }[];
+      };
+
+      expect(parsed.variables.some((v) => v.key === 'AUTH_PROVIDER')).toBe(true);
     });
 
     it(`returns error when ${ENV_FILE_NAME} not found`, () => {
@@ -183,6 +205,16 @@ DATABASE_URL=sqlite://local.db
 
       const handler = server.tools.find((t) => t.name === 'codapult_env_update')!.handler;
       const result = handler({ key: 'X', value: 'Y' });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('returns error for process env updates', () => {
+      const server = createMockServer();
+      registerEnvTools(server as never);
+
+      const handler = server.tools.find((t) => t.name === 'codapult_env_update')!.handler;
+      const result = handler({ key: 'X', value: 'Y', env_source: 'process' });
 
       expect(result.isError).toBe(true);
     });

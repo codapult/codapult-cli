@@ -3,7 +3,13 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
-import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../../utils/project-env.js';
+import {
+  ENV_EXAMPLE_FILE_NAME,
+  ENV_FILE_NAME,
+  getProjectEnvOptions,
+  loadProjectEnv,
+} from '../../utils/project-env.js';
+import { envSourceSchema } from './schemas.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -92,12 +98,14 @@ export function registerEnvTools(server: McpServer): void {
           .boolean()
           .default(false)
           .describe('When true, show full values for sensitive keys (use with caution)'),
+        env_source: envSourceSchema.optional(),
       },
     },
-    ({ show_secrets }) => {
+    ({ show_secrets, env_source }) => {
       const root = getRoot();
-      const localContent = readProjectFile(root, ENV_FILE_NAME);
-      if (!localContent)
+      const env = loadProjectEnv(root, getProjectEnvOptions(env_source));
+      const localContent = env.content;
+      if (!localContent && env.source === 'file')
         return {
           content: [{ type: 'text' as const, text: `${ENV_FILE_NAME} not found` }],
           isError: true,
@@ -142,9 +150,10 @@ export function registerEnvTools(server: McpServer): void {
       inputSchema: {
         key: z.string().describe('Variable name (e.g. "STRIPE_SECRET_KEY")'),
         value: z.string().describe('Variable value'),
+        env_source: envSourceSchema.optional(),
       },
     },
-    ({ key, value }) => {
+    ({ key, value, env_source }) => {
       if (!ENV_KEY_REGEX.test(key)) {
         return {
           content: [
@@ -158,6 +167,17 @@ export function registerEnvTools(server: McpServer): void {
       }
 
       const root = getRoot();
+      if (env_source === 'process') {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: 'Updating process.env via MCP is not supported; use env_source="file"',
+            },
+          ],
+          isError: true,
+        };
+      }
       const envPath = resolve(root, ENV_FILE_NAME);
 
       if (!existsSync(envPath)) {

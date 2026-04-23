@@ -203,5 +203,23 @@ export const user = sqliteTable('user', {
 
       expect(parsed.provider).toBe('turso');
     });
+
+    it('can read provider from process env', () => {
+      const server = createMockServer();
+      registerDbTools(server as never);
+
+      vi.stubEnv('DB_PROVIDER', 'postgres');
+      mockedReadProject.mockImplementation((_root, path) => {
+        if (path === 'src/lib/db/schema.ts') return '';
+        return null;
+      });
+      mockedExists.mockReturnValue(false);
+
+      const handler = server.tools.find((t) => t.name === 'codapult_db_status')!.handler;
+      const result = handler({ env_source: 'process' });
+      const parsed = JSON.parse(result.content[0].text) as { provider: string };
+
+      expect(parsed.provider).toBe('postgres');
+    });
   });
 });
