@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 export type ProjectEnvSource = 'file' | 'process';
 
 export interface ProjectEnvOptions {
-  noEnvFile?: boolean;
+  envFile?: boolean;
 }
 
 export interface LoadedProjectEnv {
@@ -22,7 +22,11 @@ export function getProjectEnvFilePath(projectRoot: string): string {
 }
 
 export function getProjectEnvSource(options?: ProjectEnvOptions): ProjectEnvSource {
-  return options?.noEnvFile ? 'process' : 'file';
+  return options?.envFile === false ? 'process' : 'file';
+}
+
+export function getProjectEnvOptions(envSource?: ProjectEnvSource): ProjectEnvOptions {
+  return envSource === 'process' ? { envFile: false } : { envFile: true };
 }
 
 function serializeProcessEnv(env: NodeJS.ProcessEnv): string {

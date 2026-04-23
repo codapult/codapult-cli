@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ENV_FILE_NAME,
   getProjectEnvFilePath,
+  getProjectEnvOptions,
   getProjectEnvSource,
   loadProjectEnv,
 } from './project-env.js';
@@ -23,8 +24,14 @@ describe('project-env', () => {
     expect(getProjectEnvSource()).toBe('file');
   });
 
-  it('uses process env source when noEnvFile is enabled', () => {
-    expect(getProjectEnvSource({ noEnvFile: true })).toBe('process');
+  it('uses process env source when envFile is disabled', () => {
+    expect(getProjectEnvSource({ envFile: false })).toBe('process');
+  });
+
+  it('maps env source to options', () => {
+    expect(getProjectEnvOptions('process')).toEqual({ envFile: false });
+    expect(getProjectEnvOptions('file')).toEqual({ envFile: true });
+    expect(getProjectEnvOptions()).toEqual({ envFile: true });
   });
 
   it(`loads env content from ${ENV_FILE_NAME} in file mode`, () => {
@@ -44,7 +51,7 @@ describe('project-env', () => {
     vi.stubEnv('AUTH_PROVIDER', 'better-auth');
     vi.stubEnv('DB_PROVIDER', 'postgres');
 
-    const env = loadProjectEnv('/project', { noEnvFile: true });
+    const env = loadProjectEnv('/project', { envFile: false });
 
     expect(env.source).toBe('process');
     expect(env.filePath).toBe(`/project/${ENV_FILE_NAME}`);

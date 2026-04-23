@@ -2,7 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node
 import { resolve, relative, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { findProjectRoot } from '../utils/project.js';
-import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../utils/project-env.js';
+import {
+  ENV_EXAMPLE_FILE_NAME,
+  ENV_FILE_NAME,
+  type ProjectEnvOptions,
+} from '../utils/project-env.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
 
 const rl = (): ReturnType<typeof createInterface> =>
@@ -691,9 +695,8 @@ async function interactiveSetup(): Promise<ProjectConfig> {
   return config;
 }
 
-interface SetupOptions {
+interface SetupOptions extends Pick<ProjectEnvOptions, 'envFile'> {
   preset?: string;
-  noEnvFile?: boolean;
 }
 
 export async function setupCommand(options: SetupOptions): Promise<void> {
@@ -716,7 +719,7 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   }
 
   heading('Generating configuration');
-  if (options.noEnvFile) {
+  if (options.envFile === false) {
     dim(`Skipped ${ENV_FILE_NAME} generation`);
   } else {
     generateEnvFile(root, config);
@@ -732,7 +735,7 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   if (presetRaw) {
     info('Preset applied. Proceeding to build.');
   } else {
-    if (options.noEnvFile) {
+    if (options.envFile === false) {
       printProcessEnvNextSteps();
     } else {
       info('Next steps:');
