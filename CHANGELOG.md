@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.0](https://github.com/codapult/codapult-cli/compare/v0.5.0...v0.6.0) (2026-04-23)
+
+### Features
+
+* add explicit env source support to MCP tools ([d5078c0](https://github.com/codapult/codapult-cli/commit/d5078c0ab1e91a525b5f026e7aecc1ea508802f6))
+
+### Bug Fixes
+
+* --no-env-file option ([a8d1dc8](https://github.com/codapult/codapult-cli/commit/a8d1dc8ff57aef4f5d4316b00cf26d42078bf48d))
+
 ## [0.5.0](https://github.com/codapult/codapult-cli/compare/v0.4.2...v0.5.0) (2026-04-23)
 
 ### Features
