@@ -1,6 +1,13 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
+import {
+  ENV_EXAMPLE_FILE_NAME,
+  ENV_FILE_NAME,
+  getProjectEnvSource,
+  loadProjectEnv,
+  type ProjectEnvOptions,
+} from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
 
 interface EnvEntry {
@@ -43,7 +50,7 @@ function parseEnvFile(content: string): EnvEntry[] {
 // codapult env check
 // ---------------------------------------------------------------------------
 
-export function envCheckCommand(): void {
+export function envCheckCommand(options: ProjectEnvOptions = {}): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -52,21 +59,23 @@ export function envCheckCommand(): void {
 
   heading('Environment Check');
 
-  const examplePath = resolve(root, '.env.example');
-  const localPath = resolve(root, '.env.local');
+  const examplePath = resolve(root, ENV_EXAMPLE_FILE_NAME);
+  const localPath = resolve(root, ENV_FILE_NAME);
 
   if (!existsSync(examplePath)) {
-    fail('.env.example not found');
+    fail(`${ENV_EXAMPLE_FILE_NAME} not found`);
     process.exit(1);
   }
 
-  if (!existsSync(localPath)) {
-    fail('.env.local not found — run: cp .env.example .env.local');
+  const env = loadProjectEnv(root, options);
+
+  if (env.source === 'file' && !existsSync(localPath)) {
+    fail(`${ENV_FILE_NAME} not found — run: cp ${ENV_EXAMPLE_FILE_NAME} ${ENV_FILE_NAME}`);
     process.exit(1);
   }
 
   const exampleEntries = parseEnvFile(readFileSync(examplePath, 'utf-8'));
-  const localContent = readFileSync(localPath, 'utf-8');
+  const localContent = env.content;
   const localEntries = parseEnvFile(localContent);
   const localKeys = new Set(localEntries.map((e) => e.key));
 
@@ -93,7 +102,8 @@ export function envCheckCommand(): void {
   const extra = localEntries.filter((e) => !exampleEntries.some((ex) => ex.key === e.key));
   if (extra.length > 0) {
     console.log();
-    info(`${extra.length} extra variable(s) in .env.local (not in .env.example):`);
+    const envLabel = env.source === 'process' ? 'process.env' : ENV_FILE_NAME;
+    info(`${extra.length} extra variable(s) in ${envLabel} (not in ${ENV_EXAMPLE_FILE_NAME}):`);
     for (const e of extra) {
       dim(`  ${e.key}`);
     }
@@ -113,28 +123,35 @@ export function envCheckCommand(): void {
 // codapult env sync
 // ---------------------------------------------------------------------------
 
-export async function envSyncCommand(): Promise<void> {
+export async function envSyncCommand(options: ProjectEnvOptions = {}): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
     process.exit(1);
   }
 
-  heading('Sync .env.local with .env.example');
+  heading(`Sync ${ENV_FILE_NAME} with ${ENV_EXAMPLE_FILE_NAME}`);
 
-  const examplePath = resolve(root, '.env.example');
-  const localPath = resolve(root, '.env.local');
+  if (getProjectEnvSource(options) === 'process') {
+    warn(`\`codapult env sync --no-env-file\` cannot update process.env`);
+    dim(`Use this command without \`--no-env-file\` to manage ${ENV_FILE_NAME}.`);
+    console.log();
+    return;
+  }
+
+  const examplePath = resolve(root, ENV_EXAMPLE_FILE_NAME);
+  const localPath = resolve(root, ENV_FILE_NAME);
 
   if (!existsSync(examplePath)) {
-    fail('.env.example not found');
+    fail(`${ENV_EXAMPLE_FILE_NAME} not found`);
     process.exit(1);
   }
 
   if (!existsSync(localPath)) {
-    info('.env.local does not exist — creating from .env.example');
+    info(`${ENV_FILE_NAME} does not exist — creating from ${ENV_EXAMPLE_FILE_NAME}`);
     const content = readFileSync(examplePath, 'utf-8');
     writeFileSync(localPath, content, 'utf-8');
-    success('Created .env.local');
+    success(`Created ${ENV_FILE_NAME}`);
     return;
   }
 
@@ -151,12 +168,12 @@ export async function envSyncCommand(): Promise<void> {
     return;
   }
 
-  info(`${newEntries.length} new variable(s) found in .env.example:`);
+  info(`${newEntries.length} new variable(s) found in ${ENV_EXAMPLE_FILE_NAME}:`);
   for (const e of newEntries) {
     dim(`  ${e.key}=${e.value}${e.comment ? `  # ${e.comment}` : ''}`);
   }
 
-  const proceed = await confirm(`Add ${newEntries.length} variable(s) to .env.local?`);
+  const proceed = await confirm(`Add ${newEntries.length} variable(s) to ${ENV_FILE_NAME}?`);
   if (!proceed) {
     info('Cancelled.');
     return;
@@ -169,6 +186,6 @@ export async function envSyncCommand(): Promise<void> {
   }
 
   writeFileSync(localPath, localContent.trimEnd() + appendContent, 'utf-8');
-  success(`Added ${newEntries.length} variable(s) to .env.local`);
+  success(`Added ${newEntries.length} variable(s) to ${ENV_FILE_NAME}`);
   console.log();
 }

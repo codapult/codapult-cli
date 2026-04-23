@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot } from '../../utils/project.js';
+import { ENV_FILE_NAME } from '../../utils/project-env.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -28,7 +29,7 @@ export function registerDeployTools(server: McpServer): void {
         { name: 'Terraform (AWS)', path: 'infra/terraform/main.tf' },
         { name: 'Pulumi (AWS)', path: 'infra/pulumi/index.ts' },
         { name: 'Helm chart', path: 'infra/helm/codapult/Chart.yaml' },
-        { name: '.env.local', path: '.env.local' },
+        { name: ENV_FILE_NAME, path: ENV_FILE_NAME },
       ].map(({ name, path }) => ({
         name,
         found: existsSync(resolve(root, path)),

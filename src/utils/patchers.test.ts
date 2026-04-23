@@ -15,6 +15,7 @@ import {
   patchPackageJson,
 } from './patchers.js';
 import type { PluginManifest } from './manifest.js';
+import { ENV_FILE_NAME } from './project-env.js';
 
 vi.mock('node:fs');
 
@@ -784,7 +785,7 @@ describe('patchEnvFile', () => {
     expect(mockedWrite).not.toHaveBeenCalled();
   });
 
-  it('does nothing when .env.local does not exist', () => {
+  it(`does nothing when ${ENV_FILE_NAME} does not exist`, () => {
     mockedExists.mockReturnValue(false);
 
     patchEnvFile(ROOT, 'test-plugin', { KEY: { required: true } }, 'add');

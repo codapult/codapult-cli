@@ -2,6 +2,11 @@ import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
+import {
+  ENV_FILE_NAME,
+  getProjectEnvSource,
+  type ProjectEnvOptions,
+} from '../utils/project-env.js';
 import { resolveManifest } from '../utils/manifest.js';
 import { clonePlugin } from '../utils/git.js';
 import {
@@ -32,7 +37,7 @@ function execQuiet(cmd: string, cwd: string): boolean {
 
 export async function pluginsAddCommand(
   name: string,
-  options: { from?: string; ci?: boolean },
+  options: { from?: string; ci?: boolean } & ProjectEnvOptions = {},
 ): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
@@ -186,8 +191,13 @@ export async function pluginsAddCommand(
   // 9. Append env vars (skipped in CI — env vars are configured in the hosting dashboard)
   if (!options.ci && manifest.install.env && Object.keys(manifest.install.env).length > 0) {
     info('Adding environment variables...');
-    patchEnvFile(root, manifest.name, manifest.install.env, 'add');
-    success('Environment variables added to .env.local');
+    if (getProjectEnvSource(options) === 'process') {
+      warn(`Project uses process.env — skipping ${ENV_FILE_NAME} patch`);
+      dim('Add the plugin env vars in your shell, CI, or hosting dashboard.');
+    } else {
+      patchEnvFile(root, manifest.name, manifest.install.env, 'add');
+      success(`Environment variables added to ${ENV_FILE_NAME}`);
+    }
   }
 
   if (options.ci) {
@@ -242,7 +252,10 @@ export async function pluginsAddCommand(
 // codapult plugins remove <name>
 // ---------------------------------------------------------------------------
 
-export async function pluginsRemoveCommand(name: string): Promise<void> {
+export async function pluginsRemoveCommand(
+  name: string,
+  options: ProjectEnvOptions = {},
+): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -320,8 +333,12 @@ export async function pluginsRemoveCommand(name: string): Promise<void> {
   // 7. Remove env vars
   if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
     info('Removing environment variables...');
-    patchEnvFile(root, manifest.name, manifest.install.env, 'remove');
-    success('Environment variables removed');
+    if (getProjectEnvSource(options) === 'process') {
+      warn(`Project uses process.env — no ${ENV_FILE_NAME} changes to remove`);
+    } else {
+      patchEnvFile(root, manifest.name, manifest.install.env, 'remove');
+      success('Environment variables removed');
+    }
   }
 
   // 8. Remove dependency

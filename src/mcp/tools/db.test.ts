@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ENV_FILE_NAME } from '../../utils/project-env.js';
 
 vi.mock('node:fs');
 vi.mock('node:child_process');
@@ -163,7 +164,7 @@ export const user = sqliteTable('user', {
       const schema = `export const user = sqliteTable('user', { id: text('id') });`;
 
       mockedReadProject.mockImplementation((_root, path) => {
-        if (path === '.env.local') return envContent;
+        if (path === ENV_FILE_NAME) return envContent;
         if (path === 'src/lib/db/schema.ts') return schema;
         return null;
       });
@@ -190,7 +191,7 @@ export const user = sqliteTable('user', {
       registerDbTools(server as never);
 
       mockedReadProject.mockImplementation((_root, path) => {
-        if (path === '.env.local') return '';
+        if (path === ENV_FILE_NAME) return '';
         if (path === 'src/lib/db/schema.ts') return '';
         return null;
       });

@@ -2,6 +2,12 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
+import {
+  ENV_FILE_NAME,
+  getProjectEnvSource,
+  loadProjectEnv,
+  type ProjectEnvOptions,
+} from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
 
 function hasCommand(cmd: string): boolean {
@@ -17,7 +23,7 @@ function hasCommand(cmd: string): boolean {
 // codapult deploy vercel
 // ---------------------------------------------------------------------------
 
-export async function deployVercelCommand(): Promise<void> {
+export async function deployVercelCommand(options: ProjectEnvOptions = {}): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -43,12 +49,14 @@ export async function deployVercelCommand(): Promise<void> {
   }
 
   // 3. Check required env vars
-  const envPath = resolve(root, '.env.local');
-  if (existsSync(envPath)) {
-    const content = readFileSync(envPath, 'utf-8');
+  const env = loadProjectEnv(root, options);
+  if (env.source === 'process') {
+    info('Checking Vercel env requirements from process.env');
+  }
+  if (env.source === 'process' || env.fileExists) {
     const critical = ['TURSO_DATABASE_URL', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'];
     for (const key of critical) {
-      const match = new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm').exec(content);
+      const match = new RegExp(`^${key}\\s*=\\s*"?(.+?)"?\\s*$`, 'm').exec(env.content);
       if (match && !/^(your-|generate-)/.test(match[1])) {
         success(`${key} configured`);
       } else {
@@ -89,7 +97,9 @@ export async function deployVercelCommand(): Promise<void> {
 // codapult deploy docker
 // ---------------------------------------------------------------------------
 
-export async function deployDockerCommand(opts: { tag?: string }): Promise<void> {
+export async function deployDockerCommand(
+  opts: { tag?: string } & ProjectEnvOptions = {},
+): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -151,10 +161,20 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
   console.log();
   const runNow = await confirm('Run container locally? (port 3000)');
   if (runNow) {
+    const envSource = getProjectEnvSource(opts);
+    if (envSource === 'process') {
+      warn(
+        `Process env mode is enabled — automatic docker run with ${ENV_FILE_NAME} is unavailable`,
+      );
+      dim('Run Docker manually with the env vars you want to pass through.');
+      console.log();
+      return;
+    }
+
     info('Starting container...');
-    dim(`docker run -p 3000:3000 --env-file .env.local ${imageName}`);
+    dim(`docker run -p 3000:3000 --env-file ${ENV_FILE_NAME} ${imageName}`);
     try {
-      execSync(`docker run -p 3000:3000 --env-file .env.local ${imageName}`, {
+      execSync(`docker run -p 3000:3000 --env-file ${ENV_FILE_NAME} ${imageName}`, {
         cwd: root,
         stdio: 'inherit',
       });
@@ -170,7 +190,7 @@ export async function deployDockerCommand(opts: { tag?: string }): Promise<void>
 // codapult deploy status
 // ---------------------------------------------------------------------------
 
-export function deployStatusCommand(): void {
+export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -186,7 +206,6 @@ export function deployStatusCommand(): void {
     { name: 'Terraform (AWS)', path: 'infra/terraform/main.tf' },
     { name: 'Pulumi (AWS)', path: 'infra/pulumi/index.ts' },
     { name: 'Helm chart', path: 'infra/helm/codapult/Chart.yaml' },
-    { name: '.env.local', path: '.env.local' },
   ];
 
   for (const { name, path } of checks) {
@@ -195,6 +214,14 @@ export function deployStatusCommand(): void {
     } else {
       dim(`  · ${name} — not found`);
     }
+  }
+
+  if (getProjectEnvSource(options) === 'process') {
+    success('Environment source: process.env');
+  } else if (existsSync(resolve(root, ENV_FILE_NAME))) {
+    success(ENV_FILE_NAME);
+  } else {
+    dim(`  · ${ENV_FILE_NAME} — not found`);
   }
 
   // Check if standalone output is enabled

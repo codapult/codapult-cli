@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot } from '../../utils/project.js';
+import { ENV_FILE_NAME, getProjectEnvSource } from '../../utils/project-env.js';
 import { resolveManifest } from '../../utils/manifest.js';
 import {
   patchSchemaImports,
@@ -121,8 +122,12 @@ export function registerPluginTools(server: McpServer): void {
       steps.push('Plugin registered');
 
       if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
-        patchEnvFile(root, manifest.name, manifest.install.env, 'add');
-        steps.push('Env vars added to .env.local');
+        if (getProjectEnvSource() === 'process') {
+          steps.push('Project uses process.env; add plugin env vars outside the CLI');
+        } else {
+          patchEnvFile(root, manifest.name, manifest.install.env, 'add');
+          steps.push(`Env vars added to ${ENV_FILE_NAME}`);
+        }
       }
 
       const output = {
@@ -190,8 +195,12 @@ export function registerPluginTools(server: McpServer): void {
         steps.push('next.config.ts reverted');
       }
       if (manifest.install.env && Object.keys(manifest.install.env).length > 0) {
-        patchEnvFile(root, manifest.name, manifest.install.env, 'remove');
-        steps.push('Env vars removed');
+        if (getProjectEnvSource() === 'process') {
+          steps.push(`Project uses process.env; no ${ENV_FILE_NAME} env vars were removed`);
+        } else {
+          patchEnvFile(root, manifest.name, manifest.install.env, 'remove');
+          steps.push('Env vars removed');
+        }
       }
       patchPackageJson(root, manifest.name, manifest.package, pluginDir, 'remove');
       steps.push('Dependency removed');

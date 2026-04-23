@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { ENV_FILE_NAME, getProjectEnvSource, loadProjectEnv } from '../../utils/project-env.js';
 import {
   getAdapters,
   getAuthMethods,
@@ -33,7 +34,7 @@ export function registerProjectTools(server: McpServer): void {
         unknown
       >;
 
-      const envContent = readProjectFile(root, '.env.local') ?? '';
+      const envContent = loadProjectEnv(root).content;
 
       const pluginsDir = resolve(root, 'src/plugins');
       const plugins = existsSync(pluginsDir)
@@ -150,13 +151,27 @@ export function registerProjectTools(server: McpServer): void {
         'src/lib/auth/index.ts',
         'src/lib/payments/index.ts',
         'src/config/app.ts',
-        '.env.local',
       ];
       for (const f of requiredFiles) {
         checks.push({
           name: f,
           status: existsSync(resolve(root, f)) ? 'ok' : 'fail',
           detail: existsSync(resolve(root, f)) ? 'exists' : 'missing',
+        });
+      }
+
+      const envSource = getProjectEnvSource();
+      if (envSource === 'process') {
+        checks.push({
+          name: 'Environment source',
+          status: 'ok',
+          detail: 'process.env',
+        });
+      } else {
+        checks.push({
+          name: ENV_FILE_NAME,
+          status: existsSync(resolve(root, ENV_FILE_NAME)) ? 'ok' : 'fail',
+          detail: existsSync(resolve(root, ENV_FILE_NAME)) ? 'exists' : 'missing',
         });
       }
 

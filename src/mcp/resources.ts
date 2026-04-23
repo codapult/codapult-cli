@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../utils/project.js';
+import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../utils/project-env.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -28,8 +29,7 @@ export function registerResources(server: McpServer): void {
     'codapult://config/app',
     {
       title: 'App Configuration',
-      description:
-        'Application config (src/config/app.ts) — brand, AI, payments, company. Feature toggles and auth methods live in .env.local (read via codapult://env-example or codapult_project_status).',
+      description: `Application config (src/config/app.ts) — brand, AI, payments, company. Feature toggles and auth methods live in the project env source (${ENV_FILE_NAME} or process.env) and can be inspected via codapult://env-example or codapult_project_status.`,
       mimeType: 'text/plain',
     },
     () => {
@@ -58,12 +58,13 @@ export function registerResources(server: McpServer): void {
     'codapult_env_example',
     'codapult://env-example',
     {
-      title: '.env.example',
+      title: ENV_EXAMPLE_FILE_NAME,
       description: 'Environment variable template with descriptions and defaults',
       mimeType: 'text/plain',
     },
     () => {
-      const content = readProjectFile(getRoot(), '.env.example') ?? '.env.example not found';
+      const content =
+        readProjectFile(getRoot(), ENV_EXAMPLE_FILE_NAME) ?? `${ENV_EXAMPLE_FILE_NAME} not found`;
       return {
         contents: [{ uri: 'codapult://env-example', text: content, mimeType: 'text/plain' }],
       };

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
+import { ENV_FILE_NAME, loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
 import {
   getAdapters,
   getAuthMethods,
@@ -31,7 +32,7 @@ function extractTsBoolField(content: string, field: string): boolean | null {
   return match ? match[1] === 'true' : null;
 }
 
-export function configShowCommand(): void {
+export function configShowCommand(options: ProjectEnvOptions = {}): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -49,8 +50,8 @@ export function configShowCommand(): void {
   }
   console.log();
 
-  const envPath = resolve(root, '.env.local');
-  const envContent = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
+  const env = loadProjectEnv(root, options);
+  const envContent = env.content;
 
   // --- App config (src/config/app.ts) ---
   const appConfigPath = resolve(root, 'src/config/app.ts');
@@ -89,13 +90,17 @@ export function configShowCommand(): void {
   }
   console.log();
 
-  if (!existsSync(envPath)) {
-    dim('.env.local not found — adapters / features / auth methods unavailable');
+  if (env.source === 'file' && !env.fileExists) {
+    dim(`${ENV_FILE_NAME} not found — adapters / features / auth methods unavailable`);
     console.log();
     return;
   }
 
-  // --- Adapters (from .env.local) ---
+  if (env.source === 'process') {
+    dim('Reading adapters / features / auth methods from process.env');
+  }
+
+  // --- Adapters (from project env source) ---
   info('Adapters');
   const adapters = getAdapters(envContent);
   label('  Database', adapters.database);
@@ -108,7 +113,7 @@ export function configShowCommand(): void {
   label('  Vector store', adapters.vectorStore);
   console.log();
 
-  // --- Auth methods (from .env.local) ---
+  // --- Auth methods (from project env source) ---
   info('Auth methods');
   const authMethods = getAuthMethods(envContent);
   label('  Magic Link', authMethods.magicLink ? 'enabled' : 'disabled');
@@ -118,7 +123,7 @@ export function configShowCommand(): void {
   label('  OAuth providers', oauth.length > 0 ? oauth.join(', ') : 'none');
   console.log();
 
-  // --- Feature toggles (from .env.local + ENABLE_* defaults) ---
+  // --- Feature toggles (from project env source + ENABLE_* defaults) ---
   info('Features');
   const features = getFeatures(envContent);
   const featureKeys = Object.keys(FEATURE_ENV);

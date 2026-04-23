@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
+import { ENV_FILE_NAME, loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
 import { resolveManifest } from '../utils/manifest.js';
 import { findPageConflicts, findPageBackups } from '../utils/patchers.js';
 import { findProviderIssues, getAdapters, readEnvVar } from '../utils/env-config.js';
@@ -25,7 +26,7 @@ function tryExec(cmd: string, cwd: string): string | null {
   }
 }
 
-export function doctorCommand(): void {
+export function doctorCommand(options: ProjectEnvOptions = {}): void {
   const root = findProjectRoot();
   if (!root) {
     fail('Not inside a Codapult project.');
@@ -53,13 +54,17 @@ export function doctorCommand(): void {
   // --- Environment ---
   info('Environment');
 
-  const envPath = resolve(root, '.env.local');
-  if (!existsSync(envPath)) {
-    fail('.env.local not found — run `codapult setup`');
+  const env = loadProjectEnv(root, options);
+  if (env.source === 'file' && !env.fileExists) {
+    fail(`${ENV_FILE_NAME} not found — run \`codapult setup\``);
     issues += 1;
   } else {
-    success('.env.local exists');
-    const envContent = readFileSync(envPath, 'utf-8');
+    if (env.source === 'process') {
+      success('Using process.env (project configured with --no-env-file)');
+    } else {
+      success(`${ENV_FILE_NAME} exists`);
+    }
+    const envContent = env.content;
 
     const adapters = getAdapters(envContent);
     label('  DB_PROVIDER', adapters.database);

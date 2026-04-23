@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ENV_FILE_NAME } from '../../utils/project-env.js';
 
 vi.mock('node:fs');
 vi.mock('node:child_process');
@@ -6,14 +7,21 @@ vi.mock('../../utils/project.js', () => ({
   findProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
 }));
+vi.mock('../../utils/project-env.js', () => ({
+  ENV_FILE_NAME: '.env.local',
+  getProjectEnvSource: vi.fn(() => 'file'),
+  loadProjectEnv: vi.fn(),
+}));
 
 const { existsSync, readFileSync, readdirSync } = await import('node:fs');
 const { execSync } = await import('node:child_process');
 const { findProjectRoot, readProjectFile } = await import('../../utils/project.js');
+const { loadProjectEnv } = await import('../../utils/project-env.js');
 const { registerProjectTools } = await import('./project.js');
 
 const mockedFindRoot = vi.mocked(findProjectRoot);
 const mockedReadProject = vi.mocked(readProjectFile);
+const mockedLoadProjectEnv = vi.mocked(loadProjectEnv);
 const mockedExists = vi.mocked(existsSync);
 const mockedRead = vi.mocked(readFileSync);
 const mockedReaddir = vi.mocked(readdirSync);
@@ -22,6 +30,12 @@ const mockedExec = vi.mocked(execSync);
 beforeEach(() => {
   vi.resetAllMocks();
   mockedFindRoot.mockReturnValue('/project');
+  mockedLoadProjectEnv.mockReturnValue({
+    source: 'file',
+    filePath: `/project/${ENV_FILE_NAME}`,
+    fileExists: false,
+    content: '',
+  });
 });
 
 interface ToolRegistration {
@@ -63,17 +77,18 @@ describe('registerProjectTools', () => {
       registerProjectTools(server as never);
 
       mockedRead.mockReturnValue(JSON.stringify({ name: 'codapult', version: '1.0.0' }));
-      mockedReadProject.mockImplementation((_root, path) => {
-        if (path === '.env.local')
-          return [
-            'AUTH_PROVIDER=kinde',
-            'PAYMENT_PROVIDER=lemonsqueezy',
-            'STORAGE_PROVIDER=s3',
-            'ENABLE_TEAMS=false',
-            'GOOGLE_CLIENT_ID=abc',
-            'GOOGLE_CLIENT_SECRET=def',
-          ].join('\n');
-        return null;
+      mockedLoadProjectEnv.mockReturnValue({
+        source: 'file',
+        filePath: `/project/${ENV_FILE_NAME}`,
+        fileExists: true,
+        content: [
+          'AUTH_PROVIDER=kinde',
+          'PAYMENT_PROVIDER=lemonsqueezy',
+          'STORAGE_PROVIDER=s3',
+          'ENABLE_TEAMS=false',
+          'GOOGLE_CLIENT_ID=abc',
+          'GOOGLE_CLIENT_SECRET=def',
+        ].join('\n'),
       });
       mockedExists.mockReturnValue(true);
       mockedReaddir.mockReturnValue(['ai-kit.ts', 'crm.ts', 'index.ts'] as unknown as ReturnType<

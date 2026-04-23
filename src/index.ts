@@ -31,6 +31,7 @@ import {
   deployDockerCommand,
   deployStatusCommand,
 } from './commands/deploy.js';
+import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from './utils/project-env.js';
 
 const program = new Command()
   .name('codapult')
@@ -42,11 +43,19 @@ const program = new Command()
     styleOptionText: (str) => pc.green(str),
   });
 
+function withNoEnvFileOption(command: Command): Command {
+  return command.option(
+    '--no-env-file',
+    `read env vars from process.env instead of ${ENV_FILE_NAME}`,
+  );
+}
+
 program
   .commandsGroup('Project')
   .command('setup')
   .description('interactive project setup wizard (or non-interactive with --preset)')
   .option('--preset <value>', 'apply a preset non-interactively (name, key=value pairs, or both)')
+  .option('--no-env-file', `do not create ${ENV_FILE_NAME}; read env vars from process.env instead`)
   .action(setupCommand);
 
 program
@@ -56,32 +65,33 @@ program
   .option('--list', 'list available versions')
   .action(updateCommand);
 
-program
-  .command('doctor')
-  .description('check project health and configuration')
-  .action(doctorCommand);
+withNoEnvFileOption(
+  program.command('doctor').description('check project health and configuration'),
+).action(doctorCommand);
 
-program
-  .command('config')
-  .description('show current project configuration')
-  .action(configShowCommand);
+withNoEnvFileOption(
+  program.command('config').description('show current project configuration'),
+).action(configShowCommand);
 
 const plugins = program
   .commandsGroup('Plugins')
   .command('plugins')
   .description('manage Codapult plugins');
 
-plugins
-  .command('add <name>')
-  .description('install a plugin (local or remote)')
-  .option('--from <url>', 'git URL to clone the plugin from')
-  .option(
-    '--ci',
-    'CI/Vercel mode: skip pnpm install, db:push, env patching, and interactive prompts',
-  )
-  .action(pluginsAddCommand);
+withNoEnvFileOption(
+  plugins
+    .command('add <name>')
+    .description('install a plugin (local or remote)')
+    .option('--from <url>', 'git URL to clone the plugin from')
+    .option(
+      '--ci',
+      'CI/Vercel mode: skip pnpm install, db:push, env patching, and interactive prompts',
+    ),
+).action(pluginsAddCommand);
 
-plugins.command('remove <name>').description('uninstall a plugin').action(pluginsRemoveCommand);
+withNoEnvFileOption(plugins.command('remove <name>').description('uninstall a plugin')).action(
+  pluginsRemoveCommand,
+);
 
 plugins
   .command('migrate [name]')
@@ -119,29 +129,43 @@ const db = program
   .command('db')
   .description('database management (Drizzle ORM)');
 
-db.command('push').description('apply schema to database').action(dbPushCommand);
-db.command('generate').description('generate migration files').action(dbGenerateCommand);
-db.command('seed').description('seed sample data').action(dbSeedCommand);
-db.command('studio').description('open Drizzle Studio').action(dbStudioCommand);
-db.command('status').description('show schema info and migration count').action(dbStatusCommand);
+withNoEnvFileOption(db.command('push').description('apply schema to database')).action(
+  dbPushCommand,
+);
+withNoEnvFileOption(db.command('generate').description('generate migration files')).action(
+  dbGenerateCommand,
+);
+withNoEnvFileOption(db.command('seed').description('seed sample data')).action(dbSeedCommand);
+withNoEnvFileOption(db.command('studio').description('open Drizzle Studio')).action(
+  dbStudioCommand,
+);
+withNoEnvFileOption(
+  db.command('status').description('show schema info and migration count'),
+).action(dbStatusCommand);
 
 const env = program.command('env').description('environment variable management');
 
-env
-  .command('check')
-  .description('validate .env.local against .env.example')
-  .action(envCheckCommand);
-env.command('sync').description('add missing variables from .env.example').action(envSyncCommand);
+withNoEnvFileOption(
+  env.command('check').description(`validate env vars against ${ENV_EXAMPLE_FILE_NAME}`),
+).action(envCheckCommand);
+withNoEnvFileOption(
+  env.command('sync').description(`add missing variables from ${ENV_EXAMPLE_FILE_NAME}`),
+).action(envSyncCommand);
 
 const deploy = program.command('deploy').description('deployment helpers');
 
-deploy.command('vercel').description('build and deploy to Vercel').action(deployVercelCommand);
-deploy
-  .command('docker')
-  .description('build Docker image')
-  .option('-t, --tag <tag>', 'image tag', 'latest')
-  .action(deployDockerCommand);
-deploy.command('status').description('check deploy readiness').action(deployStatusCommand);
+withNoEnvFileOption(deploy.command('vercel').description('build and deploy to Vercel')).action(
+  deployVercelCommand,
+);
+withNoEnvFileOption(
+  deploy
+    .command('docker')
+    .description('build Docker image')
+    .option('-t, --tag <tag>', 'image tag', 'latest'),
+).action(deployDockerCommand);
+withNoEnvFileOption(deploy.command('status').description('check deploy readiness')).action(
+  deployStatusCommand,
+);
 
 program
   .commandsGroup('AI Integration')

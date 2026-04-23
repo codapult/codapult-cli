@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node
 import { resolve, relative, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { findProjectRoot } from '../utils/project.js';
+import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../utils/project-env.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
 
 const rl = (): ReturnType<typeof createInterface> =>
@@ -289,6 +290,7 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(marketing)/docs/api`,
       'src/lib/api-docs.ts',
+      'src/lib/openapi.ts',
       'src/components/docs/ApiReference.tsx',
     ],
     label: 'API Docs',
@@ -511,11 +513,11 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
 };
 
 function generateEnvFile(root: string, config: ProjectConfig): void {
-  const envExamplePath = join(root, '.env.example');
-  const envLocalPath = join(root, '.env.local');
+  const envExamplePath = join(root, ENV_EXAMPLE_FILE_NAME);
+  const envLocalPath = join(root, ENV_FILE_NAME);
 
   if (existsSync(envLocalPath)) {
-    info('.env.local already exists — creating .env.local.new instead');
+    info(`${ENV_FILE_NAME} already exists — creating ${ENV_FILE_NAME}.new instead`);
   }
 
   let content = existsSync(envExamplePath) ? readFileSync(envExamplePath, 'utf-8') : '';
@@ -548,6 +550,14 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
   const outputPath = existsSync(envLocalPath) ? `${envLocalPath}.new` : envLocalPath;
   writeFileSync(outputPath, content, 'utf-8');
   success(`Written to ${relative(root, outputPath)}`);
+}
+
+function printProcessEnvNextSteps(): void {
+  info('Next steps:');
+  dim('1. Configure required env vars in your shell, CI, or Vercel dashboard');
+  dim('2. pnpm install');
+  dim('3. Run Codapult commands from a process where those env vars are available');
+  dim('4. pnpm dev');
 }
 
 function generateMcpConfig(root: string): void {
@@ -683,6 +693,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
 
 interface SetupOptions {
   preset?: string;
+  noEnvFile?: boolean;
 }
 
 export async function setupCommand(options: SetupOptions): Promise<void> {
@@ -705,7 +716,11 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   }
 
   heading('Generating configuration');
-  generateEnvFile(root, config);
+  if (options.noEnvFile) {
+    dim(`Skipped ${ENV_FILE_NAME} generation`);
+  } else {
+    generateEnvFile(root, config);
+  }
 
   heading('Removing unused modules');
   removeModules(root, config);
@@ -717,11 +732,15 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   if (presetRaw) {
     info('Preset applied. Proceeding to build.');
   } else {
-    info('Next steps:');
-    dim('1. Fill in secrets in .env.local');
-    dim('2. pnpm install');
-    dim('3. pnpm db:push');
-    dim('4. pnpm dev');
+    if (options.noEnvFile) {
+      printProcessEnvNextSteps();
+    } else {
+      info('Next steps:');
+      dim(`1. Fill in secrets in ${ENV_FILE_NAME}`);
+      dim('2. pnpm install');
+      dim('3. pnpm db:push');
+      dim('4. pnpm dev');
+    }
   }
   console.log();
 }

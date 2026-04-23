@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../../utils/project-env.js';
 
 vi.mock('node:fs');
 vi.mock('../../utils/project.js', () => ({
@@ -56,7 +57,7 @@ describe('registerEnvTools', () => {
   });
 
   describe('codapult_env_schema', () => {
-    it('parses .env.example entries with comments', () => {
+    it(`parses ${ENV_EXAMPLE_FILE_NAME} entries with comments`, () => {
       const server = createMockServer();
       registerEnvTools(server as never);
 
@@ -91,7 +92,7 @@ DATABASE_URL=sqlite://local.db
       expect(dbEntry.comment).toBe('Optional database URL');
     });
 
-    it('returns error when .env.example not found', () => {
+    it(`returns error when ${ENV_EXAMPLE_FILE_NAME} not found`, () => {
       const server = createMockServer();
       registerEnvTools(server as never);
 
@@ -113,8 +114,8 @@ DATABASE_URL=sqlite://local.db
       const envExample = `AUTH_PROVIDER=better-auth\nSTRIPE_SECRET_KEY=\nDATABASE_URL=\n`;
 
       mockedReadProject.mockImplementation((_root, path) => {
-        if (path === '.env.local') return envLocal;
-        if (path === '.env.example') return envExample;
+        if (path === ENV_FILE_NAME) return envLocal;
+        if (path === ENV_EXAMPLE_FILE_NAME) return envExample;
         return null;
       });
 
@@ -130,7 +131,7 @@ DATABASE_URL=sqlite://local.db
       expect(parsed.unconfigured).toContain('STRIPE_SECRET_KEY');
     });
 
-    it('returns error when .env.local not found', () => {
+    it(`returns error when ${ENV_FILE_NAME} not found`, () => {
       const server = createMockServer();
       registerEnvTools(server as never);
 
@@ -144,7 +145,7 @@ DATABASE_URL=sqlite://local.db
   });
 
   describe('codapult_env_update', () => {
-    it('updates existing variable in .env.local', () => {
+    it(`updates existing variable in ${ENV_FILE_NAME}`, () => {
       const server = createMockServer();
       registerEnvTools(server as never);
 
@@ -174,7 +175,7 @@ DATABASE_URL=sqlite://local.db
       expect(written).toContain('NEW_VAR="new_value"');
     });
 
-    it('returns error when .env.local not found', () => {
+    it(`returns error when ${ENV_FILE_NAME} not found`, () => {
       const server = createMockServer();
       registerEnvTools(server as never);
 

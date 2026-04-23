@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { loadProjectEnv } from '../../utils/project-env.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -139,7 +140,7 @@ export function registerDbTools(server: McpServer): void {
     () => {
       const root = getRoot();
 
-      const envContent = readProjectFile(root, '.env.local') ?? '';
+      const envContent = loadProjectEnv(root).content;
       const providerMatch = /^DB_PROVIDER\s*=\s*"?(\w+)"?/m.exec(envContent);
       const provider = providerMatch?.[1] ?? 'turso';
 

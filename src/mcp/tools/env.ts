@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../../utils/project-env.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -64,16 +65,15 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_schema',
     {
       title: 'Env Schema',
-      description:
-        'Get all environment variables from .env.example with descriptions and default values',
+      description: `Get all environment variables from ${ENV_EXAMPLE_FILE_NAME} with descriptions and default values`,
       inputSchema: {},
     },
     () => {
       const root = getRoot();
-      const content = readProjectFile(root, '.env.example');
+      const content = readProjectFile(root, ENV_EXAMPLE_FILE_NAME);
       if (!content)
         return {
-          content: [{ type: 'text' as const, text: '.env.example not found' }],
+          content: [{ type: 'text' as const, text: `${ENV_EXAMPLE_FILE_NAME} not found` }],
           isError: true,
         };
 
@@ -86,8 +86,7 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_read',
     {
       title: 'Read Env',
-      description:
-        'Read current .env.local values with validation status against .env.example. Sensitive values (keys containing SECRET, KEY, TOKEN, PASSWORD, CREDENTIAL) are masked by default.',
+      description: `Read current ${ENV_FILE_NAME} values with validation status against ${ENV_EXAMPLE_FILE_NAME}. Sensitive values (keys containing SECRET, KEY, TOKEN, PASSWORD, CREDENTIAL) are masked by default.`,
       inputSchema: {
         show_secrets: z
           .boolean()
@@ -97,14 +96,14 @@ export function registerEnvTools(server: McpServer): void {
     },
     ({ show_secrets }) => {
       const root = getRoot();
-      const localContent = readProjectFile(root, '.env.local');
+      const localContent = readProjectFile(root, ENV_FILE_NAME);
       if (!localContent)
         return {
-          content: [{ type: 'text' as const, text: '.env.local not found' }],
+          content: [{ type: 'text' as const, text: `${ENV_FILE_NAME} not found` }],
           isError: true,
         };
 
-      const exampleContent = readProjectFile(root, '.env.example') ?? '';
+      const exampleContent = readProjectFile(root, ENV_EXAMPLE_FILE_NAME) ?? '';
       const localEntries = parseEnvFile(localContent);
       const exampleEntries = parseEnvFile(exampleContent);
       const localKeys = new Set(localEntries.map((e) => e.key));
@@ -139,7 +138,7 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_update',
     {
       title: 'Update Env Variable',
-      description: 'Update or add a single environment variable in .env.local',
+      description: `Update or add a single environment variable in ${ENV_FILE_NAME}`,
       inputSchema: {
         key: z.string().describe('Variable name (e.g. "STRIPE_SECRET_KEY")'),
         value: z.string().describe('Variable value'),
@@ -159,11 +158,11 @@ export function registerEnvTools(server: McpServer): void {
       }
 
       const root = getRoot();
-      const envPath = resolve(root, '.env.local');
+      const envPath = resolve(root, ENV_FILE_NAME);
 
       if (!existsSync(envPath)) {
         return {
-          content: [{ type: 'text' as const, text: '.env.local not found' }],
+          content: [{ type: 'text' as const, text: `${ENV_FILE_NAME} not found` }],
           isError: true,
         };
       }
@@ -180,7 +179,7 @@ export function registerEnvTools(server: McpServer): void {
       }
 
       writeFileSync(envPath, content, 'utf-8');
-      return { content: [{ type: 'text' as const, text: `Updated ${key} in .env.local` }] };
+      return { content: [{ type: 'text' as const, text: `Updated ${key} in ${ENV_FILE_NAME}` }] };
     },
   );
 }

@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { resolve, dirname, relative, basename, extname, join } from 'node:path';
 import type { PluginManifest } from './manifest.js';
+import { ENV_FILE_NAME } from './project-env.js';
 
 const MARKER_START = (name: string): string => `// --- plugin:${name}:start ---`;
 const MARKER_END = (name: string): string => `// --- plugin:${name}:end ---`;
@@ -688,7 +689,7 @@ export function findPageBackups(projectRoot: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// .env.local — append env vars
+// env file — append env vars
 // ---------------------------------------------------------------------------
 
 export function patchEnvFile(
@@ -697,7 +698,7 @@ export function patchEnvFile(
   envVars: Record<string, { default?: string; required: boolean; description?: string }>,
   action: 'add' | 'remove',
 ): void {
-  const envPath = resolve(projectRoot, '.env.local');
+  const envPath = resolve(projectRoot, ENV_FILE_NAME);
   if (!existsSync(envPath)) return;
   let content = readFileSync(envPath, 'utf-8');
 

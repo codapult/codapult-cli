@@ -3,10 +3,10 @@
  *
  * Keep this file in sync with the host's `env.features`, `env.auth`,
  * provider enums, and the `superRefine` validation in
- * `codapult/src/lib/config.ts`. The CLI parses `.env.local` directly (it
- * cannot import from the host project), so this module centralises the
- * provider/feature shape that several commands share (config-show, doctor,
- * MCP project status).
+ * `codapult/src/lib/config.ts`. The CLI cannot import from the host project,
+ * so this module centralises the provider/feature shape that several
+ * commands share regardless of whether env values come from `.env.local` or
+ * `process.env`.
  */
 
 export type DbProvider = 'turso' | 'postgres';
