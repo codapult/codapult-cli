@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.1](https://github.com/codapult/codapult-cli/compare/v0.7.0...v0.7.1) (2026-04-24)
+
+### Bug Fixes
+
+* add install deps step in ci mode; fix resolve manifest ([10c682c](https://github.com/codapult/codapult-cli/commit/10c682cfa23c5c56214290692b955a3ecc1ff78c))
+
 ## [0.7.0](https://github.com/codapult/codapult-cli/compare/v0.6.1...v0.7.0) (2026-04-24)
 
 ### Features
