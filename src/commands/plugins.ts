@@ -217,7 +217,6 @@ export async function pluginsAddCommand(
     heading('Done!');
     success(`Plugin "${manifest.name}" installed (CI mode).`);
     dim('Skipped: db:push, env patching, optional deps.');
-    dim('Run pnpm install separately after this command.');
     console.log();
     return;
   }
