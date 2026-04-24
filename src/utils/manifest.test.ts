@@ -98,7 +98,7 @@ describe('resolveManifest', () => {
     expect(result!.pluginDir).toContain('.codapult/plugins/codapult-plugin-cached');
   });
 
-  it('prefers sibling directory over .codapult/plugins/ cache', () => {
+  it('prefers .codapult/plugins/ cache over sibling directory', () => {
     mockedExists.mockImplementation((p) => {
       const path = p as string;
       return (
@@ -111,7 +111,7 @@ describe('resolveManifest', () => {
     const result = resolveManifest(ROOT, 'both');
 
     expect(result).not.toBeNull();
-    expect(result!.pluginDir).toBe('/codapult-plugin-both');
+    expect(result!.pluginDir).toBe('/project/.codapult/plugins/codapult-plugin-both');
   });
 
   it('returns null for invalid JSON manifest', () => {

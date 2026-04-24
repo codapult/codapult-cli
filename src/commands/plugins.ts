@@ -35,9 +35,14 @@ function execQuiet(cmd: string, cwd: string): boolean {
 // codapult plugins add <name>
 // ---------------------------------------------------------------------------
 
+interface PluginsAddCommandOptions extends ProjectEnvOptions {
+  from?: string;
+  ci?: boolean;
+}
+
 export async function pluginsAddCommand(
   name: string,
-  options: { from?: string; ci?: boolean } & ProjectEnvOptions = {},
+  options: PluginsAddCommandOptions = {},
 ): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
@@ -64,10 +69,10 @@ export async function pluginsAddCommand(
   if (!result) {
     fail(`Plugin "${name}" not found.`);
     dim('Searched for codapult-plugin.json in:');
+    dim(`  .codapult/plugins/codapult-plugin-${name}/`);
     dim(`  ../codapult-plugin-${name}/`);
     dim(`  ../codapult-${name}/`);
     dim(`  ../${name}/`);
-    dim(`  .codapult/plugins/codapult-plugin-${name}/`);
     if (!options.from) {
       dim('');
       dim('Tip: use --from <git-url> to install from a remote repository.');
@@ -200,21 +205,21 @@ export async function pluginsAddCommand(
     }
   }
 
-  if (options.ci) {
-    heading('Done!');
-    success(`Plugin "${manifest.name}" installed (CI mode).`);
-    dim('Skipped: pnpm install, db:push, env patching, optional deps.');
-    dim('Run pnpm install separately after this command.');
-    console.log();
-    return;
-  }
-
   // 10. pnpm install
   info('Installing dependencies...');
   if (!execQuiet('pnpm install --no-frozen-lockfile', root)) {
     warn('pnpm install failed — run manually: pnpm install --no-frozen-lockfile');
   } else {
     success('Dependencies installed');
+  }
+
+  if (options.ci) {
+    heading('Done!');
+    success(`Plugin "${manifest.name}" installed (CI mode).`);
+    dim('Skipped: db:push, env patching, optional deps.');
+    dim('Run pnpm install separately after this command.');
+    console.log();
+    return;
   }
 
   // 11. pnpm db:push

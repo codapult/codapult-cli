@@ -63,20 +63,20 @@ export function resolveManifest(
     }
   }
 
-  // 2. Sibling directories (../codapult-plugin-<name>, ../codapult-<name>, ../<name>)
-  const parentDir = resolve(projectRoot, '..');
-  candidates.push(
-    join(parentDir, `codapult-plugin-${nameOrPath}`),
-    join(parentDir, `codapult-${nameOrPath}`),
-    join(parentDir, nameOrPath),
-  );
-
-  // 3. Local cache (.codapult/plugins/codapult-plugin-<name>, ../<name>)
+  // 2. Local cache (.codapult/plugins/codapult-plugin-<name>, ../<name>)
   const cacheDir = join(projectRoot, '.codapult', 'plugins');
   candidates.push(
     join(cacheDir, `codapult-plugin-${nameOrPath}`),
     join(cacheDir, `codapult-${nameOrPath}`),
     join(cacheDir, nameOrPath),
+  );
+
+  // 3. Sibling directories (../codapult-plugin-<name>, ../codapult-<name>, ../<name>)
+  const parentDir = resolve(projectRoot, '..');
+  candidates.push(
+    join(parentDir, `codapult-plugin-${nameOrPath}`),
+    join(parentDir, `codapult-${nameOrPath}`),
+    join(parentDir, nameOrPath),
   );
 
   for (const dir of candidates) {
