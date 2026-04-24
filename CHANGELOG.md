@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0](https://github.com/codapult/codapult-cli/compare/v0.6.1...v0.7.0) (2026-04-24)
+
+### Features
+
+* add pruning blocks in files on remove feature ([e98ac79](https://github.com/codapult/codapult-cli/commit/e98ac7979c34b319751220eaee916c36fc9b17ed))
+
 ## [0.6.1](https://github.com/codapult/codapult-cli/compare/v0.6.0...v0.6.1) (2026-04-24)
 
 ### Bug Fixes
