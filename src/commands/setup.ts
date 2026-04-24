@@ -225,8 +225,8 @@ const MODULE_REMOVALS: {
       `${APP}/admin`,
       `${APP}/invite`,
       'src/app/api/auth',
-      // 'src/lib/auth/better-auth.ts',
-      // 'src/lib/auth/kinde.ts',
+      'src/lib/auth/better-auth.ts',
+      'src/lib/auth/kinde.ts',
       'src/components/auth',
       'src/components/dashboard',
       'src/components/admin',
@@ -249,7 +249,8 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(marketing)/blog`,
       'src/components/blog',
-      // 'src/lib/blog',
+      'src/components/seo/BlogPostJsonLd.tsx',
+      'src/lib/blog',
       'content/blog',
       'src/app/rss.xml',
     ],
@@ -365,12 +366,12 @@ const MODULE_REMOVALS: {
     paths: ['src/lib/event-store', 'src/app/api/admin/events'],
     label: 'Event Store',
   },
-  // { key: 'enableOtel', paths: ['src/lib/telemetry'], label: 'OpenTelemetry' },
+  { key: 'enableOtel', paths: ['src/lib/telemetry'], label: 'OpenTelemetry' },
   {
     key: 'enableDripCampaigns',
     paths: [
       `${APP}/admin/drip-campaigns`,
-      // 'src/lib/drip-campaigns',
+      'src/lib/drip-campaigns',
       'src/app/api/admin/drip-campaigns',
       'src/components/admin/DripCampaignManager.tsx',
     ],
@@ -423,7 +424,7 @@ const MODULE_REMOVALS: {
       'src/lib/ai/chunker.ts',
       'src/lib/ai/embeddings.ts',
       'src/lib/ai/vector-store.ts',
-      // 'src/lib/ai/rag.ts',
+      'src/lib/ai/rag.ts',
       'src/app/api/ai',
     ],
     label: 'RAG Pipeline',
@@ -434,7 +435,7 @@ const MODULE_REMOVALS: {
       `${APP}/(dashboard)/dashboard/webhooks`,
       `${APP}/admin/webhooks`,
       'src/app/api/webhooks',
-      // 'src/lib/outgoing-webhooks',
+      'src/lib/outgoing-webhooks',
       'src/lib/webhook-log.ts',
       'src/lib/webhook-log.test.ts',
       'src/components/dashboard/OutgoingWebhooks.tsx',
@@ -457,7 +458,7 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(dashboard)/dashboard/reports`,
       'src/app/api/reports',
-      // 'src/lib/scheduled-reports',
+      'src/lib/scheduled-reports',
       'src/components/dashboard/ReportSchedules.tsx',
     ],
     label: 'Scheduled Reports',
@@ -527,6 +528,13 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableTwoFactor: 'ENABLE_TWO_FACTOR',
   enablePlugins: 'ENABLE_PLUGINS',
 };
+
+const PRUNE_MARKER_FILES = [
+  'src/app/sitemap.ts',
+  'src/lib/auth/index.ts',
+  'src/lib/jobs/definitions.ts',
+  'src/instrumentation.ts',
+] as const;
 
 function generateEnvFile(root: string, config: ProjectConfig): void {
   const envExamplePath = join(root, ENV_EXAMPLE_FILE_NAME);
@@ -603,6 +611,49 @@ function generateMcpConfig(root: string): void {
   success('Created .cursor/mcp.json — Codapult MCP server configured for Cursor');
 }
 
+function pruneMarkedBlocks(
+  content: string,
+  disabledKeys: readonly (keyof ProjectConfig)[],
+): string {
+  let next = content;
+
+  for (const key of disabledKeys) {
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(
+      `^[ \\t]*\\/\\/\\s*codapult:prune:start\\s+${escapedKey}\\s*\\n[\\s\\S]*?^[ \\t]*\\/\\/\\s*codapult:prune:end\\s+${escapedKey}[ \\t]*\\n?`,
+      'gm',
+    );
+
+    next = next.replace(pattern, '');
+  }
+
+  return next;
+  // return next.replace(/\n{3,}/g, '\n\n');
+}
+
+function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
+  const disabledKeys = (Object.keys(config) as (keyof ProjectConfig)[]).filter(
+    (key) => key.startsWith('enable') && config[key] === false,
+  );
+
+  if (disabledKeys.length === 0) return;
+
+  dim(`Pruning files...`);
+
+  for (const relativePath of PRUNE_MARKER_FILES) {
+    const fullPath = resolve(root, relativePath);
+    if (!existsSync(fullPath)) continue;
+
+    const original = readFileSync(fullPath, 'utf-8');
+    const pruned = pruneMarkedBlocks(original, disabledKeys);
+
+    if (pruned !== original) {
+      writeFileSync(fullPath, pruned, 'utf-8');
+      dim(`  patched ${relativePath}`);
+    }
+  }
+}
+
 function removeModules(root: string, config: ProjectConfig): void {
   for (const removal of MODULE_REMOVALS) {
     if (config[removal.key]) continue;
@@ -626,6 +677,8 @@ function removeModules(root: string, config: ProjectConfig): void {
       dim(`  no matching files found (expected ${missing.length} path(s))`);
     }
   }
+
+  pruneMarkedBlocksInFiles(root, config);
 }
 
 async function interactiveSetup(): Promise<ProjectConfig> {
