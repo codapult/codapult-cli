@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1](https://github.com/codapult/codapult-cli/compare/v0.6.0...v0.6.1) (2026-04-24)
+
+### Bug Fixes
+
+* update removable paths ([4fdeb02](https://github.com/codapult/codapult-cli/commit/4fdeb022ade6edb295016cb0c68a4ba8972a9dc4))
+
 ## [0.6.0](https://github.com/codapult/codapult-cli/compare/v0.5.0...v0.6.0) (2026-04-23)
 
 ### Features
