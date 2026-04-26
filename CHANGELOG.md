@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.2](https://github.com/codapult/codapult-cli/compare/v0.7.1...v0.7.2) (2026-04-26)
+
+### Bug Fixes
+
+* remove obsolete message ([43911f5](https://github.com/codapult/codapult-cli/commit/43911f5d455fcc3586c0faa6696fa2381aec4ed1))
+
 ## [0.7.1](https://github.com/codapult/codapult-cli/compare/v0.7.0...v0.7.1) (2026-04-24)
 
 ### Bug Fixes
