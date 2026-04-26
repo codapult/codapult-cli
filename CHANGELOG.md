@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0](https://github.com/codapult/codapult-cli/compare/v0.7.2...v0.8.0) (2026-04-26)
+
+### Features
+
+* add --clean option to remove plugin cache dir ([155502b](https://github.com/codapult/codapult-cli/commit/155502bab84e6eace9c09e00e1c3291e58d3b643))
+
 ## [0.7.2](https://github.com/codapult/codapult-cli/compare/v0.7.1...v0.7.2) (2026-04-26)
 
 ### Bug Fixes
