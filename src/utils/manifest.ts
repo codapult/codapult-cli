@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join, isAbsolute, relative } from 'node:path';
+import { getCacheDir } from './git.js';
 
 export interface PluginManifestEnvVar {
   default?: string;
@@ -35,7 +36,7 @@ const MANIFEST_FILENAME = 'codapult-plugin.json';
  */
 function isWithinAllowedScope(dir: string, projectRoot: string): boolean {
   const parentDir = resolve(projectRoot, '..');
-  const cacheDir = resolve(projectRoot, '.codapult', 'plugins');
+  const cacheDir = getCacheDir(projectRoot);
 
   const relToParent = relative(parentDir, dir);
   const relToCache = relative(cacheDir, dir);
@@ -64,7 +65,7 @@ export function resolveManifest(
   }
 
   // 2. Local cache (.codapult/plugins/codapult-plugin-<name>, ../<name>)
-  const cacheDir = join(projectRoot, '.codapult', 'plugins');
+  const cacheDir = getCacheDir(projectRoot);
   candidates.push(
     join(cacheDir, `codapult-plugin-${nameOrPath}`),
     join(cacheDir, `codapult-${nameOrPath}`),

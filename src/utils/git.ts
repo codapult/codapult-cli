@@ -8,6 +8,10 @@ export interface CloneResult {
   pluginDir: string;
 }
 
+export function getCacheDir(projectRoot: string): string {
+  return resolve(projectRoot, '.codapult', 'plugins');
+}
+
 /**
  * Derive a directory name from a git URL.
  *
@@ -33,7 +37,7 @@ export function clonePlugin(projectRoot: string, gitUrl: string): CloneResult {
   }
 
   const dirName = dirNameFromGitUrl(gitUrl);
-  const cacheDir = resolve(projectRoot, '.codapult', 'plugins');
+  const cacheDir = getCacheDir(projectRoot);
   const pluginDir = resolve(cacheDir, dirName);
 
   mkdirSync(cacheDir, { recursive: true });
