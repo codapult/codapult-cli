@@ -89,9 +89,9 @@ withNoEnvFileOption(
     ),
 ).action(pluginsAddCommand);
 
-withNoEnvFileOption(plugins.command('remove <name>').description('uninstall a plugin')).action(
-  pluginsRemoveCommand,
-);
+withNoEnvFileOption(
+  plugins.command('remove <name>').description('uninstall a plugin').option('--clean'),
+).action(pluginsRemoveCommand);
 
 plugins
   .command('migrate [name]')

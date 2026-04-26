@@ -1,5 +1,5 @@
 import { execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
 import {
@@ -256,9 +256,14 @@ export async function pluginsAddCommand(
 // codapult plugins remove <name>
 // ---------------------------------------------------------------------------
 
+interface PluginsRemoveCommandOptions extends ProjectEnvOptions {
+  /** Also remove cache in .codapult/ dir */
+  clean?: boolean;
+}
+
 export async function pluginsRemoveCommand(
   name: string,
-  options: ProjectEnvOptions = {},
+  options: PluginsRemoveCommandOptions = {},
 ): Promise<void> {
   const root = findProjectRoot();
   if (!root) {
@@ -345,12 +350,19 @@ export async function pluginsRemoveCommand(
     }
   }
 
-  // 8. Remove dependency
+  // 8. Remove cache
+  if (options.clean && pluginDir) {
+    info('Removing cache...');
+    rmSync(pluginDir, { recursive: true, force: true });
+    success('Cache removed');
+  }
+
+  // 9. Remove dependency
   info('Removing dependency...');
   patchPackageJson(root, manifest.name, manifest.package, pluginDir, 'remove');
   success('Dependency removed');
 
-  // 9. pnpm install
+  // 10. pnpm install
   info('Updating dependencies...');
   execQuiet('pnpm install --no-frozen-lockfile', root);
   success('Dependencies updated');
