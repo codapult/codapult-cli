@@ -226,7 +226,12 @@ const MODULE_REMOVALS: {
       `${APP}/invite`,
       'src/app/api/auth',
       'src/lib/auth/better-auth.ts',
+      'src/lib/auth/better-auth.test.ts',
       'src/lib/auth/kinde.ts',
+      'src/lib/auth/kinde.test.ts',
+      'src/lib/auth/better-auth-client.ts',
+      'src/lib/auth/kinde-client.ts',
+      'src/lib/auth/client-adapter.test.ts',
       'src/components/auth',
       'src/components/dashboard',
       'src/components/admin',
@@ -532,6 +537,7 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
   'src/lib/auth/index.ts',
+  'src/lib/auth/client-adapter.ts',
   'src/lib/jobs/definitions.ts',
   'src/instrumentation.ts',
 ] as const;
