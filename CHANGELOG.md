@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.3](https://github.com/codapult/codapult-cli/compare/v0.8.2...v0.8.3) (2026-05-23)
+
+### Bug Fixes
+
+* update removable paths ([41da17c](https://github.com/codapult/codapult-cli/commit/41da17c1df4af03350c87f0dfab8903fc0d07aeb))
+
 ## [0.8.2](https://github.com/codapult/codapult-cli/compare/v0.8.1...v0.8.2) (2026-05-15)
 
 ### Bug Fixes
