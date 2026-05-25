@@ -193,7 +193,7 @@ function parsePresetValue(raw: string): Partial<ProjectConfig> {
     result[key] = val === 'false' ? false : val === 'true' ? true : val;
   }
 
-  return { ...base, ...result } as Partial<ProjectConfig>;
+  return { ...base, ...result };
 }
 
 function resolvePreset(raw: string): ProjectConfig {

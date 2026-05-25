@@ -417,7 +417,7 @@ describe('createPluginRegistration', () => {
 
   it('removes registration file and regenerates barrel on remove', () => {
     mockedExists.mockReturnValue(true);
-    mockedReaddir.mockReturnValue([] as unknown as ReturnType<typeof readdirSync>);
+    mockedReaddir.mockReturnValue([]);
 
     createPluginRegistration(ROOT, 'test-plugin', '@codapult/plugin-test', 'remove');
 
@@ -447,7 +447,7 @@ describe('patchPages', () => {
 
   it('removes page files and cleans up empty dirs on remove', () => {
     mockedExists.mockReturnValue(true);
-    mockedReaddir.mockReturnValue([] as unknown as ReturnType<typeof readdirSync>);
+    mockedReaddir.mockReturnValue([]);
 
     const pages = {
       'src/app/(dashboard)/dashboard/widgets/page.tsx': '@codapult/plugin-test/pages/widgets-page',
@@ -569,7 +569,7 @@ describe('patchPages', () => {
       if (dir === '/project/src/app/welcome') {
         return ['page.tsx.codapult-bak-onboarding'] as unknown as ReturnType<typeof readdirSync>;
       }
-      return [] as unknown as ReturnType<typeof readdirSync>;
+      return [];
     });
 
     patchPages(ROOT, 'onboarding', pages, 'remove');
@@ -602,7 +602,7 @@ describe('patchPages', () => {
           typeof readdirSync
         >;
       }
-      return [] as unknown as ReturnType<typeof readdirSync>;
+      return [];
     });
 
     patchPages(ROOT, 'onboarding', pages, 'remove');
@@ -716,7 +716,7 @@ describe('findPageBackups', () => {
           typeof readdirSync
         >;
       }
-      return [] as unknown as ReturnType<typeof readdirSync>;
+      return [];
     });
     mockedStat.mockImplementation((p) => {
       const path = p as string;

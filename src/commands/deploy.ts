@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
@@ -11,12 +11,7 @@ import {
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
 
 function hasCommand(cmd: string): boolean {
-  try {
-    execSync(`which ${cmd}`, { stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
+  return spawnSync(cmd, ['--version'], { stdio: 'ignore' }).status === 0;
 }
 
 // ---------------------------------------------------------------------------

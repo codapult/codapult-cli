@@ -24,9 +24,9 @@ const mockedMkdir = vi.mocked(mkdirSync);
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.spyOn(process, 'exit').mockImplementation((() => {
+  vi.spyOn(process, 'exit').mockImplementation(() => {
     throw new Error('process.exit');
-  }) as never);
+  });
 });
 
 describe('generatePageCommand', () => {

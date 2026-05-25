@@ -142,7 +142,7 @@ describe('registerProjectTools', () => {
         content: 'AUTH_PROVIDER=none\nENABLE_BLOG=false',
       });
       mockedExists.mockReturnValue(true);
-      mockedReaddir.mockReturnValue([] as unknown as ReturnType<typeof readdirSync>);
+      mockedReaddir.mockReturnValue([]);
 
       const handler = server.tools.find((t) => t.name === 'codapult_project_status')!.handler;
       const result = handler({ env_source: 'process' });
