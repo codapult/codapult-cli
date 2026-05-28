@@ -66,6 +66,7 @@ interface ProjectConfig {
   enableHelpCenter: boolean;
   enableExperiments: boolean;
   enableFeatureRequests: boolean;
+  enableCompare: boolean;
   enableConnect: boolean;
   enableEventStore: boolean;
   enableOtel: boolean;
@@ -112,6 +113,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableBlog: true,
     enableWaitlist: false,
     enableFeatureRequests: false,
+    enableCompare: true,
     enableWebhooks: false,
     enableAuditLog: false,
     enableReports: false,
@@ -143,6 +145,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableHelpCenter: true,
   enableExperiments: true,
   enableFeatureRequests: true,
+  enableCompare: false,
   enableConnect: true,
   enableEventStore: true,
   enableOtel: true,
@@ -361,6 +364,16 @@ const MODULE_REMOVALS: {
     label: 'Feature Requests',
   },
   {
+    key: 'enableCompare',
+    paths: [
+      `${APP}/(marketing)/compare`,
+      `${APP}/(marketing)/vs`,
+      'src/config/competitor-comparison.ts',
+      'src/components/marketing/ComparisonTable.tsx',
+    ],
+    label: 'Feature Requests',
+  },
+  {
     key: 'enableConnect',
     paths: [
       `${APP}/(dashboard)/dashboard/connect`,
@@ -521,6 +534,7 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableBlog: 'ENABLE_BLOG',
   enableWaitlist: 'ENABLE_WAITLIST',
   enableFeatureRequests: 'ENABLE_FEATURE_REQUESTS',
+  enableCompare: 'ENABLE_COMPARE',
   enableAI: 'ENABLE_AI_CHAT',
   enableTeams: 'ENABLE_TEAMS',
   enableReferrals: 'ENABLE_REFERRALS',
@@ -703,6 +717,8 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     'none',
   ])) as ProjectConfig['authProvider'];
 
+  const authEnabled = authProvider !== 'none';
+
   const config: ProjectConfig = {
     appName: await ask(iface, 'App name', 'Codapult'),
     appUrl: await ask(iface, 'App URL', 'http://localhost:3000'),
@@ -719,46 +735,38 @@ async function interactiveSetup(): Promise<ProjectConfig> {
       'memory',
       'bullmq',
     ])) as ProjectConfig['jobProvider'],
-    enableAuth: authProvider !== 'none',
+    enableAuth: authEnabled,
     enableAI: await confirmPrompt(iface, 'Enable AI Chat module?'),
     enableBlog: await confirmPrompt(iface, 'Enable Blog module?'),
-    enableTeams:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable Teams/Organizations?')),
+    enableTeams: authEnabled && (await confirmPrompt(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirmPrompt(iface, 'Enable Waitlist page?'),
     enableGraphQL: await confirmPrompt(iface, 'Enable GraphQL API layer?'),
-    enableSSO:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable Enterprise SSO (SAML)?')),
+    enableSSO: authEnabled && (await confirmPrompt(iface, 'Enable Enterprise SSO (SAML)?')),
     enableApiDocs: await confirmPrompt(iface, 'Enable interactive API docs?'),
     enableHelpCenter: await confirmPrompt(iface, 'Enable Documentation module?'),
     enableExperiments: await confirmPrompt(iface, 'Enable A/B Testing?'),
     enableFeatureRequests: await confirmPrompt(iface, 'Enable Feature Request board?'),
+    enableCompare: false,
     enableConnect:
-      authProvider !== 'none' &&
-      (await confirmPrompt(iface, 'Enable Stripe Connect (marketplace)?')),
+      authEnabled && (await confirmPrompt(iface, 'Enable Stripe Connect (marketplace)?')),
     enableEventStore: await confirmPrompt(iface, 'Enable Event Store (event sourcing)?'),
     enableOtel: await confirmPrompt(iface, 'Enable OpenTelemetry tracing?'),
     enableDripCampaigns: await confirmPrompt(iface, 'Enable email drip campaigns?'),
     enableOnboarding:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable in-app onboarding tours?')),
-    enableWorkflows:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable workflow automation?')),
-    enableReferrals:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable referral program?')),
+      authEnabled && (await confirmPrompt(iface, 'Enable in-app onboarding tours?')),
+    enableWorkflows: authEnabled && (await confirmPrompt(iface, 'Enable workflow automation?')),
+    enableReferrals: authEnabled && (await confirmPrompt(iface, 'Enable referral program?')),
     enableAnalytics: await confirmPrompt(iface, 'Enable built-in analytics?'),
     enableChangelog: await confirmPrompt(iface, 'Enable Changelog page?'),
     enableRAG: await confirmPrompt(iface, 'Enable RAG pipeline (vector search)?'),
-    enableWebhooks:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable outgoing webhooks?')),
+    enableWebhooks: authEnabled && (await confirmPrompt(iface, 'Enable outgoing webhooks?')),
     enableAuditLog:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable audit log / activity feed?')),
-    enableReports:
-      authProvider !== 'none' && (await confirmPrompt(iface, 'Enable scheduled email reports?')),
+      authEnabled && (await confirmPrompt(iface, 'Enable audit log / activity feed?')),
+    enableReports: authEnabled && (await confirmPrompt(iface, 'Enable scheduled email reports?')),
     enableBranding:
-      authProvider !== 'none' &&
-      (await confirmPrompt(iface, 'Enable per-org branding (white-label)?')),
+      authEnabled && (await confirmPrompt(iface, 'Enable per-org branding (white-label)?')),
     enableTwoFactor:
-      authProvider !== 'none' &&
-      (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
+      authEnabled && (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
     enablePlugins: await confirmPrompt(iface, 'Enable plugin marketplace (/plugins)?'),
   };
 
