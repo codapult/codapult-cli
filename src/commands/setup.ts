@@ -371,7 +371,7 @@ const MODULE_REMOVALS: {
       'src/config/competitor-comparison.ts',
       'src/components/marketing/ComparisonTable.tsx',
     ],
-    label: 'Feature Requests',
+    label: 'Compare',
   },
   {
     key: 'enableConnect',
@@ -554,9 +554,11 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
 
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
+  'src/app/sitemap.test.ts',
   'src/lib/auth/index.ts',
   'src/lib/auth/client-adapter.ts',
   'src/lib/jobs/definitions.ts',
+  'src/config/marketing.test.ts',
   'src/instrumentation.ts',
 ] as const;
 
