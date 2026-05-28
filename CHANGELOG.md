@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.2](https://github.com/codapult/codapult-cli/compare/v0.9.1...v0.9.2) (2026-05-28)
+
+### Bug Fixes
+
+* update PRUNE_MARKER_FILES and update module label ([263f658](https://github.com/codapult/codapult-cli/commit/263f6580129e159303139034ca08b75e9d6dadfa))
+
 ## [0.9.1](https://github.com/codapult/codapult-cli/compare/v0.9.0...v0.9.1) (2026-05-28)
 
 ### Bug Fixes
