@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.4](https://github.com/codapult/codapult-cli/compare/v0.8.3...v0.8.4) (2026-05-28)
+
+### Bug Fixes
+
+* enable blog in built-in presets ([4a92486](https://github.com/codapult/codapult-cli/commit/4a92486fc019189dcf2811ea6b0707193898f13c))
+
 ## [0.8.3](https://github.com/codapult/codapult-cli/compare/v0.8.2...v0.8.3) (2026-05-23)
 
 ### Bug Fixes
