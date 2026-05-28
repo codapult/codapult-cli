@@ -41,6 +41,9 @@ const program = new Command()
     styleTitle: (str) => pc.bold(pc.cyan(str)),
     styleCommandText: (str) => pc.yellow(str),
     styleOptionText: (str) => pc.green(str),
+  })
+  .hook('postAction', () => {
+    process.exit(0);
   });
 
 function withNoEnvFileOption(command: Command): Command {
