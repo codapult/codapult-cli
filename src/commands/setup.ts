@@ -109,7 +109,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableDripCampaigns: false,
     enableApiDocs: false,
     enableChangelog: false,
-    enableBlog: false,
+    enableBlog: true,
     enableWaitlist: false,
     enableFeatureRequests: false,
     enableWebhooks: false,
