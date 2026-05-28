@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.1](https://github.com/codapult/codapult-cli/compare/v0.9.0...v0.9.1) (2026-05-28)
+
+### Bug Fixes
+
+* add process.exit after action completed ([3000666](https://github.com/codapult/codapult-cli/commit/300066634eea55884b135fdb59de9289d59f4893))
+
 ## [0.9.0](https://github.com/codapult/codapult-cli/compare/v0.8.4...v0.9.0) (2026-05-28)
 
 ### Features
