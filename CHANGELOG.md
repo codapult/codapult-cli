@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.0](https://github.com/codapult/codapult-cli/compare/v0.8.4...v0.9.0) (2026-05-28)
+
+### Features
+
+* add compare feature toggle to project configuration ([5eff1e8](https://github.com/codapult/codapult-cli/commit/5eff1e816032a62eb465f8a1cf6efd4a014c11ab))
+
 ## [0.8.4](https://github.com/codapult/codapult-cli/compare/v0.8.3...v0.8.4) (2026-05-28)
 
 ### Bug Fixes
