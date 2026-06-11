@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.4](https://github.com/codapult/codapult-cli/compare/v0.9.3...v0.9.4) (2026-06-11)
+
+### Bug Fixes
+
+* remove obsolete /vs path ([827ff34](https://github.com/codapult/codapult-cli/commit/827ff349651c8d867fe218e348888745aa50b1e6))
+
 ## [0.9.3](https://github.com/codapult/codapult-cli/compare/v0.9.2...v0.9.3) (2026-06-02)
 
 ## [0.9.2](https://github.com/codapult/codapult-cli/compare/v0.9.1...v0.9.2) (2026-05-28)
