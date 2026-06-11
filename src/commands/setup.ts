@@ -367,7 +367,6 @@ const MODULE_REMOVALS: {
     key: 'enableCompare',
     paths: [
       `${APP}/(marketing)/compare`,
-      `${APP}/(marketing)/vs`,
       'src/config/competitor-comparison.ts',
       'src/components/marketing/ComparisonTable.tsx',
     ],
