@@ -578,7 +578,6 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
     PAYMENT_PROVIDER: config.paymentProvider,
     STORAGE_PROVIDER: config.storageProvider,
     JOB_PROVIDER: config.jobProvider,
-    ...(config.enableAnalytics ? { NEXT_PUBLIC_ANALYTICS_ENABLED: 'true' } : {}),
   };
 
   for (const [cliKey, envVar] of Object.entries(FEATURE_ENV_VARS)) {
