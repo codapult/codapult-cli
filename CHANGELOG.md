@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.9.5](https://github.com/codapult/codapult-cli/compare/v0.9.4...v0.9.5) (2026-06-17)
+
+### Bug Fixes
+
+* remove NEXT_PUBLIC_ANALYTICS_ENABLED ([c6e03bc](https://github.com/codapult/codapult-cli/commit/c6e03bcdedd96e5f49111b2d436e12d8bf8e2682))
+
 ## [0.9.4](https://github.com/codapult/codapult-cli/compare/v0.9.3...v0.9.4) (2026-06-11)
 
 ### Bug Fixes
