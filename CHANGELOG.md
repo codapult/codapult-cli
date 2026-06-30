@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0](https://github.com/codapult/codapult-cli/compare/v0.9.5...v0.10.0) (2026-06-30)
+
+### Features
+
+* add enableCompare prompt and fix removeUnusedCode prompt ([02d78d9](https://github.com/codapult/codapult-cli/commit/02d78d977ad803d32bb441f98048cf38b6841d5b))
+
 ## [0.9.5](https://github.com/codapult/codapult-cli/compare/v0.9.4...v0.9.5) (2026-06-17)
 
 ### Bug Fixes
