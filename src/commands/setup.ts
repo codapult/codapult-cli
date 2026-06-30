@@ -83,6 +83,7 @@ interface ProjectConfig {
   enableBranding: boolean;
   enableTwoFactor: boolean;
   enablePlugins: boolean;
+  removeUnusedCode: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,8 +91,7 @@ interface ProjectConfig {
 // ---------------------------------------------------------------------------
 
 const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
-  // Showcase / marketing-only site: navbar shows only Pricing, Plugins, Docs.
-  // `enableHelpCenter` stays true (powers /docs).
+  // Showcase / marketing-only site.
   marketing: {
     authProvider: 'none',
     enableAuth: false,
@@ -110,17 +110,19 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableDripCampaigns: false,
     enableApiDocs: false,
     enableChangelog: false,
-    enableBlog: true,
     enableWaitlist: false,
     enableFeatureRequests: false,
-    enableCompare: true,
     enableWebhooks: false,
     enableAuditLog: false,
     enableReports: false,
     enableBranding: false,
     enableTwoFactor: false,
-    // Plugins page stays in marketing navbar by default — preset keeps the
-    // feature on. Override with `marketing;enablePlugins=false` to drop it.
+    enableGraphQL: false,
+    enableHelpCenter: true,
+    enableBlog: true,
+    enablePlugins: true,
+    enableCompare: true,
+    removeUnusedCode: true,
   },
   demo: {
     authProvider: 'better-auth',
@@ -162,6 +164,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableBranding: true,
   enableTwoFactor: true,
   enablePlugins: true,
+  removeUnusedCode: false,
 };
 
 function parsePresetValue(raw: string): Partial<ProjectConfig> {
@@ -551,6 +554,8 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enablePlugins: 'ENABLE_PLUGINS',
 };
 
+// codapult:prune:start {key}
+// codapult:prune:end {key}
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
   'src/app/sitemap.test.ts',
@@ -746,7 +751,11 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableHelpCenter: await confirmPrompt(iface, 'Enable Documentation module?'),
     enableExperiments: await confirmPrompt(iface, 'Enable A/B Testing?'),
     enableFeatureRequests: await confirmPrompt(iface, 'Enable Feature Request board?'),
-    enableCompare: false,
+    enableCompare: await confirmPrompt(
+      iface,
+      'Enable competitor comparison pages (/compare)?',
+      false,
+    ),
     enableConnect:
       authEnabled && (await confirmPrompt(iface, 'Enable Stripe Connect (marketplace)?')),
     enableEventStore: await confirmPrompt(iface, 'Enable Event Store (event sourcing)?'),
@@ -768,11 +777,8 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableTwoFactor:
       authEnabled && (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
     enablePlugins: await confirmPrompt(iface, 'Enable plugin marketplace (/plugins)?'),
+    removeUnusedCode: await confirmPrompt(iface, 'Remove unused module code?', false),
   };
-
-  if (await confirmPrompt(iface, 'Remove unused module code?', false)) {
-    return config;
-  }
 
   iface.close();
   return config;
@@ -808,8 +814,10 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
     generateEnvFile(root, config);
   }
 
-  heading('Removing unused modules');
-  removeModules(root, config);
+  if (config.removeUnusedCode) {
+    heading('Removing unused modules');
+    removeModules(root, config);
+  }
 
   heading('Setting up MCP integration');
   generateMcpConfig(root);
