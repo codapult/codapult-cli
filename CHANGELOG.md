@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.10.1](https://github.com/codapult/codapult-cli/compare/v0.10.0...v0.10.1) (2026-07-01)
+
 ## [0.10.0](https://github.com/codapult/codapult-cli/compare/v0.9.5...v0.10.0) (2026-06-30)
 
 ### Features
