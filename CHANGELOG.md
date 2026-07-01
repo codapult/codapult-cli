@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.3](https://github.com/codapult/codapult-cli/compare/v0.10.2...v0.10.3) (2026-07-01)
+
+### Bug Fixes
+
+* emty lines ([175831a](https://github.com/codapult/codapult-cli/commit/175831a8db2671ef4b740700a36b193f4303f124))
+
 ## [0.10.2](https://github.com/codapult/codapult-cli/compare/v0.10.1...v0.10.2) (2026-07-01)
 
 ### Bug Fixes
