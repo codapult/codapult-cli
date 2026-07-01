@@ -13,10 +13,12 @@ async function selectPrompt<T extends string>(
   iface: ReturnType<typeof createInterface>,
   question: string,
   options: T[],
+  lastEmptyLine = false,
 ): Promise<T> {
   console.log(`\n  ${question}`);
   options.forEach((opt, i) => console.log(`    ${i + 1}. ${opt}`));
   const answer = await ask(iface, 'Choose', '1');
+  if (lastEmptyLine) console.log();
   const idx = parseInt(answer, 10) - 1;
   return options[Math.max(0, Math.min(idx, options.length - 1))];
 }
@@ -714,12 +716,14 @@ async function interactiveSetup(): Promise<ProjectConfig> {
       'Storage provider:',
       ['local', 's3'],
     ),
-    jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(iface, 'Background jobs:', [
-      'memory',
-      'bullmq',
-    ]),
+    jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(
+      iface,
+      'Background jobs:',
+      ['memory', 'bullmq'],
+      true,
+    ),
     enableAuth: authEnabled,
-    enableAI: await confirm(iface, '\nEnable AI Chat module?'),
+    enableAI: await confirm(iface, 'Enable AI Chat module?'),
     enableBlog: await confirm(iface, 'Enable Blog module?'),
     enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
