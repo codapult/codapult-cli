@@ -13,14 +13,17 @@ async function selectPrompt<T extends string>(
   iface: ReturnType<typeof createInterface>,
   question: string,
   options: T[],
-  lastEmptyLine = false,
 ): Promise<T> {
   console.log(`\n  ${question}`);
   options.forEach((opt, i) => console.log(`    ${i + 1}. ${opt}`));
   const answer = await ask(iface, 'Choose', '1');
-  if (lastEmptyLine) console.log();
   const idx = parseInt(answer, 10) - 1;
   return options[Math.max(0, Math.min(idx, options.length - 1))];
+}
+
+function line(): boolean {
+  console.log();
+  return true;
 }
 
 interface ProjectConfig {
@@ -716,14 +719,12 @@ async function interactiveSetup(): Promise<ProjectConfig> {
       'Storage provider:',
       ['local', 's3'],
     ),
-    jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(
-      iface,
-      'Background jobs:',
-      ['memory', 'bullmq'],
-      true,
-    ),
+    jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(iface, 'Background jobs:', [
+      'memory',
+      'bullmq',
+    ]),
     enableAuth: authEnabled,
-    enableAI: await confirm(iface, 'Enable AI Chat module?'),
+    enableAI: line() && (await confirm(iface, 'Enable AI Chat module?')),
     enableBlog: await confirm(iface, 'Enable Blog module?'),
     enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
@@ -751,7 +752,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableTwoFactor:
       authEnabled && (await confirm(iface, 'Enable two-factor authentication (TOTP)?')),
     enablePlugins: await confirm(iface, 'Enable plugin marketplace (/plugins)?'),
-    removeUnusedCode: await confirm(iface, '\nRemove unused module code?', false),
+    removeUnusedCode: line() && (await confirm(iface, 'Remove unused module code?', false)),
   };
 
   iface.close();
