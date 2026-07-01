@@ -7,40 +7,13 @@ import {
   ENV_FILE_NAME,
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
-import { heading, success, fail, info, dim } from '../utils/ui.js';
+import { heading, success, fail, info, dim, ask, confirm } from '../utils/ui.js';
 
-const rl = (): ReturnType<typeof createInterface> =>
-  createInterface({ input: process.stdin, output: process.stdout });
-
-function ask(
-  iface: ReturnType<typeof rl>,
+async function selectPrompt<T extends string>(
+  iface: ReturnType<typeof createInterface>,
   question: string,
-  defaultValue?: string,
-): Promise<string> {
-  const suffix = defaultValue ? ` (${defaultValue})` : '';
-  return new Promise((res) => {
-    iface.question(`  ${question}${suffix}: `, (answer) => {
-      res(answer.trim() || defaultValue || '');
-    });
-  });
-}
-
-async function confirmPrompt(
-  iface: ReturnType<typeof rl>,
-  question: string,
-  defaultYes = true,
-): Promise<boolean> {
-  const hint = defaultYes ? 'Y/n' : 'y/N';
-  const answer = await ask(iface, `${question} [${hint}]`);
-  if (!answer) return defaultYes;
-  return answer.toLowerCase().startsWith('y');
-}
-
-async function selectPrompt(
-  iface: ReturnType<typeof rl>,
-  question: string,
-  options: string[],
-): Promise<string> {
+  options: T[],
+): Promise<T> {
   console.log(`\n  ${question}`);
   options.forEach((opt, i) => console.log(`    ${i + 1}. ${opt}`));
   const answer = await ask(iface, 'Choose', '1');
@@ -711,73 +684,70 @@ function removeModules(root: string, config: ProjectConfig): void {
 }
 
 async function interactiveSetup(): Promise<ProjectConfig> {
-  const iface = rl();
+  const iface = createInterface({ input: process.stdin, output: process.stdout });
 
   heading('Codapult Setup');
   info('This wizard will configure your project.\n');
 
-  const authProvider = (await selectPrompt(iface, 'Auth provider:', [
+  const appName = await ask(iface, 'App name', 'Codapult');
+  const appUrl = await ask(iface, 'App URL', 'http://localhost:3000');
+
+  const authProvider = await selectPrompt<ProjectConfig['authProvider']>(iface, 'Auth provider:', [
     'better-auth',
     'kinde',
     'none',
-  ])) as ProjectConfig['authProvider'];
+  ]);
 
   const authEnabled = authProvider !== 'none';
 
   const config: ProjectConfig = {
-    appName: await ask(iface, 'App name', 'Codapult'),
-    appUrl: await ask(iface, 'App URL', 'http://localhost:3000'),
+    appName,
+    appUrl,
     authProvider,
-    paymentProvider: (await selectPrompt(iface, 'Payment provider:', [
-      'stripe',
-      'lemonsqueezy',
-    ])) as ProjectConfig['paymentProvider'],
-    storageProvider: (await selectPrompt(iface, 'Storage provider:', [
-      'local',
-      's3',
-    ])) as ProjectConfig['storageProvider'],
-    jobProvider: (await selectPrompt(iface, 'Background jobs:', [
+    paymentProvider: await selectPrompt<ProjectConfig['paymentProvider']>(
+      iface,
+      'Payment provider:',
+      ['stripe', 'lemonsqueezy'],
+    ),
+    storageProvider: await selectPrompt<ProjectConfig['storageProvider']>(
+      iface,
+      'Storage provider:',
+      ['local', 's3'],
+    ),
+    jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(iface, 'Background jobs:', [
       'memory',
       'bullmq',
-    ])) as ProjectConfig['jobProvider'],
+    ]),
     enableAuth: authEnabled,
-    enableAI: await confirmPrompt(iface, 'Enable AI Chat module?'),
-    enableBlog: await confirmPrompt(iface, 'Enable Blog module?'),
-    enableTeams: authEnabled && (await confirmPrompt(iface, 'Enable Teams/Organizations?')),
-    enableWaitlist: await confirmPrompt(iface, 'Enable Waitlist page?'),
-    enableGraphQL: await confirmPrompt(iface, 'Enable GraphQL API layer?'),
-    enableSSO: authEnabled && (await confirmPrompt(iface, 'Enable Enterprise SSO (SAML)?')),
-    enableApiDocs: await confirmPrompt(iface, 'Enable interactive API docs?'),
-    enableHelpCenter: await confirmPrompt(iface, 'Enable Documentation module?'),
-    enableExperiments: await confirmPrompt(iface, 'Enable A/B Testing?'),
-    enableFeatureRequests: await confirmPrompt(iface, 'Enable Feature Request board?'),
-    enableCompare: await confirmPrompt(
-      iface,
-      'Enable competitor comparison pages (/compare)?',
-      false,
-    ),
-    enableConnect:
-      authEnabled && (await confirmPrompt(iface, 'Enable Stripe Connect (marketplace)?')),
-    enableEventStore: await confirmPrompt(iface, 'Enable Event Store (event sourcing)?'),
-    enableOtel: await confirmPrompt(iface, 'Enable OpenTelemetry tracing?'),
-    enableDripCampaigns: await confirmPrompt(iface, 'Enable email drip campaigns?'),
-    enableOnboarding:
-      authEnabled && (await confirmPrompt(iface, 'Enable in-app onboarding tours?')),
-    enableWorkflows: authEnabled && (await confirmPrompt(iface, 'Enable workflow automation?')),
-    enableReferrals: authEnabled && (await confirmPrompt(iface, 'Enable referral program?')),
-    enableAnalytics: await confirmPrompt(iface, 'Enable built-in analytics?'),
-    enableChangelog: await confirmPrompt(iface, 'Enable Changelog page?'),
-    enableRAG: await confirmPrompt(iface, 'Enable RAG pipeline (vector search)?'),
-    enableWebhooks: authEnabled && (await confirmPrompt(iface, 'Enable outgoing webhooks?')),
-    enableAuditLog:
-      authEnabled && (await confirmPrompt(iface, 'Enable audit log / activity feed?')),
-    enableReports: authEnabled && (await confirmPrompt(iface, 'Enable scheduled email reports?')),
-    enableBranding:
-      authEnabled && (await confirmPrompt(iface, 'Enable per-org branding (white-label)?')),
+    enableAI: await confirm(iface, '\nEnable AI Chat module?'),
+    enableBlog: await confirm(iface, 'Enable Blog module?'),
+    enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
+    enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
+    enableGraphQL: await confirm(iface, 'Enable GraphQL API layer?'),
+    enableSSO: authEnabled && (await confirm(iface, 'Enable Enterprise SSO (SAML)?')),
+    enableApiDocs: await confirm(iface, 'Enable interactive API docs?'),
+    enableHelpCenter: await confirm(iface, 'Enable Documentation module?'),
+    enableExperiments: await confirm(iface, 'Enable A/B Testing?'),
+    enableFeatureRequests: await confirm(iface, 'Enable Feature Request board?'),
+    enableCompare: await confirm(iface, 'Enable competitor comparison pages (/compare)?', false),
+    enableConnect: authEnabled && (await confirm(iface, 'Enable Stripe Connect (marketplace)?')),
+    enableEventStore: await confirm(iface, 'Enable Event Store (event sourcing)?'),
+    enableOtel: await confirm(iface, 'Enable OpenTelemetry tracing?'),
+    enableDripCampaigns: await confirm(iface, 'Enable email drip campaigns?'),
+    enableOnboarding: authEnabled && (await confirm(iface, 'Enable in-app onboarding tours?')),
+    enableWorkflows: authEnabled && (await confirm(iface, 'Enable workflow automation?')),
+    enableReferrals: authEnabled && (await confirm(iface, 'Enable referral program?')),
+    enableAnalytics: await confirm(iface, 'Enable built-in analytics?'),
+    enableChangelog: await confirm(iface, 'Enable Changelog page?'),
+    enableRAG: await confirm(iface, 'Enable RAG pipeline (vector search)?'),
+    enableWebhooks: authEnabled && (await confirm(iface, 'Enable outgoing webhooks?')),
+    enableAuditLog: authEnabled && (await confirm(iface, 'Enable audit log / activity feed?')),
+    enableReports: authEnabled && (await confirm(iface, 'Enable scheduled email reports?')),
+    enableBranding: authEnabled && (await confirm(iface, 'Enable per-org branding (white-label)?')),
     enableTwoFactor:
-      authEnabled && (await confirmPrompt(iface, 'Enable two-factor authentication (TOTP)?')),
-    enablePlugins: await confirmPrompt(iface, 'Enable plugin marketplace (/plugins)?'),
-    removeUnusedCode: await confirmPrompt(iface, 'Remove unused module code?', false),
+      authEnabled && (await confirm(iface, 'Enable two-factor authentication (TOTP)?')),
+    enablePlugins: await confirm(iface, 'Enable plugin marketplace (/plugins)?'),
+    removeUnusedCode: await confirm(iface, '\nRemove unused module code?', false),
   };
 
   iface.close();

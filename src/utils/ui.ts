@@ -51,22 +51,47 @@ export function table(rows: [string, string, string?][]): void {
   }
 }
 
+export function ask(
+  iface: ReturnType<typeof createInterface>,
+  question: string,
+  defaultValue?: string,
+): Promise<string> {
+  const suffix = defaultValue ? ` (${defaultValue})` : '';
+  return new Promise((res) => {
+    iface.question(`  ${question}${suffix}: `, (answer) => {
+      res(answer.trim() || defaultValue || '');
+    });
+  });
+}
+
+export function confirm(question: string, defaultYes?: boolean): Promise<boolean>;
+
+export function confirm(
+  iface: ReturnType<typeof createInterface>,
+  question: string,
+  defaultYes?: boolean,
+): Promise<boolean>;
+
 /** Prompt yes/no. Returns default when stdin is not a TTY (piped / CI). */
-export function confirm(question: string, defaultYes = true): Promise<boolean> {
+export async function confirm(
+  ifaceOrQuestion: ReturnType<typeof createInterface> | string,
+  questionOrDefault: string | boolean | undefined,
+  defaultYes_?: boolean,
+): Promise<boolean> {
+  const defaultYes =
+    (typeof questionOrDefault !== 'string' ? questionOrDefault : defaultYes_) ?? true;
+
   if (!process.stdin.isTTY) {
     return Promise.resolve(defaultYes);
   }
 
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const [rl, question, closeRl] =
+    typeof ifaceOrQuestion === 'string'
+      ? [createInterface({ input: process.stdin, output: process.stdout }), ifaceOrQuestion, true]
+      : [ifaceOrQuestion, String(questionOrDefault), false];
+
   const hint = defaultYes ? 'Y/n' : 'y/N';
-  return new Promise((resolve) => {
-    rl.question(`  ${question} [${hint}]: `, (answer) => {
-      rl.close();
-      if (!answer.trim()) {
-        resolve(defaultYes);
-        return;
-      }
-      resolve(answer.trim().toLowerCase().startsWith('y'));
-    });
-  });
+  const answer = await ask(rl, `${question} [${hint}]`);
+  if (closeRl) rl.close();
+  return !answer ? defaultYes : answer.toLowerCase().startsWith('y');
 }
