@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.2](https://github.com/codapult/codapult-cli/compare/v0.10.1...v0.10.2) (2026-07-01)
+
+### Bug Fixes
+
+* output line formating ([90d0a5f](https://github.com/codapult/codapult-cli/commit/90d0a5f4c0a25b37e27f06e1d836a2f4b7ba50a9))
+
 ## [0.10.1](https://github.com/codapult/codapult-cli/compare/v0.10.0...v0.10.1) (2026-07-01)
 
 ## [0.10.0](https://github.com/codapult/codapult-cli/compare/v0.9.5...v0.10.0) (2026-06-30)
