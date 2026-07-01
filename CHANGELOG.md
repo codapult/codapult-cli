@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.0](https://github.com/codapult/codapult-cli/compare/v0.10.3...v0.11.0) (2026-07-01)
+
+### Features
+
+* add total removed info ([5292dc8](https://github.com/codapult/codapult-cli/commit/5292dc83e4a4d537eb2a388fd09e74e29e26aa81))
+
 ## [0.10.3](https://github.com/codapult/codapult-cli/compare/v0.10.2...v0.10.3) (2026-07-01)
 
 ### Bug Fixes
