@@ -662,6 +662,8 @@ function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
 }
 
 function removeModules(root: string, config: ProjectConfig): void {
+  let totalRemoved = 0;
+
   for (const removal of MODULE_REMOVALS) {
     if (config[removal.key]) continue;
 
@@ -678,6 +680,7 @@ function removeModules(root: string, config: ProjectConfig): void {
         missing.push(p);
       }
     }
+    totalRemoved += removed;
     // Surface stale paths so removals don't silently no-op when the host
     // project's file layout changes (e.g. moving routes under [locale]).
     if (removed === 0 && missing.length > 0) {
@@ -686,6 +689,10 @@ function removeModules(root: string, config: ProjectConfig): void {
   }
 
   pruneMarkedBlocksInFiles(root, config);
+
+  if (totalRemoved > 0) {
+    dim(`Total removed: ${totalRemoved}`);
+  }
 }
 
 async function interactiveSetup(): Promise<ProjectConfig> {
