@@ -21,7 +21,7 @@ async function selectPrompt<T extends string>(
   return options[Math.max(0, Math.min(idx, options.length - 1))];
 }
 
-function line(): boolean {
+function emptyLine(): boolean {
   console.log();
   return true;
 }
@@ -543,6 +543,7 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
 };
 
 // codapult:prune:start {key}
+// codapult:prune:replace
 // codapult:prune:end {key}
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
@@ -638,20 +639,69 @@ function pruneMarkedBlocks(
   content: string,
   disabledKeys: readonly (keyof ProjectConfig)[],
 ): string {
-  let next = content;
+  const keySet = new Set(disabledKeys.map(String));
+  const lines = content.split('\n');
+  const out: string[] = [];
 
-  for (const key of disabledKeys) {
-    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = new RegExp(
-      `^[ \\t]*\\/\\/\\s*codapult:prune:start\\s+${escapedKey}\\s*\\n[\\s\\S]*?^[ \\t]*\\/\\/\\s*codapult:prune:end\\s+${escapedKey}[ \\t]*\\n?`,
-      'gm',
-    );
+  const startRe = /^[ \t]*\/\/\s*codapult:prune:start\s+(\S+)\s*$/;
+  const replaceRe = /^[ \t]*\/\/\s*codapult:prune:replace\s*$/;
+  const endRe = /^[ \t]*\/\/\s*codapult:prune:end\s+(\S+)[ \t]*$/;
+  const commentRe = /^([ \t]*)\/\/ ?(.*)$/;
 
-    next = next.replace(pattern, '');
+  // Ищет ближайший terminator (replace или end с нужным key) начиная с индекса i.
+  // Бросает при вложенном start того же формата. Возвращает индекс ПОСЛЕ terminator-строки.
+  const seekTo = (i: number, key: string): { i: number; kind: 'replace' | 'end' } => {
+    for (let j = i; j < lines.length; j += 1) {
+      if (replaceRe.test(lines[j])) return { i: j + 1, kind: 'replace' };
+      const end = endRe.exec(lines[j]);
+      if (end?.[1] === key) return { i: j + 1, kind: 'end' };
+      if (startRe.test(lines[j])) {
+        throw new Error(`Nested "codapult:prune:start" before closing "${key}" (line ${j + 1}).`);
+      }
+    }
+    throw new Error(`Unclosed "codapult:prune:start ${key}" — no matching end found.`);
+  };
+
+  for (let i = 0; i < lines.length; ) {
+    const start = startRe.exec(lines[i]);
+    if (!start || !keySet.has(start[1])) {
+      out.push(lines[i]);
+      i += 1;
+      continue;
+    }
+
+    const key = start[1];
+    const body = seekTo(i + 1, key);
+    if (body.kind === 'end') {
+      i = body.i; // тело отбрасываем целиком
+      continue;
+    }
+
+    // body.kind === 'replace': строки от body.i до end — это закомментированный replacement
+    const replEnd = seekTo(body.i, key);
+    if (replEnd.kind !== 'end') {
+      throw new Error(`Expected "end" after "replace" for key "${key}".`);
+    }
+
+    for (let r = body.i; r < replEnd.i - 1; r++) {
+      const line = lines[r];
+      if (line.trim() === '') {
+        out.push('');
+        continue;
+      }
+      const m = commentRe.exec(line);
+      if (!m) {
+        throw new Error(
+          `Line ${r + 1} in "replace" section for "${key}" is not commented out: ${JSON.stringify(line)}`,
+        );
+      }
+      out.push(m[1] + m[2]);
+    }
+
+    i = replEnd.i;
   }
 
-  return next;
-  // return next.replace(/\n{3,}/g, '\n\n');
+  return out.join('\n');
 }
 
 function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
@@ -747,7 +797,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
       'bullmq',
     ]),
     enableAuth: authEnabled,
-    enableAI: line() && (await confirm(iface, 'Enable AI Chat module?')),
+    enableAI: emptyLine() && (await confirm(iface, 'Enable AI Chat module?')),
     enableBlog: await confirm(iface, 'Enable Blog module?'),
     enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
@@ -775,7 +825,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableTwoFactor:
       authEnabled && (await confirm(iface, 'Enable two-factor authentication (TOTP)?')),
     enablePlugins: await confirm(iface, 'Enable plugin marketplace (/plugins)?'),
-    removeUnusedCode: line() && (await confirm(iface, 'Remove unused module code?', false)),
+    removeUnusedCode: emptyLine() && (await confirm(iface, 'Remove unused module code?', false)),
   };
 
   iface.close();
