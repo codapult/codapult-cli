@@ -231,7 +231,12 @@ const MODULE_REMOVALS: {
   },
   {
     key: 'enableAI',
-    paths: [`${APP}/(dashboard)/dashboard/ai-chat`, 'src/app/api/chat', 'src/components/ai'],
+    paths: [
+      `${APP}/(dashboard)/dashboard/ai-chat`,
+      'src/app/api/chat',
+      'src/components/ai',
+      'src/lib/ai',
+    ],
     label: 'AI Chat',
   },
   {
@@ -245,7 +250,9 @@ const MODULE_REMOVALS: {
       'src/lib/rss.test.ts',
       'content/blog',
       'src/app/rss.xml',
-      'src/app/[locale]/rss.xml',
+      'src/app/(marketing)/rss.xml',
+      `${APP}/(marketing)/rss.xml`,
+      `${APP}/rss.xml`,
     ],
     label: 'Blog',
   },
@@ -311,6 +318,7 @@ const MODULE_REMOVALS: {
       `${APP}/(marketing)/docs`,
       'src/lib/docs',
       'src/components/docs/HelpDocSearch.tsx',
+      'src/components/seo/DocArticleJsonLd.tsx',
       'content/docs',
     ],
     label: 'Documentation',
@@ -358,6 +366,7 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(dashboard)/dashboard/connect`,
       'src/lib/payments/connect.ts',
+      'src/lib/payments/connect.test.ts',
       'src/app/api/connect',
       'src/components/dashboard/ConnectDashboard.tsx',
     ],
@@ -424,6 +433,7 @@ const MODULE_REMOVALS: {
     key: 'enableRAG',
     paths: [
       'src/lib/ai/chunker.ts',
+      'src/lib/ai/chunker.test.ts',
       'src/lib/ai/embeddings.ts',
       'src/lib/ai/vector-store.ts',
       'src/lib/ai/rag.ts',
@@ -489,11 +499,11 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(marketing)/plugins`,
       `${APP}/(dashboard)/dashboard/plugins`,
-      'src/app/api/plugins',
-      'src/lib/plugins',
+      'src/lib/plugins/marketplace.ts',
       'src/components/marketing/PluginsShowcase.tsx',
       'src/components/marketing/PluginDetail.tsx',
       'src/components/dashboard/PluginMarketplace.tsx',
+      'plugins/example-analytics',
     ],
     label: 'Plugin Marketplace',
   },
@@ -537,10 +547,16 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
   'src/app/sitemap.test.ts',
+  'src/app/(marketing)/llms.txt/route.ts',
+  'src/components/marketing/Footer.tsx',
   'src/lib/auth/index.ts',
   'src/lib/auth/client-adapter.ts',
   'src/lib/jobs/definitions.ts',
+  'src/lib/actions/admin.ts',
+  'src/lib/actions/impersonation.ts',
+  'src/lib/scheduled-reports/index.ts',
   'src/config/marketing.test.ts',
+  'src/config/app.ts',
   'src/instrumentation.ts',
 ] as const;
 
