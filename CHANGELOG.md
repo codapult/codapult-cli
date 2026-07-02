@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.0](https://github.com/codapult/codapult-cli/compare/v0.11.0...v0.12.0) (2026-07-02)
+
+### Features
+
+* add replace block on pruning ([a5ac8fd](https://github.com/codapult/codapult-cli/commit/a5ac8fd67c3956d757ac9ef6a63d136b5e3ede39))
+
+### Bug Fixes
+
+* improve removing and pruning modules ([e60f9d0](https://github.com/codapult/codapult-cli/commit/e60f9d05438a039d947cd097a3db165f6976203e))
+
 ## [0.11.0](https://github.com/codapult/codapult-cli/compare/v0.10.3...v0.11.0) (2026-07-01)
 
 ### Features
