@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.1](https://github.com/codapult/codapult-cli/compare/v0.12.0...v0.12.1) (2026-07-03)
+
+### Bug Fixes
+
+* update configuration references from src/config/app.ts to src/lib/config.ts ([71b0f4a](https://github.com/codapult/codapult-cli/commit/71b0f4a4add895ace17cb3dd103507ee55605321))
+
 ## [0.12.0](https://github.com/codapult/codapult-cli/compare/v0.11.0...v0.12.0) (2026-07-02)
 
 ### Features
