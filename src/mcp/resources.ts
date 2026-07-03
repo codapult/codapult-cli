@@ -29,7 +29,7 @@ export function registerResources(server: McpServer): void {
     'codapult://config/app',
     {
       title: 'App Configuration',
-      description: `Application config (src/config/app.ts) — brand, AI, payments, company. Feature toggles and auth methods live in the project env source (${ENV_FILE_NAME} or process.env) and can be inspected via codapult://env-example or codapult_project_status.`,
+      description: `Application config (src/config/app.ts) — brand, AI, company. Feature toggles and auth methods live in the project env source (${ENV_FILE_NAME} or process.env) and can be inspected via codapult://env-example or codapult_project_status.`,
       mimeType: 'text/plain',
     },
     () => {
