@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.0](https://github.com/codapult/codapult-cli/compare/v0.12.1...v0.13.0) (2026-07-04)
+
+### Features
+
+* add mcp resource for env config ([4383e7b](https://github.com/codapult/codapult-cli/commit/4383e7bc99d465118cc422b59d6bedd0aa6ba70f))
+
 ## [0.12.1](https://github.com/codapult/codapult-cli/compare/v0.12.0...v0.12.1) (2026-07-03)
 
 ### Bug Fixes
