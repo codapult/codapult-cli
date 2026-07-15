@@ -50,7 +50,7 @@ function isWithinAllowedScope(dir: string, projectRoot: string): boolean {
 export function resolveManifest(
   projectRoot: string,
   nameOrPath: string,
-): { manifest: PluginManifest; pluginDir: string } | null {
+): { manifest: PluginManifest; pluginDir: string } | undefined {
   const candidates: string[] = [];
 
   // 1. Absolute / relative path — only accept if it resolves within allowed scope
@@ -95,5 +95,5 @@ export function resolveManifest(
     }
   }
 
-  return null;
+  return undefined;
 }

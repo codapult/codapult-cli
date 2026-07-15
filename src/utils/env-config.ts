@@ -155,7 +155,7 @@ export interface EnvIssue {
 export function findProviderIssues(envContent: string): EnvIssue[] {
   const issues: EnvIssue[] = [];
   const adapters = getAdapters(envContent);
-  const has = (k: string): boolean => readEnvVar(envContent, k) !== undefined;
+  const has = (k: string): boolean => readEnvVar(envContent, k) != null;
 
   if (adapters.database === 'turso') {
     if (!has('TURSO_DATABASE_URL')) {

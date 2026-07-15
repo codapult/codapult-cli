@@ -81,16 +81,16 @@ export function patchSchemaImports(
   writeFileSync(schemaPath, content, 'utf-8');
 }
 
-function extractMarkedBlock(content: string, name: string): string | null {
+function extractMarkedBlock(content: string, name: string): string | undefined {
   const start = MARKER_START(name);
   const end = MARKER_END(name);
   const startIdx = content.indexOf(start);
   const endIdx = content.indexOf(end);
-  if (startIdx === -1 || endIdx === -1) return null;
+  if (startIdx === -1 || endIdx === -1) return undefined;
   return content.slice(startIdx + start.length, endIdx);
 }
 
-function readPluginTables(pluginDir: string, tablesFile: string): string | null {
+function readPluginTables(pluginDir: string, tablesFile: string): string | undefined {
   const resolvedPlugin = resolve(pluginDir);
   const tablesPath = resolve(pluginDir, tablesFile);
 
@@ -99,7 +99,7 @@ function readPluginTables(pluginDir: string, tablesFile: string): string | null 
     throw new Error(`Path traversal detected: "${tablesFile}" resolves outside plugin directory`);
   }
 
-  if (!existsSync(tablesPath)) return null;
+  if (!existsSync(tablesPath)) return undefined;
 
   let tables = readFileSync(tablesPath, 'utf-8');
   // Strip import lines — host schema already has them
@@ -135,7 +135,7 @@ export function patchSchemaTables(
   if (action === 'update') {
     if (!hasMarker(content, pluginName)) return false;
     const oldBlock = extractMarkedBlock(content, pluginName);
-    if (oldBlock !== null && oldBlock.trim() === tables) return false;
+    if (oldBlock?.trim() === tables) return false;
     content = removeMarkedBlock(content, pluginName);
   }
 
@@ -397,9 +397,9 @@ interface StubInfo {
   exportFrom: string;
 }
 
-function parseStub(content: string): StubInfo | null {
+function parseStub(content: string): StubInfo | undefined {
   const match = STUB_RE.exec(content.trim());
-  if (!match) return null;
+  if (!match) return undefined;
   return { exportFrom: match[1] };
 }
 
@@ -488,7 +488,7 @@ function collectConflictsForEntry(
     }
 
     const stub = parseStub(content);
-    const isStub = stub !== null;
+    const isStub = stub != null;
     const isOwnStub = isStub && (content === expectedStub || stub.exportFrom === exportFrom);
     const isExactPath = ext === targetExt;
 

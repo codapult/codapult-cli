@@ -18,11 +18,11 @@ function checkExists(root: string, path: string, description: string): boolean {
   return exists;
 }
 
-function tryExec(cmd: string, cwd: string): string | null {
+function tryExec(cmd: string, cwd: string): string | undefined {
   try {
     return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
-    return null;
+    return undefined;
   }
 }
 
@@ -133,7 +133,7 @@ export function doctorCommand(options: ProjectEnvOptions = {}): void {
   // --- TypeScript ---
   info('TypeScript');
   const tscResult = tryExec('npx tsc --noEmit 2>&1 | tail -1', root);
-  if (tscResult === null || tscResult.includes('error')) {
+  if (tscResult == null || tscResult.includes('error')) {
     warn('TypeScript has errors — run: pnpm type-check');
     warnings += 1;
   } else {
@@ -197,7 +197,7 @@ export function doctorCommand(options: ProjectEnvOptions = {}): void {
   const gitStatus = tryExec('git status --porcelain', root);
   if (gitStatus === '') {
     success('Working tree clean');
-  } else if (gitStatus !== null) {
+  } else if (gitStatus != null) {
     const lines = gitStatus.split('\n').filter(Boolean);
     warn(`${lines.length} uncommitted change(s)`);
   }

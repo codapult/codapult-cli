@@ -27,7 +27,7 @@ function parseSchema(content: string): TableInfo[] {
     /export\s+const\s+(\w+)\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]\s*,\s*\{/g;
 
   let match;
-  while ((match = tableRegex.exec(content)) !== null) {
+  while ((match = tableRegex.exec(content)) != null) {
     const tableName = match[2];
 
     const startIdx = match.index + match[0].length;
@@ -45,7 +45,7 @@ function parseSchema(content: string): TableInfo[] {
     const colRegex =
       /(\w+)\s*:\s*(text|integer|real|blob|boolean|timestamp|serial)\(['"](\w+)['"]/g;
     let colMatch;
-    while ((colMatch = colRegex.exec(body)) !== null) {
+    while ((colMatch = colRegex.exec(body)) != null) {
       const colName = colMatch[1];
       const colType = colMatch[2];
       const constraints: string[] = [];

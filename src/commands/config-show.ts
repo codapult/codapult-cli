@@ -12,24 +12,24 @@ import {
 import { heading, success, fail, info, dim, label } from '../utils/ui.js';
 
 /** Extracts a quoted string from a TS object literal: `field: 'value'` or `field: "value"`. */
-function extractTsObjectField(content: string, field: string): string | null {
+function extractTsObjectField(content: string, field: string): string | undefined {
   const regex = new RegExp(`\\b${field}\\s*:\\s*['"\`]([^'"\`]+)['"\`]`);
   const match = regex.exec(content);
-  return match?.[1] ?? null;
+  return match?.[1] ?? undefined;
 }
 
 /** Extracts a numeric literal: `field: 123` or `field: 0.5`. */
-function extractTsNumericField(content: string, field: string): string | null {
+function extractTsNumericField(content: string, field: string): string | undefined {
   const regex = new RegExp(`\\b${field}\\s*:\\s*([\\d.]+)`);
   const match = regex.exec(content);
-  return match?.[1] ?? null;
+  return match?.[1] ?? undefined;
 }
 
 /** Extracts a boolean literal: `field: true|false`. */
-function extractTsBoolField(content: string, field: string): boolean | null {
+function extractTsBoolField(content: string, field: string): boolean | undefined {
   const regex = new RegExp(`\\b${field}\\s*:\\s*(true|false)`);
   const match = regex.exec(content);
-  return match ? match[1] === 'true' : null;
+  return match ? match[1] === 'true' : undefined;
 }
 
 export function configShowCommand(options: ProjectEnvOptions = {}): void {
@@ -82,7 +82,7 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
     const ragMaxChunks = extractTsNumericField(content, 'ragMaxChunks');
     const ragMinScore = extractTsNumericField(content, 'ragMinScore');
     if (defaultModel) label('  Default model', defaultModel);
-    if (ragEnabled !== null) label('  RAG', ragEnabled ? 'enabled' : 'disabled');
+    if (ragEnabled != null) label('  RAG', ragEnabled ? 'enabled' : 'disabled');
     if (ragMaxChunks) label('  RAG max chunks', ragMaxChunks);
     if (ragMinScore) label('  RAG min score', ragMinScore);
   } else {

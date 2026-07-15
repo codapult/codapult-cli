@@ -31,7 +31,7 @@ export function getProjectEnvOptions(envSource?: ProjectEnvSource): ProjectEnvOp
 
 function serializeProcessEnv(env: NodeJS.ProcessEnv): string {
   return Object.entries(env)
-    .filter(([, value]) => value !== undefined)
+    .filter(([, value]) => value != null)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
 }
