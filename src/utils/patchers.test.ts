@@ -460,9 +460,10 @@ describe('patchPages', () => {
 
   it('backs up a user-written page at a different extension before writing the stub', () => {
     const pages = {
-      'src/app/[locale]/(marketing)/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+      'src/app/[locale]/(public)/(marketing)/welcome/page.ts':
+        '@codapult/plugin-onboarding/pages/welcome',
     };
-    const userTsx = '/project/src/app/[locale]/(marketing)/welcome/page.tsx';
+    const userTsx = '/project/src/app/[locale]/(public)/(marketing)/welcome/page.tsx';
 
     // Only the .tsx sibling exists on disk; no backup file yet.
     mockedExists.mockImplementation((p) => (p as string) === userTsx);

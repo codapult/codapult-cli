@@ -204,10 +204,10 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAuth',
     paths: [
-      `${APP}/(auth)`,
-      `${APP}/(dashboard)`,
-      `${APP}/admin`,
-      `${APP}/invite`,
+      `${APP}/(public)/(auth)`,
+      `${APP}/(public)/invite`,
+      `${APP}/(protected)/(dashboard)`,
+      `${APP}/(protected)/(admin)`,
       'src/app/api/auth',
       'src/lib/auth/better-auth.ts',
       'src/lib/auth/better-auth.test.ts',
@@ -231,7 +231,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAI',
     paths: [
-      `${APP}/(dashboard)/dashboard/ai-chat`,
+      `${APP}/(protected)/(dashboard)/dashboard/ai-chat`,
       'src/app/api/chat',
       'src/components/ai',
       'src/lib/ai',
@@ -241,16 +241,15 @@ const MODULE_REMOVALS: {
   {
     key: 'enableBlog',
     paths: [
-      `${APP}/(marketing)/blog`,
+      `${APP}/(public)/(marketing)/blog`,
       'src/components/blog',
       'src/components/seo/BlogPostJsonLd.tsx',
       'src/lib/blog',
+      'content/blog',
       'src/lib/rss.ts',
       'src/lib/rss.test.ts',
-      'content/blog',
-      'src/app/rss.xml',
       'src/app/(marketing)/rss.xml',
-      `${APP}/(marketing)/rss.xml`,
+      `${APP}/(public)/(marketing)/rss.xml`,
       `${APP}/rss.xml`,
     ],
     label: 'Blog',
@@ -258,8 +257,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableTeams',
     paths: [
-      `${APP}/(dashboard)/dashboard/teams`,
-      `${APP}/invite`,
+      `${APP}/(protected)/(dashboard)/dashboard/teams`,
+      `${APP}/(public)/invite`,
       'src/components/dashboard/TeamSwitcher.tsx',
       'src/components/dashboard/TeamSettings.tsx',
       'src/components/dashboard/AcceptInvitationButton.tsx',
@@ -277,8 +276,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableWaitlist',
     paths: [
-      `${APP}/(marketing)/waitlist`,
-      `${APP}/admin/waitlist`,
+      `${APP}/(public)/(marketing)/waitlist`,
+      `${APP}/(protected)/(admin)/admin/waitlist`,
       'src/components/marketing/WaitlistForm.tsx',
       'src/lib/actions/waitlist.ts',
     ],
@@ -292,7 +291,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableSSO',
     paths: [
-      `${APP}/admin/sso`,
+      `${APP}/(protected)/(admin)/admin/sso`,
       'src/lib/sso',
       'src/app/api/auth/sso',
       'src/app/api/admin/sso',
@@ -303,7 +302,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableApiDocs',
     paths: [
-      `${APP}/(marketing)/docs/api`,
+      `${APP}/(public)/(marketing)/docs/api`,
       'src/lib/api-docs.ts',
       'src/lib/openapi.ts',
       'src/app/api/openapi',
@@ -314,7 +313,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableHelpCenter',
     paths: [
-      `${APP}/(marketing)/docs`,
+      `${APP}/(public)/(marketing)/docs`,
       'src/lib/docs',
       'src/components/docs/HelpDocSearch.tsx',
       'src/components/seo/DocArticleJsonLd.tsx',
@@ -325,7 +324,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableChangelog',
     paths: [
-      `${APP}/(marketing)/changelog`,
+      `${APP}/(public)/(marketing)/changelog`,
       'src/app/api/changelog',
       'src/components/dashboard/ChangelogWidget.tsx',
     ],
@@ -334,7 +333,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableExperiments',
     paths: [
-      `${APP}/admin/experiments`,
+      `${APP}/(protected)/(admin)/admin/experiments`,
       'src/lib/experiments',
       'src/app/api/admin/experiments',
       'src/components/admin/ExperimentManager.tsx',
@@ -344,7 +343,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableFeatureRequests',
     paths: [
-      `${APP}/(marketing)/feature-requests`,
+      `${APP}/(public)/(marketing)/feature-requests`,
       'src/lib/feature-requests',
       'src/app/api/feature-requests',
       'src/components/feature-requests',
@@ -354,7 +353,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableCompare',
     paths: [
-      `${APP}/(marketing)/compare`,
+      `${APP}/(public)/(marketing)/compare`,
       'src/config/competitor-comparison.ts',
       'src/components/marketing/ComparisonTable.tsx',
     ],
@@ -363,7 +362,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableConnect',
     paths: [
-      `${APP}/(dashboard)/dashboard/connect`,
+      `${APP}/(protected)/(dashboard)/dashboard/connect`,
       'src/lib/payments/connect.ts',
       'src/lib/payments/connect.test.ts',
       'src/app/api/connect',
@@ -380,7 +379,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableDripCampaigns',
     paths: [
-      `${APP}/admin/drip-campaigns`,
+      `${APP}/(protected)/(admin)/admin/drip-campaigns`,
       'src/lib/drip-campaigns',
       'src/app/api/admin/drip-campaigns',
       'src/components/admin/DripCampaignManager.tsx',
@@ -390,7 +389,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableOnboarding',
     paths: [
-      `${APP}/(dashboard)/dashboard/onboarding`,
+      `${APP}/(protected)/(dashboard)/dashboard/onboarding`,
       'src/lib/onboarding',
       'src/app/api/onboarding',
       'src/components/dashboard/OnboardingTour.tsx',
@@ -401,7 +400,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableWorkflows',
     paths: [
-      `${APP}/(dashboard)/dashboard/workflows`,
+      `${APP}/(protected)/(dashboard)/dashboard/workflows`,
       'src/lib/workflows',
       'src/app/api/workflows',
       'src/components/dashboard/WorkflowBuilder.tsx',
@@ -411,7 +410,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableReferrals',
     paths: [
-      `${APP}/(dashboard)/dashboard/referrals`,
+      `${APP}/(protected)/(dashboard)/dashboard/referrals`,
       'src/lib/referrals',
       'src/app/api/referrals',
       'src/components/dashboard/ReferralDashboard.tsx',
@@ -421,7 +420,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAnalytics',
     paths: [
-      `${APP}/(dashboard)/dashboard/analytics`,
+      `${APP}/(protected)/(dashboard)/dashboard/analytics`,
       'src/lib/analytics',
       'src/app/api/analytics',
       'src/components/dashboard/AnalyticsDashboard.tsx',
@@ -443,8 +442,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableWebhooks',
     paths: [
-      `${APP}/(dashboard)/dashboard/webhooks`,
-      `${APP}/admin/webhooks`,
+      `${APP}/(protected)/(dashboard)/dashboard/webhooks`,
+      `${APP}/(protected)/(admin)/admin/webhooks`,
       'src/app/api/webhooks',
       'src/lib/outgoing-webhooks',
       'src/lib/webhook-log.ts',
@@ -456,8 +455,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAuditLog',
     paths: [
-      `${APP}/(dashboard)/dashboard/audit-log`,
-      `${APP}/admin/activity`,
+      `${APP}/(protected)/(dashboard)/dashboard/audit-log`,
+      `${APP}/(protected)/(admin)/admin/activity`,
       'src/app/api/audit-log',
       'src/lib/activity-log.ts',
       'src/components/dashboard/AuditLog.tsx',
@@ -477,7 +476,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableBranding',
     paths: [
-      `${APP}/(dashboard)/dashboard/branding`,
+      `${APP}/(protected)/(dashboard)/dashboard/branding`,
       'src/app/api/branding',
       'src/lib/branding',
       'src/components/dashboard/BrandingSettings.tsx',
@@ -497,8 +496,8 @@ const MODULE_REMOVALS: {
   {
     key: 'enablePlugins',
     paths: [
-      `${APP}/(marketing)/plugins`,
-      `${APP}/(dashboard)/dashboard/plugins`,
+      `${APP}/(public)/(marketing)/plugins`,
+      `${APP}/(protected)/(dashboard)/dashboard/plugins`,
       'src/lib/plugins/marketplace.ts',
       'src/components/marketing/PluginsShowcase.tsx',
       'src/components/marketing/PluginDetail.tsx',

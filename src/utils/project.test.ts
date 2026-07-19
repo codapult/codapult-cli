@@ -61,7 +61,7 @@ describe('findProjectRoot', () => {
 
     const root = findProjectRoot('/home/user/random');
 
-    expect(root).toBeNull();
+    expect(root).toBeNullable();
   });
 
   it('skips directories with invalid JSON in package.json', () => {
@@ -102,7 +102,7 @@ describe('readJsonFile', () => {
 
     const result = readJsonFile('/some/file.json');
 
-    expect(result).toBeNull();
+    expect(result).toBeNullable();
   });
 
   it('returns null when file does not exist', () => {
@@ -112,7 +112,7 @@ describe('readJsonFile', () => {
 
     const result = readJsonFile('/nonexistent.json');
 
-    expect(result).toBeNull();
+    expect(result).toBeNullable();
   });
 });
 
@@ -153,6 +153,6 @@ describe('readProjectFile', () => {
 
     const result = readProjectFile('/project', 'missing.ts');
 
-    expect(result).toBeNull();
+    expect(result).toBeNullable();
   });
 });

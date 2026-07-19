@@ -74,7 +74,7 @@ describe('resolveManifest', () => {
 
     const result = resolveManifest(ROOT, 'bar');
 
-    expect(result).not.toBeNull();
+    expect(result).not.toBeNullable();
   });
 
   it('returns null when no manifest found', () => {
@@ -82,7 +82,7 @@ describe('resolveManifest', () => {
 
     const result = resolveManifest(ROOT, 'nonexistent');
 
-    expect(result).toBeNull();
+    expect(result).toBeNullable();
   });
 
   it('resolves manifest from .codapult/plugins/ cache directory', () => {
@@ -120,7 +120,7 @@ describe('resolveManifest', () => {
 
     const result = resolveManifest(ROOT, 'broken');
 
-    expect(result).toBeNull();
+    expect(result).toBeNullable();
   });
 
   it('prioritizes direct path over sibling directories', () => {
