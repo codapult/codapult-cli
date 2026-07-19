@@ -170,7 +170,7 @@ describe('registerProjectTools', () => {
       const server = createMockServer();
       registerProjectTools(server as never);
 
-      mockedReadProject.mockReturnValue(null);
+      mockedReadProject.mockReturnValue(undefined);
 
       const handler = server.tools.find((t) => t.name === 'codapult_project_config')!.handler;
       const result = handler({});

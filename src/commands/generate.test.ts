@@ -66,7 +66,7 @@ describe('generatePageCommand', () => {
   });
 
   it('exits when not in a Codapult project', () => {
-    mockedFindRoot.mockReturnValue(null);
+    mockedFindRoot.mockReturnValue(undefined);
 
     expect(() => generatePageCommand('test')).toThrow('process.exit');
     expect(process.exit).toHaveBeenCalledWith(1);

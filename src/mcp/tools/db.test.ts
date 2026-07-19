@@ -93,7 +93,7 @@ export const post = sqliteTable('post', {
       const server = createMockServer();
       registerDbTools(server as never);
 
-      mockedReadProject.mockReturnValue(null);
+      mockedReadProject.mockReturnValue(undefined);
 
       const handler = server.tools.find((t) => t.name === 'codapult_db_get_tables')!.handler;
       const result = handler({});
@@ -166,7 +166,7 @@ export const user = sqliteTable('user', {
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === ENV_FILE_NAME) return envContent;
         if (path === 'src/lib/db/schema.ts') return schema;
-        return null;
+        return undefined;
       });
       mockedExists.mockReturnValue(true);
       mockedReaddir.mockReturnValue(['0001.sql', '0002.sql', 'meta'] as unknown as ReturnType<
@@ -193,7 +193,7 @@ export const user = sqliteTable('user', {
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === ENV_FILE_NAME) return '';
         if (path === 'src/lib/db/schema.ts') return '';
-        return null;
+        return undefined;
       });
       mockedExists.mockReturnValue(false);
 
@@ -211,7 +211,7 @@ export const user = sqliteTable('user', {
       vi.stubEnv('DB_PROVIDER', 'postgres');
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === 'src/lib/db/schema.ts') return '';
-        return null;
+        return undefined;
       });
       mockedExists.mockReturnValue(false);
 

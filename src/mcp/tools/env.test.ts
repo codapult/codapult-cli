@@ -96,7 +96,7 @@ DATABASE_URL=sqlite://local.db
       const server = createMockServer();
       registerEnvTools(server as never);
 
-      mockedReadProject.mockReturnValue(null);
+      mockedReadProject.mockReturnValue(undefined);
 
       const handler = server.tools.find((t) => t.name === 'codapult_env_schema')!.handler;
       const result = handler({});
@@ -117,7 +117,7 @@ DATABASE_URL=sqlite://local.db
       mockedRead.mockReturnValue(envLocal);
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === ENV_EXAMPLE_FILE_NAME) return envExample;
-        return null;
+        return undefined;
       });
 
       const handler = server.tools.find((t) => t.name === 'codapult_env_read')!.handler;
@@ -141,7 +141,7 @@ DATABASE_URL=sqlite://local.db
       mockedReadProject.mockImplementation((_root, path) => {
         if (path === ENV_EXAMPLE_FILE_NAME)
           return `AUTH_PROVIDER=better-auth\nSTRIPE_SECRET_KEY=\nDATABASE_URL=\n`;
-        return null;
+        return undefined;
       });
 
       const handler = server.tools.find((t) => t.name === 'codapult_env_read')!.handler;
@@ -157,7 +157,7 @@ DATABASE_URL=sqlite://local.db
       const server = createMockServer();
       registerEnvTools(server as never);
 
-      mockedReadProject.mockReturnValue(null);
+      mockedReadProject.mockReturnValue(undefined);
 
       const handler = server.tools.find((t) => t.name === 'codapult_env_read')!.handler;
       const result = handler({});

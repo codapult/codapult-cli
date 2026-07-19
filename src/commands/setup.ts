@@ -661,7 +661,7 @@ function pruneMarkedBlocks(
     throw new Error(`Unclosed "codapult:prune:start ${key}" — no matching end found.`);
   };
 
-  for (let i = 0; i < lines.length; ) {
+  for (let i = 0; i < lines.length;) {
     const start = startRe.exec(lines[i]);
     if (!start || !keySet.has(start[1])) {
       out.push(lines[i]);
