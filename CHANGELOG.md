@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.0](https://github.com/codapult/codapult-cli/compare/v0.13.0...v0.14.0) (2026-07-19)
+
+### Features
+
+* update module removal paths and improve null checks in tests ([0e9a80c](https://github.com/codapult/codapult-cli/commit/0e9a80cc8182e720d5491d29d597802b542e20e9))
+
+### Bug Fixes
+
+* replace null with undefined in project-related mocks ([96e3235](https://github.com/codapult/codapult-cli/commit/96e32354d302da8b25c6ae795edb4c14ed3a52f5))
+* update module removals paths ([6f76888](https://github.com/codapult/codapult-cli/commit/6f76888ba2aa4bbfdd2e79ec2e10af3193e644fc))
+
 ## [0.13.0](https://github.com/codapult/codapult-cli/compare/v0.12.1...v0.13.0) (2026-07-04)
 
 ### Features
