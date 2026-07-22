@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.1](https://github.com/codapult/codapult-cli/compare/v0.14.0...v0.14.1) (2026-07-22)
+
+### Bug Fixes
+
+* update module removal paths for branding and custom domain components ([4979827](https://github.com/codapult/codapult-cli/commit/4979827c17385c25c9bf2cf54a61af5efc1702a3))
+
 ## [0.14.0](https://github.com/codapult/codapult-cli/compare/v0.13.0...v0.14.0) (2026-07-19)
 
 ### Features
