@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.2](https://github.com/codapult/codapult-cli/compare/v0.14.1...v0.14.2) (2026-07-25)
+
+### Bug Fixes
+
+* update MODULE_REMOVALS paths ([5ac47ea](https://github.com/codapult/codapult-cli/commit/5ac47eabe007a5d1933a9b2dfaaf07efeeebaca2))
+
 ## [0.14.1](https://github.com/codapult/codapult-cli/compare/v0.14.0...v0.14.1) (2026-07-22)
 
 ### Bug Fixes
