@@ -427,8 +427,8 @@ const MODULE_REMOVALS: {
     paths: [
       'src/lib/ai/chunker.ts',
       'src/lib/ai/chunker.test.ts',
-      'src/lib/ai/embeddings.ts',
-      'src/lib/ai/vector-store.ts',
+      'src/lib/ai/embeddings',
+      'src/lib/ai/vector-store',
       'src/lib/ai/rag.ts',
       'src/app/api/ai',
     ],
