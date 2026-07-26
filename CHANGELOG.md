@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.3](https://github.com/codapult/codapult-cli/compare/v0.14.2...v0.14.3) (2026-07-26)
+
+### Bug Fixes
+
+* update removable paths (enableRAG) ([558b07f](https://github.com/codapult/codapult-cli/commit/558b07f4a6d2eeb0fff2f9b30e1e34db6582e2f1))
+
 ## [0.14.2](https://github.com/codapult/codapult-cli/compare/v0.14.1...v0.14.2) (2026-07-25)
 
 ### Bug Fixes
