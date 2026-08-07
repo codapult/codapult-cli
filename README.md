@@ -4,13 +4,13 @@ CLI tool for managing [Codapult](https://codapult.dev) SaaS projects.
 
 ## Installation
 
-```bash
+```shell
 npm install -g @codapult/cli
 ```
 
 Or run directly with npx:
 
-```bash
+```shell
 npx @codapult/cli <command>
 ```
 
@@ -66,7 +66,7 @@ The CLI includes an MCP (Model Context Protocol) server with 19 tools, 6 resourc
 
 ## Development
 
-```bash
+```shell
 pnpm install
 pnpm dev          # watch mode — rebuild on changes
 pnpm test         # run unit tests
@@ -80,7 +80,7 @@ Releases are managed with [release-it](https://github.com/release-it/release-it)
 
 1. Run the release command on the `main` branch:
 
-```bash
+```shell
 pnpm run release          # interactive — prompts for version bump type
 pnpm run release -- patch # non-interactive patch bump (0.1.0 → 0.1.1)
 pnpm run release -- minor # minor bump (0.1.0 → 0.2.0)
@@ -101,7 +101,7 @@ pnpm run release -- major # major bump (0.1.0 → 1.0.0)
 
 Preview what a release would do without making any changes:
 
-```bash
+```shell
 pnpm run release -- --dry-run
 ```
 
