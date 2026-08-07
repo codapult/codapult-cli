@@ -251,9 +251,9 @@ export function findProviderIssues(envContent: string): EnvIssue[] {
     });
   }
 
-  if (adapters.notifications === 'ws' && !has('NEXT_PUBLIC_WS_URL')) {
+  if (adapters.notifications === 'ws' && !has('NOTIFICATION_WS_URL')) {
     issues.push({
-      key: 'NEXT_PUBLIC_WS_URL',
+      key: 'NOTIFICATION_WS_URL',
       message: 'Required when NOTIFICATION_TRANSPORT="ws"',
       severity: 'error',
     });
