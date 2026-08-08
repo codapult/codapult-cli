@@ -3,7 +3,7 @@
   "version": "0.14.4",
   "description": "Codapult CLI — manage, update, and diagnose your Codapult SaaS project",
   "license": "MIT",
-  "packageManager": "pnpm@11.15.0+sha512.266f8957a30d2be6e9468e5e66bcdedd35a794175f71b067ba8504d686cce1d0c0f429b33c323c3c569ad4891e667574a49ff71d1b89a22cc66f13c65818c578",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "engines": {
     "node": ">=20.19.0"
   },
@@ -43,7 +43,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1",
     "zod": "^4.4.3"
@@ -54,14 +54,14 @@
     "@js-toolkit/prettier-config": "^1.0.1",
     "@js-toolkit/tsconfig": "^1.0.1",
     "@release-it/conventional-changelog": "^11.0.1",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.2.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
-    "prettier": "^3.9.5",
-    "release-it": "^20.2.1",
+    "prettier": "^3.9.6",
+    "release-it": "^21.0.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.64.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10"
   }
 }
