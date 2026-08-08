@@ -1,12 +1,12 @@
 /**
- * Shared, read-only mirror of `src/lib/config.ts` from the host project.
+ * Shared, read-only mirror of `src/config/env.ts` from the host project.
  *
  * Keep this file in sync with the host's `env.features`, `env.auth`,
  * provider enums, and the `superRefine` validation in
- * `codapult/src/lib/config.ts`. The CLI cannot import from the host project,
- * so this module centralises the provider/feature shape that several
- * commands share regardless of whether env values come from `.env.local` or
- * `process.env`.
+ * `codapult/src/config/env.ts` and `codapult/src/config/env-schema.ts`.
+ * The CLI cannot import from the host project, so this module centralises
+ * the provider/feature shape that several commands share regardless of whether
+ * env values come from `.env.local` or `process.env`.
  */
 
 export type DbProvider = 'turso' | 'postgres';
@@ -101,7 +101,7 @@ export function getAdapters(envContent: string): Adapters {
 
 /**
  * Compute the effective set of feature toggles from .env content.
- * Mirrors `env.features` in `codapult/src/lib/config.ts`:
+ * Mirrors `env.features` in `codapult/src/config/env.ts`:
  * - default `true` for every ENABLE_* (unset → enabled);
  * - explicit "false" disables;
  * - `auth` derived from AUTH_PROVIDER !== 'none';

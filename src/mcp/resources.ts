@@ -29,7 +29,7 @@ export function registerResources(server: McpServer): void {
     'codapult://config/app',
     {
       title: 'App Configuration',
-      description: `Application config (src/config/app.ts) — brand, AI, company. Feature toggles and auth methods live in src/lib/config.ts — see codapult://config/env.`,
+      description: `Application config (src/config/app.ts) — brand, AI, company. Feature toggles and auth methods live in src/config/env.ts — see codapult://config/env.`,
       mimeType: 'text/plain',
     },
     () => {
@@ -45,11 +45,11 @@ export function registerResources(server: McpServer): void {
     'codapult://config/env',
     {
       title: 'Environment Configuration',
-      description: `Typed env access (src/lib/config.ts) — feature toggles (env.features), auth methods (env.auth), provider selection (dbProvider, paymentProvider, storageProvider, jobProvider), and checkout resolution. This is the source of truth for which modules are enabled — see also codapult://env-example or codapult_project_status.`,
+      description: `Typed env access (src/config/env.ts) — feature toggles (env.features), auth methods (env.auth), provider selection (dbProvider, paymentProvider, storageProvider, jobProvider), and checkout resolution. This is the source of truth for which modules are enabled — see also codapult://env-example or codapult_project_status.`,
       mimeType: 'text/plain',
     },
     () => {
-      const content = readProjectFile(getRoot(), 'src/lib/config.ts') ?? 'Config file not found';
+      const content = readProjectFile(getRoot(), 'src/config/env.ts') ?? 'Config file not found';
       return {
         contents: [{ uri: 'codapult://config/env', text: content, mimeType: 'text/plain' }],
       };
