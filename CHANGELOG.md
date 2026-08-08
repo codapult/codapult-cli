@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.5](https://github.com/codapult/codapult-cli/compare/v0.14.4...v0.14.5) (2026-08-08)
+
+### Bug Fixes
+
+* sync with main project ([4de4661](https://github.com/codapult/codapult-cli/commit/4de4661e7cdeccde8116a3abf424796e0ab3bc4e))
+
 ## [0.14.4](https://github.com/codapult/codapult-cli/compare/v0.14.3...v0.14.4) (2026-08-07)
 
 ## [0.14.3](https://github.com/codapult/codapult-cli/compare/v0.14.2...v0.14.3) (2026-07-26)
