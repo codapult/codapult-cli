@@ -30,9 +30,10 @@ interface ProjectConfig {
   appName: string;
   appUrl: string;
   authProvider: 'better-auth' | 'kinde' | 'none';
-  paymentProvider: 'stripe' | 'lemonsqueezy';
+  paymentProvider: 'stripe' | 'lemonsqueezy' | 'polar';
+  ssoProvider: 'jackson' | 'none';
   storageProvider: 'local' | 's3';
-  jobProvider: 'memory' | 'bullmq';
+  jobProvider: 'memory' | 'bullmq' | 'none';
   enableAuth: boolean;
   enableAI: boolean;
   enableBlog: boolean;
@@ -72,6 +73,8 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
   // Showcase / marketing-only site.
   marketing: {
     authProvider: 'none',
+    jobProvider: 'none',
+    ssoProvider: 'none',
     enableAuth: false,
     enableAI: false,
     enableTeams: false,
@@ -111,6 +114,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   appName: 'Codapult',
   appUrl: 'http://localhost:3000',
   authProvider: 'better-auth',
+  ssoProvider: 'none',
   paymentProvider: 'stripe',
   storageProvider: 'local',
   jobProvider: 'memory',
@@ -120,7 +124,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableTeams: true,
   enableWaitlist: true,
   enableGraphQL: true,
-  enableSSO: true,
+  enableSSO: false,
   enableApiDocs: true,
   enableHelpCenter: true,
   enableExperiments: true,
@@ -528,7 +532,6 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableReferrals: 'ENABLE_REFERRALS',
   enableAnalytics: 'ENABLE_ANALYTICS',
   enableWorkflows: 'ENABLE_WORKFLOWS',
-  enableSSO: 'ENABLE_SSO',
   enableExperiments: 'ENABLE_EXPERIMENTS',
   enableDripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
   enableOnboarding: 'ENABLE_ONBOARDING',
@@ -774,16 +777,24 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     'none',
   ]);
 
+  const ssoProvider = await selectPrompt<ProjectConfig['ssoProvider']>(
+    iface,
+    'SSO provider (Enterprise SSO (SAML)):',
+    ['jackson', 'none'],
+  );
+
   const authEnabled = authProvider !== 'none';
+  const ssoEnabled = authEnabled && ssoProvider !== 'none';
 
   const config: ProjectConfig = {
     appName,
     appUrl,
     authProvider,
+    ssoProvider,
     paymentProvider: await selectPrompt<ProjectConfig['paymentProvider']>(
       iface,
       'Payment provider:',
-      ['stripe', 'lemonsqueezy'],
+      ['stripe', 'lemonsqueezy', 'polar'],
     ),
     storageProvider: await selectPrompt<ProjectConfig['storageProvider']>(
       iface,
@@ -793,14 +804,15 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     jobProvider: await selectPrompt<ProjectConfig['jobProvider']>(iface, 'Background jobs:', [
       'memory',
       'bullmq',
+      'none',
     ]),
     enableAuth: authEnabled,
+    enableSSO: ssoEnabled,
     enableAI: emptyLine() && (await confirm(iface, 'Enable AI Chat module?')),
     enableBlog: await confirm(iface, 'Enable Blog module?'),
     enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
     enableGraphQL: await confirm(iface, 'Enable GraphQL API layer?'),
-    enableSSO: authEnabled && (await confirm(iface, 'Enable Enterprise SSO (SAML)?')),
     enableApiDocs: await confirm(iface, 'Enable interactive API docs?'),
     enableHelpCenter: await confirm(iface, 'Enable Documentation module?'),
     enableExperiments: await confirm(iface, 'Enable A/B Testing?'),

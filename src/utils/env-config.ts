@@ -12,8 +12,9 @@
 export type DbProvider = 'turso' | 'postgres';
 export type AuthProvider = 'better-auth' | 'kinde' | 'none';
 export type PaymentProvider = 'stripe' | 'lemonsqueezy' | 'polar';
+export type SSOProvider = 'jackson' | 'none';
 export type StorageProvider = 'local' | 's3' | 'r2';
-export type JobProvider = 'memory' | 'bullmq';
+export type JobProvider = 'memory' | 'bullmq' | 'none';
 export type NotificationTransport = 'poll' | 'sse' | 'ws';
 export type EmbeddingProvider = 'openai' | 'ollama';
 export type VectorStoreProvider = 'sqlite' | 'memory';
@@ -36,7 +37,6 @@ export const FEATURE_ENV: Readonly<Record<string, string>> = {
   reports: 'ENABLE_REPORTS',
   onboarding: 'ENABLE_ONBOARDING',
   branding: 'ENABLE_BRANDING',
-  sso: 'ENABLE_SSO',
   experiments: 'ENABLE_EXPERIMENTS',
   dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
   plugins: 'ENABLE_PLUGINS',
@@ -77,6 +77,7 @@ export function readEnv<T extends string>(envContent: string, key: string, fallb
 export interface Adapters {
   database: DbProvider;
   auth: AuthProvider;
+  sso: SSOProvider;
   payments: PaymentProvider;
   storage: StorageProvider;
   jobs: JobProvider;
@@ -90,6 +91,7 @@ export function getAdapters(envContent: string): Adapters {
   return {
     database: readEnv<DbProvider>(envContent, 'DB_PROVIDER', 'turso'),
     auth: readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth'),
+    sso: readEnv<SSOProvider>(envContent, 'SSO_PROVIDER', 'none'),
     payments: readEnv<PaymentProvider>(envContent, 'PAYMENT_PROVIDER', 'stripe'),
     storage: readEnv<StorageProvider>(envContent, 'STORAGE_PROVIDER', 'local'),
     jobs: readEnv<JobProvider>(envContent, 'JOB_PROVIDER', 'memory'),
