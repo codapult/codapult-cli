@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.0](https://github.com/codapult/codapult-cli/compare/v0.14.5...v0.15.0) (2026-08-12)
+
+### Features
+
+* add support for SSO and update payment/job providers in project configuration ([c26ca88](https://github.com/codapult/codapult-cli/commit/c26ca88cf88d106f2c2b90eb5019a97d5aa1bce9))
+
 ## [0.14.5](https://github.com/codapult/codapult-cli/compare/v0.14.4...v0.14.5) (2026-08-08)
 
 ### Bug Fixes
