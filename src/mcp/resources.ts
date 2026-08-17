@@ -45,7 +45,7 @@ export function registerResources(server: McpServer): void {
     'codapult://config/env',
     {
       title: 'Environment Configuration',
-      description: `Typed env access (src/config/env.ts) — feature toggles (env.features), auth methods (env.auth), provider selection (dbProvider, paymentProvider, storageProvider, jobProvider), and checkout resolution. This is the source of truth for which modules are enabled — see also codapult://env-example or codapult_project_status.`,
+      description: `Typed env access (src/config/env.ts) — feature toggles (env.features), auth methods (env.auth), provider selection (db.provider, payments.provider, storage.provider, jobs.provider), and checkout resolution. This is the source of truth for which modules are enabled — see also codapult://env-example or codapult_project_status.`,
       mimeType: 'text/plain',
     },
     () => {
