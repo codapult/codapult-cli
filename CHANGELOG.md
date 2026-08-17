@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.1](https://github.com/codapult/codapult-cli/compare/v0.15.0...v0.15.1) (2026-08-17)
+
+### Bug Fixes
+
+* correct variable names in environment configuration description ([1b845a6](https://github.com/codapult/codapult-cli/commit/1b845a6be4bd3b52b107524b790c10e346e2a7d2))
+
 ## [0.15.0](https://github.com/codapult/codapult-cli/compare/v0.14.5...v0.15.0) (2026-08-12)
 
 ### Features
