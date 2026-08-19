@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.2](https://github.com/codapult/codapult-cli/compare/v0.15.1...v0.15.2) (2026-08-19)
+
+### Bug Fixes
+
+* ensure barrel file exports an empty object when no imports are present ([dd5596a](https://github.com/codapult/codapult-cli/commit/dd5596a42fe588abe7cfa1e53cb42195533be8bb))
+* update comment for marketing preset in setup configuration ([3fcf5eb](https://github.com/codapult/codapult-cli/commit/3fcf5eba22388b64f20eb67f3205da2ef754501e))
+
 ## [0.15.1](https://github.com/codapult/codapult-cli/compare/v0.15.0...v0.15.1) (2026-08-17)
 
 ### Bug Fixes
