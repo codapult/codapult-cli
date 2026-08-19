@@ -70,7 +70,7 @@ interface ProjectConfig {
 // ---------------------------------------------------------------------------
 
 const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
-  // Showcase / marketing-only site.
+  // Marketing-only site.
   marketing: {
     authProvider: 'none',
     jobProvider: 'none',
