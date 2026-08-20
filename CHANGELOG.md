@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.3](https://github.com/codapult/codapult-cli/compare/v0.15.2...v0.15.3) (2026-08-20)
+
+### Bug Fixes
+
+* update paths for plugin removals and clarify plugin marketplace prompt ([6a2b7df](https://github.com/codapult/codapult-cli/commit/6a2b7dfeb697d62fae6c57cfcf8128cf21486b8d))
+
 ## [0.15.2](https://github.com/codapult/codapult-cli/compare/v0.15.1...v0.15.2) (2026-08-19)
 
 ### Bug Fixes
