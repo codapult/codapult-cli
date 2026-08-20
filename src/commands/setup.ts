@@ -499,11 +499,11 @@ const MODULE_REMOVALS: {
   {
     key: 'enablePlugins',
     paths: [
-      `${APP}/(public)/(marketing)/plugins`,
+      // `${APP}/(public)/(marketing)/plugins`,
       `${APP}/(protected)/(dashboard)/dashboard/plugins`,
       'src/lib/plugins/marketplace.ts',
-      'src/components/marketing/PluginsShowcase.tsx',
-      'src/components/marketing/PluginDetail.tsx',
+      // 'src/components/marketing/PluginsShowcase.tsx',
+      // 'src/components/marketing/PluginDetail.tsx',
       'src/components/dashboard/PluginMarketplace.tsx',
       'plugins/example-analytics',
     ],
@@ -834,7 +834,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableBranding: authEnabled && (await confirm(iface, 'Enable per-org branding (white-label)?')),
     enableTwoFactor:
       authEnabled && (await confirm(iface, 'Enable two-factor authentication (TOTP)?')),
-    enablePlugins: await confirm(iface, 'Enable plugin marketplace (/plugins)?'),
+    enablePlugins: await confirm(iface, 'Enable plugin marketplace (/dashboard/plugins)?'),
     removeUnusedCode: emptyLine() && (await confirm(iface, 'Remove unused module code?', false)),
   };
 
