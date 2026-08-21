@@ -37,19 +37,21 @@ function removeMarkedBlock(content: string, name: string): string {
 // schema.ts — add/remove schema imports and table definitions
 // ---------------------------------------------------------------------------
 
-export function patchSchemaImports(
+function patchSchemaImportsAtPath(
   projectRoot: string,
   pluginName: string,
   imports: string[],
   action: 'add' | 'remove',
+  schemaPath: string,
+  packageName: 'sqlite-core' | 'pg-core',
 ): void {
-  const schemaPath = resolve(projectRoot, 'src/lib/db/schema.ts');
-  if (!existsSync(schemaPath)) return;
-  let content = readFileSync(schemaPath, 'utf-8');
+  const absoluteSchemaPath = resolve(projectRoot, schemaPath);
+  if (!existsSync(absoluteSchemaPath)) return;
+  let content = readFileSync(absoluteSchemaPath, 'utf-8');
 
-  const importLine = /import\s*\{([^}]+)\}\s*from\s*['"]drizzle-orm\/sqlite-core['"];?/.exec(
-    content,
-  );
+  const importLine = new RegExp(
+    `import\\s*\\{([^}]+)\\}\\s*from\\s*['"]drizzle-orm\\/${packageName}['"];?`,
+  ).exec(content);
   if (!importLine) return;
 
   const existing = importLine[1]
@@ -76,9 +78,41 @@ export function patchSchemaImports(
     }
   }
 
-  const newImportLine = `import { ${existing.join(', ')} } from 'drizzle-orm/sqlite-core';`;
+  const newImportLine = `import { ${existing.join(', ')} } from 'drizzle-orm/${packageName}';`;
   content = content.replace(importLine[0], newImportLine);
-  writeFileSync(schemaPath, content, 'utf-8');
+  writeFileSync(absoluteSchemaPath, content, 'utf-8');
+}
+
+export function patchSchemaImports(
+  projectRoot: string,
+  pluginName: string,
+  imports: string[],
+  action: 'add' | 'remove',
+): void {
+  patchSchemaImportsAtPath(
+    projectRoot,
+    pluginName,
+    imports,
+    action,
+    'src/lib/db/schema.ts',
+    'sqlite-core',
+  );
+}
+
+export function patchSchemaImportsPg(
+  projectRoot: string,
+  pluginName: string,
+  imports: string[],
+  action: 'add' | 'remove',
+): void {
+  patchSchemaImportsAtPath(
+    projectRoot,
+    pluginName,
+    imports,
+    action,
+    'src/lib/db/schema-pg.ts',
+    'pg-core',
+  );
 }
 
 function extractMarkedBlock(content: string, name: string): string | undefined {
@@ -110,20 +144,21 @@ function readPluginTables(pluginDir: string, tablesFile: string): string | undef
   return tables.trim();
 }
 
-export function patchSchemaTables(
+function patchSchemaTablesAtPath(
   projectRoot: string,
   pluginName: string,
   pluginDir: string,
   tablesFile: string,
   action: 'add' | 'remove' | 'update',
+  schemaPath: string,
 ): boolean {
-  const schemaPath = resolve(projectRoot, 'src/lib/db/schema.ts');
-  if (!existsSync(schemaPath)) return false;
-  let content = readFileSync(schemaPath, 'utf-8');
+  const absoluteSchemaPath = resolve(projectRoot, schemaPath);
+  if (!existsSync(absoluteSchemaPath)) return false;
+  let content = readFileSync(absoluteSchemaPath, 'utf-8');
 
   if (action === 'remove') {
     content = removeMarkedBlock(content, pluginName);
-    writeFileSync(schemaPath, content, 'utf-8');
+    writeFileSync(absoluteSchemaPath, content, 'utf-8');
     return true;
   }
 
@@ -141,8 +176,42 @@ export function patchSchemaTables(
 
   const block = `\n${MARKER_START(pluginName)}\n${tables}\n${MARKER_END(pluginName)}\n`;
   content = content.trimEnd() + '\n' + block;
-  writeFileSync(schemaPath, content, 'utf-8');
+  writeFileSync(absoluteSchemaPath, content, 'utf-8');
   return true;
+}
+
+export function patchSchemaTables(
+  projectRoot: string,
+  pluginName: string,
+  pluginDir: string,
+  tablesFile: string,
+  action: 'add' | 'remove' | 'update',
+): boolean {
+  return patchSchemaTablesAtPath(
+    projectRoot,
+    pluginName,
+    pluginDir,
+    tablesFile,
+    action,
+    'src/lib/db/schema.ts',
+  );
+}
+
+export function patchSchemaTablesPg(
+  projectRoot: string,
+  pluginName: string,
+  pluginDir: string,
+  tablesFile: string,
+  action: 'add' | 'remove' | 'update',
+): boolean {
+  return patchSchemaTablesAtPath(
+    projectRoot,
+    pluginName,
+    pluginDir,
+    tablesFile,
+    action,
+    'src/lib/db/schema-pg.ts',
+  );
 }
 
 // ---------------------------------------------------------------------------

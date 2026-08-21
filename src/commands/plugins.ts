@@ -11,7 +11,9 @@ import { resolveManifest } from '../utils/manifest.js';
 import { clonePlugin } from '../utils/git.js';
 import {
   patchSchemaImports,
+  patchSchemaImportsPg,
   patchSchemaTables,
+  patchSchemaTablesPg,
   patchDbReExports,
   patchNextConfig,
   createPluginRegistration,
@@ -98,6 +100,12 @@ export async function pluginsAddCommand(
     patchSchemaImports(root, manifest.name, imports, 'add');
     success(`Added imports: ${imports.join(', ')}`);
   }
+  if (manifest.install.schemaImportsPg && manifest.install.schemaImportsPg.length > 0) {
+    const imports = manifest.install.schemaImportsPg;
+    info('Adding PostgreSQL schema imports...');
+    patchSchemaImportsPg(root, manifest.name, imports, 'add');
+    success(`Added PostgreSQL imports: ${imports.join(', ')}`);
+  }
 
   // 3. Re-export tables from db/index.ts
   if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
@@ -112,6 +120,11 @@ export async function pluginsAddCommand(
     info('Adding schema tables...');
     patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'add');
     success('Schema tables added');
+  }
+  if (manifest.install.schemaTablesPg) {
+    info('Adding PostgreSQL schema tables...');
+    patchSchemaTablesPg(root, manifest.name, pluginDir, manifest.install.schemaTablesPg, 'add');
+    success('PostgreSQL schema tables added');
   }
 
   // 5. Patch next.config.ts
@@ -314,12 +327,22 @@ export async function pluginsRemoveCommand(
     patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'remove');
     success('Schema tables removed');
   }
+  if (manifest.install.schemaTablesPg) {
+    info('Removing PostgreSQL schema tables...');
+    patchSchemaTablesPg(root, manifest.name, pluginDir, manifest.install.schemaTablesPg, 'remove');
+    success('PostgreSQL schema tables removed');
+  }
 
   // 4. Remove schema imports
   if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
     info('Removing schema imports...');
     patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'remove');
     success('Schema imports removed');
+  }
+  if (manifest.install.schemaImportsPg && manifest.install.schemaImportsPg.length > 0) {
+    info('Removing PostgreSQL schema imports...');
+    patchSchemaImportsPg(root, manifest.name, manifest.install.schemaImportsPg, 'remove');
+    success('PostgreSQL schema imports removed');
   }
 
   // 5. Remove DB re-exports
@@ -416,29 +439,47 @@ export async function pluginsMigrateCommand(
 
     const { manifest, pluginDir } = result;
 
-    if (!manifest.install.schemaTables) {
+    if (!manifest.install.schemaTables && !manifest.install.schemaTablesPg) {
       dim(`${manifest.name}: no schema tables — skipping.`);
       continue;
     }
 
-    const updated = patchSchemaTables(
-      root,
-      manifest.name,
-      pluginDir,
-      manifest.install.schemaTables,
-      'update',
-    );
+    let updated = false;
+    if (manifest.install.schemaTables) {
+      const sqliteUpdated = patchSchemaTables(
+        root,
+        manifest.name,
+        pluginDir,
+        manifest.install.schemaTables,
+        'update',
+      );
+      if (sqliteUpdated) success(`${manifest.name}: schema updated in schema.ts`);
+      updated ||= sqliteUpdated;
+    }
+    if (manifest.install.schemaTablesPg) {
+      const postgresUpdated = patchSchemaTablesPg(
+        root,
+        manifest.name,
+        pluginDir,
+        manifest.install.schemaTablesPg,
+        'update',
+      );
+      if (postgresUpdated) success(`${manifest.name}: schema updated in schema-pg.ts`);
+      updated ||= postgresUpdated;
+    }
 
     if (updated) {
-      success(`${manifest.name}: schema updated in schema.ts`);
       schemaUpdated = true;
     } else {
-      dim(`${manifest.name}: schema is already up to date.`);
+      dim(`${manifest.name}: schemas are already up to date.`);
     }
 
     // Also refresh imports in case the plugin added new drizzle column types
     if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
       patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'add');
+    }
+    if (manifest.install.schemaImportsPg && manifest.install.schemaImportsPg.length > 0) {
+      patchSchemaImportsPg(root, manifest.name, manifest.install.schemaImportsPg, 'add');
     }
   }
 

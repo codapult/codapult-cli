@@ -44,12 +44,14 @@ function createMockServer(): {
 }
 
 describe('registerEnvTools', () => {
-  it('registers 3 env tools', () => {
+  it('registers environment inspection and mutation tools', () => {
     const server = createMockServer();
     registerEnvTools(server as never);
 
-    expect(server.tools).toHaveLength(3);
+    expect(server.tools).toHaveLength(5);
     expect(server.tools.map((t) => t.name)).toEqual([
+      'codapult_env_check',
+      'codapult_env_sync',
       'codapult_env_schema',
       'codapult_env_read',
       'codapult_env_update',

@@ -21,6 +21,9 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      typescript:
+        specifier: npm:@typescript/typescript6@^6.0.2
+        version: '@typescript/typescript6@6.0.2'
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -61,9 +64,6 @@ importers:
       release-it:
         specifier: ^21.0.2
         version: 21.0.2(@types/node@26.2.0)(supports-color@7.2.0)
-      typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
       typescript-eslint:
         specifier: ^8.67.0
         version: 8.67.0(@typescript/typescript6@6.0.2)(eslint@9.39.4(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)

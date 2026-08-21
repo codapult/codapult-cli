@@ -16,6 +16,7 @@ export interface PluginManifest {
 
   install: {
     schemaImports?: string[];
+    schemaImportsPg?: string[];
     dbReExports?: string[];
     schemaTables?: string;
     schemaTablesPg?: string;

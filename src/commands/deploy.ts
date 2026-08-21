@@ -9,6 +9,11 @@ import {
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
+import {
+  renderStructuredReport,
+  summarizeChecks,
+  type ReportCheck,
+} from '../utils/check-report.js';
 
 function hasCommand(cmd: string): boolean {
   return spawnSync(cmd, ['--version'], { stdio: 'ignore' }).status === 0;
@@ -192,8 +197,6 @@ export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
     process.exit(1);
   }
 
-  heading('Deploy Readiness');
-
   const checks = [
     { name: 'Dockerfile', path: 'Dockerfile' },
     { name: 'docker-compose.yml', path: 'docker-compose.yml' },
@@ -203,20 +206,33 @@ export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
     { name: 'Helm chart', path: 'infra/helm/codapult/Chart.yaml' },
   ];
 
-  for (const { name, path } of checks) {
-    if (existsSync(resolve(root, path))) {
-      success(name);
-    } else {
-      dim(`  · ${name} — not found`);
-    }
-  }
+  const reportChecks: ReportCheck[] = checks.map(({ name, path }) => ({
+    id: path,
+    status: existsSync(resolve(root, path)) ? ('ok' as const) : ('warn' as const),
+    message: existsSync(resolve(root, path)) ? `${name} exists` : `${name} not found`,
+    path,
+  }));
 
   if (getProjectEnvSource(options) === 'process') {
-    success('Environment source: process.env');
+    reportChecks.push({
+      id: 'env-source',
+      status: 'ok',
+      message: 'Environment source: process.env',
+    });
   } else if (existsSync(resolve(root, ENV_FILE_NAME))) {
-    success(ENV_FILE_NAME);
+    reportChecks.push({
+      id: 'env-file',
+      status: 'ok',
+      message: `${ENV_FILE_NAME} exists`,
+      path: ENV_FILE_NAME,
+    });
   } else {
-    dim(`  · ${ENV_FILE_NAME} — not found`);
+    reportChecks.push({
+      id: 'env-file',
+      status: 'warn',
+      message: `${ENV_FILE_NAME} not found`,
+      path: ENV_FILE_NAME,
+    });
   }
 
   // Check if standalone output is enabled
@@ -224,9 +240,17 @@ export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
   if (existsSync(nextConfig)) {
     const content = readFileSync(nextConfig, 'utf-8');
     if (content.includes("output: 'standalone'")) {
-      success('Next.js standalone output enabled');
+      reportChecks.push({
+        id: 'next-standalone',
+        status: 'ok',
+        message: 'Next.js standalone output enabled',
+      });
     } else {
-      warn('Next.js standalone output not enabled (required for Docker)');
+      reportChecks.push({
+        id: 'next-standalone',
+        status: 'warn',
+        message: 'Next.js standalone output not enabled (required for Docker)',
+      });
     }
   }
 
@@ -237,11 +261,17 @@ export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
   >;
   const engines = pkg.engines as Record<string, string> | undefined;
   if (engines?.node) {
-    success(`Node engine: ${engines.node}`);
+    reportChecks.push({ id: 'node-engine', status: 'ok', message: `Node engine: ${engines.node}` });
   } else {
-    warn('No Node engine constraint in package.json');
+    reportChecks.push({
+      id: 'node-engine',
+      status: 'warn',
+      message: 'No Node engine constraint in package.json',
+    });
   }
-
+  const report = summarizeChecks(reportChecks);
+  renderStructuredReport('Deploy Readiness', report);
+  process.exitCode = report.summary.failures > 0 ? 1 : 0;
   console.log();
   dim('Deploy targets:');
   dim('  codapult deploy vercel   — Vercel (recommended)');

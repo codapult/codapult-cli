@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { findProjectRoot, readJsonFile } from '../utils/project.js';
 import { ENV_FILE_NAME, loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
@@ -10,27 +9,7 @@ import {
   FEATURE_ENV,
 } from '../utils/env-config.js';
 import { heading, success, fail, info, dim, label } from '../utils/ui.js';
-
-/** Extracts a quoted string from a TS object literal: `field: 'value'` or `field: "value"`. */
-function extractTsObjectField(content: string, field: string): string | undefined {
-  const regex = new RegExp(`\\b${field}\\s*:\\s*['"\`]([^'"\`]+)['"\`]`);
-  const match = regex.exec(content);
-  return match?.[1] ?? undefined;
-}
-
-/** Extracts a numeric literal: `field: 123` or `field: 0.5`. */
-function extractTsNumericField(content: string, field: string): string | undefined {
-  const regex = new RegExp(`\\b${field}\\s*:\\s*([\\d.]+)`);
-  const match = regex.exec(content);
-  return match?.[1] ?? undefined;
-}
-
-/** Extracts a boolean literal: `field: true|false`. */
-function extractTsBoolField(content: string, field: string): boolean | undefined {
-  const regex = new RegExp(`\\b${field}\\s*:\\s*(true|false)`);
-  const match = regex.exec(content);
-  return match ? match[1] === 'true' : undefined;
-}
+import { collectAppConfigSummary } from '../utils/config-report.js';
 
 export function configShowCommand(options: ProjectEnvOptions = {}): void {
   const root = findProjectRoot();
@@ -54,15 +33,10 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
   const envContent = env.content;
 
   // --- App config (src/config/app.ts) ---
-  const appConfigPath = resolve(root, 'src/config/app.ts');
-  if (existsSync(appConfigPath)) {
-    const content = readFileSync(appConfigPath, 'utf-8');
-
+  const appConfig = collectAppConfigSummary(root);
+  if (appConfig) {
     info('Brand');
-    const name = extractTsObjectField(content, 'name');
-    const description = extractTsObjectField(content, 'description');
-    const logo = extractTsObjectField(content, 'logo');
-    const favicon = extractTsObjectField(content, 'favicon');
+    const { name, description, logo, favicon } = appConfig.brand;
     if (name) label('  Name', name);
     if (description) label('  Description', description);
     if (logo) label('  Logo', logo);
@@ -70,17 +44,13 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
     console.log();
 
     info('Company');
-    const contactEmail = extractTsObjectField(content, 'contactEmail');
-    const githubUrl = extractTsObjectField(content, 'githubUrl');
+    const { contactEmail, githubUrl } = appConfig.company;
     if (contactEmail) label('  Contact email', contactEmail);
     if (githubUrl) label('  GitHub', githubUrl);
     console.log();
 
     info('AI');
-    const defaultModel = extractTsObjectField(content, 'defaultModel');
-    const ragEnabled = extractTsBoolField(content, 'ragEnabled');
-    const ragMaxChunks = extractTsNumericField(content, 'ragMaxChunks');
-    const ragMinScore = extractTsNumericField(content, 'ragMinScore');
+    const { defaultModel, ragEnabled, ragMaxChunks, ragMinScore } = appConfig.ai;
     if (defaultModel) label('  Default model', defaultModel);
     if (ragEnabled != null) label('  RAG', ragEnabled ? 'enabled' : 'disabled');
     if (ragMaxChunks) label('  RAG max chunks', ragMaxChunks);

@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerProjectTools } from './tools/project.js';
@@ -9,9 +10,12 @@ import { registerDeployTools } from './tools/deploy.js';
 import { registerPrompts } from './prompts.js';
 import { registerResources } from './resources.js';
 
+const require = createRequire(import.meta.url);
+const packageJson = require('../../package.json') as { version: string };
+
 const server = new McpServer({
   name: 'codapult',
-  version: '0.1.0',
+  version: packageJson.version,
 });
 
 registerProjectTools(server);

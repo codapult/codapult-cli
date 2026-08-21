@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   patchSchemaImports,
+  patchSchemaImportsPg,
   patchSchemaTables,
+  patchSchemaTablesPg,
   patchDbReExports,
   patchNextConfig,
   regenerateBarrel,
@@ -85,6 +87,7 @@ export const user = sqliteTable('user', {
 export const widget = sqliteTable('widget', {
   score: real('score'),
 });
+
 // --- plugin:test-plugin:end ---
 `;
     mockedExists.mockReturnValue(true);
@@ -119,6 +122,37 @@ export const widget = sqliteTable('widget', {
 
     const written = mockedWrite.mock.calls[0][1] as string;
     expect(written).toContain('integer');
+  });
+});
+
+describe('PostgreSQL schema patchers', () => {
+  it('adds PostgreSQL imports to schema-pg.ts', () => {
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockReturnValue(
+      "import { pgTable, text } from 'drizzle-orm/pg-core';\n\nexport const user = pgTable('user', {});",
+    );
+
+    patchSchemaImportsPg(ROOT, 'test-plugin', ['jsonb', 'primaryKey'], 'add');
+
+    expect(mockedWrite.mock.calls[0][1]).toContain(
+      "import { pgTable, text, jsonb, primaryKey } from 'drizzle-orm/pg-core';",
+    );
+  });
+
+  it('copies PostgreSQL tables into schema-pg.ts', () => {
+    const schema =
+      "import { pgTable, text } from 'drizzle-orm/pg-core';\n\nexport const user = pgTable('user', {});";
+    const tables =
+      "import { pgTable, text } from 'drizzle-orm/pg-core';\n\nexport const widget = pgTable('widget', {});";
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockImplementation((path) =>
+      String(path).includes('schema-pg.ts') ? schema : tables,
+    );
+
+    patchSchemaTablesPg(ROOT, 'test-plugin', '/plugins/test', 'tables-pg.ts', 'add');
+
+    expect(mockedWrite.mock.calls[0][0]).toBe('/project/src/lib/db/schema-pg.ts');
+    expect(mockedWrite.mock.calls[0][1]).toContain("pgTable('widget'");
   });
 });
 
@@ -614,7 +648,9 @@ describe('patchPages', () => {
 
 describe('findPageConflicts', () => {
   it('reports a sibling file at a different Next.js page extension', () => {
-    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
     const sibling = '/project/src/app/welcome/page.tsx';
 
     mockedExists.mockImplementation((p) => (p as string) === sibling);
@@ -628,7 +664,9 @@ describe('findPageConflicts', () => {
   });
 
   it('returns [] when the only file at the target path is our own stub', () => {
-    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
     const target = '/project/src/app/welcome/page.ts';
 
     mockedExists.mockImplementation((p) => (p as string) === target);
@@ -640,7 +678,9 @@ describe('findPageConflicts', () => {
   });
 
   it('flags foreign stubs as conflicts but marks them isStub=true', () => {
-    const pages = { 'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome' };
+    const pages = {
+      'src/app/welcome/page.ts': '@codapult/plugin-onboarding/pages/welcome',
+    };
     const sibling = '/project/src/app/welcome/page.tsx';
 
     mockedExists.mockImplementation((p) => (p as string) === sibling);
@@ -747,7 +787,11 @@ describe('patchEnvFile', () => {
     mockedRead.mockReturnValue(envContent);
 
     const envVars = {
-      PLUGIN_API_KEY: { default: '', required: true, description: 'API key for the plugin' },
+      PLUGIN_API_KEY: {
+        default: '',
+        required: true,
+        description: 'API key for the plugin',
+      },
       PLUGIN_URL: { default: 'http://localhost:3001', required: false },
     };
 
@@ -801,7 +845,10 @@ describe('patchEnvFile', () => {
 
 describe('patchPackageJson', () => {
   it('adds dependency with file: protocol on add', () => {
-    const pkg = JSON.stringify({ name: 'codapult', dependencies: { next: '16' } });
+    const pkg = JSON.stringify({
+      name: 'codapult',
+      dependencies: { next: '16' },
+    });
 
     mockedExists.mockReturnValue(true);
     mockedRead.mockReturnValue(pkg);
@@ -817,7 +864,10 @@ describe('patchPackageJson', () => {
   it('removes dependency on remove', () => {
     const pkg = JSON.stringify({
       name: 'codapult',
-      dependencies: { next: '16', '@codapult/plugin-test': 'file:../test-plugin' },
+      dependencies: {
+        next: '16',
+        '@codapult/plugin-test': 'file:../test-plugin',
+      },
     });
 
     mockedExists.mockReturnValue(true);

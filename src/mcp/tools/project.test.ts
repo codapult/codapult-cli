@@ -6,6 +6,7 @@ vi.mock('node:child_process');
 vi.mock('../../utils/project.js', () => ({
   findProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
+  readJsonFile: vi.fn(),
 }));
 vi.mock('../../utils/project-env.js', () => ({
   ENV_FILE_NAME: '.env.local',
@@ -18,7 +19,7 @@ vi.mock('../../utils/project-env.js', () => ({
 
 const { existsSync, readFileSync, readdirSync } = await import('node:fs');
 const { execSync } = await import('node:child_process');
-const { findProjectRoot, readProjectFile } = await import('../../utils/project.js');
+const { findProjectRoot, readProjectFile, readJsonFile } = await import('../../utils/project.js');
 const { loadProjectEnv } = await import('../../utils/project-env.js');
 const { registerProjectTools } = await import('./project.js');
 
@@ -28,6 +29,7 @@ const mockedLoadProjectEnv = vi.mocked(loadProjectEnv);
 const mockedExists = vi.mocked(existsSync);
 const mockedRead = vi.mocked(readFileSync);
 const mockedReaddir = vi.mocked(readdirSync);
+const mockedReadJson = vi.mocked(readJsonFile);
 const mockedExec = vi.mocked(execSync);
 
 beforeEach(() => {
@@ -39,6 +41,8 @@ beforeEach(() => {
     fileExists: false,
     content: '',
   });
+  mockedReaddir.mockReturnValue([]);
+  mockedReadJson.mockReturnValue({ name: 'codapult', version: '1.0.0' });
 });
 
 interface ToolRegistration {
@@ -62,16 +66,18 @@ function createMockServer(): {
 }
 
 describe('registerProjectTools', () => {
-  it('registers 4 project tools', () => {
+  it('registers project inspection and execution tools', () => {
     const server = createMockServer();
     registerProjectTools(server as never);
 
-    expect(server.tools).toHaveLength(4);
+    expect(server.tools).toHaveLength(6);
     const names = server.tools.map((t) => t.name);
     expect(names).toContain('codapult_project_status');
     expect(names).toContain('codapult_project_config');
     expect(names).toContain('codapult_run_checks');
     expect(names).toContain('codapult_doctor');
+    expect(names).toContain('codapult_project_context');
+    expect(names).toContain('codapult_build');
   });
 
   describe('codapult_project_status', () => {
@@ -190,15 +196,13 @@ describe('registerProjectTools', () => {
       const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
       const result = handler({});
       const parsed = JSON.parse(result.content[0].text) as {
-        name: string;
-        status: string;
-        detail: string;
-      }[];
+        checks: { id: string; status: string }[];
+      };
 
-      const pkgCheck = parsed.find((c) => c.name === 'package.json');
+      const pkgCheck = parsed.checks.find((c) => c.id === 'package');
       expect(pkgCheck?.status).toBe('ok');
 
-      const tsCheck = parsed.find((c) => c.name === 'TypeScript');
+      const tsCheck = parsed.checks.find((c) => c.id === 'typecheck');
       expect(tsCheck?.status).toBe('ok');
     });
 
@@ -214,11 +218,10 @@ describe('registerProjectTools', () => {
       const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
       const result = handler({});
       const parsed = JSON.parse(result.content[0].text) as {
-        name: string;
-        status: string;
-      }[];
+        checks: { status: string }[];
+      };
 
-      const failedChecks = parsed.filter((c) => c.status === 'fail');
+      const failedChecks = parsed.checks.filter((c) => c.status === 'fail');
       expect(failedChecks.length).toBeGreaterThan(0);
     });
 
@@ -228,16 +231,21 @@ describe('registerProjectTools', () => {
 
       mockedExists.mockReturnValue(true);
       mockedExec.mockReturnValue(Buffer.from(''));
+      mockedLoadProjectEnv.mockReturnValue({
+        source: 'process',
+        filePath: `/project/${ENV_FILE_NAME}`,
+        fileExists: false,
+        content: '',
+      });
 
       const handler = server.tools.find((t) => t.name === 'codapult_doctor')!.handler;
       const result = handler({ env_source: 'process' });
       const parsed = JSON.parse(result.content[0].text) as {
-        name: string;
-        detail: string;
-      }[];
+        checks: { id: string; message: string }[];
+      };
 
-      const envCheck = parsed.find((c) => c.name === 'Environment source');
-      expect(envCheck?.detail).toBe('process.env');
+      const envCheck = parsed.checks.find((c) => c.id === 'env-file');
+      expect(envCheck?.message).toBe('Using process.env');
     });
   });
 });

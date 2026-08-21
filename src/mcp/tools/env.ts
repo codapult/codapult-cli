@@ -9,6 +9,14 @@ import {
   getProjectEnvOptions,
   loadProjectEnv,
 } from '../../utils/project-env.js';
+import {
+  findProviderIssues,
+  getAdapters,
+  getAuthMethods,
+  getFeatures,
+  getOauthProviders,
+  readEnv,
+} from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
 
 function getRoot(): string {
@@ -17,14 +25,14 @@ function getRoot(): string {
   return root;
 }
 
-interface EnvEntry {
+export interface EnvEntry {
   key: string;
   value: string;
   comment?: string;
   required: boolean;
 }
 
-function parseEnvFile(content: string): EnvEntry[] {
+export function parseEnvFile(content: string): EnvEntry[] {
   const entries: EnvEntry[] = [];
   let lastComment = '';
 
@@ -66,7 +74,123 @@ function maskValue(value: string): string {
 
 const ENV_KEY_REGEX = /^[A-Z][A-Z0-9_]*$/;
 
+function getEffectiveConfig(content: string): {
+  appMode: string;
+  adapters: ReturnType<typeof getAdapters>;
+  authMethods: ReturnType<typeof getAuthMethods>;
+  oauthProviders: string[];
+  features: Record<string, boolean>;
+} {
+  return {
+    appMode: readEnv<string>(content, 'APP_MODE', 'app'),
+    adapters: getAdapters(content),
+    authMethods: getAuthMethods(content),
+    oauthProviders: getOauthProviders(content),
+    features: getFeatures(content),
+  };
+}
+
 export function registerEnvTools(server: McpServer): void {
+  server.registerTool(
+    'codapult_env_check',
+    {
+      title: 'Check Environment',
+      description: `Validate ${ENV_FILE_NAME} against ${ENV_EXAMPLE_FILE_NAME} without exposing secret values`,
+      inputSchema: { env_source: envSourceSchema.optional() },
+    },
+    ({ env_source }) => {
+      const root = getRoot();
+      const example = parseEnvFile(readProjectFile(root, ENV_EXAMPLE_FILE_NAME) ?? '');
+      const local = parseEnvFile(loadProjectEnv(root, getProjectEnvOptions(env_source)).content);
+      const localKeys = new Set(local.map((entry) => entry.key));
+      const missing = example
+        .filter((entry) => entry.required && !localKeys.has(entry.key))
+        .map((entry) => entry.key);
+      const unconfigured = local
+        .filter(
+          (entry) => !entry.value || /^(your-|generate-|https?:\/\/your|""?)/.test(entry.value),
+        )
+        .map((entry) => entry.key);
+      const extra = local
+        .filter((entry) => !example.some((candidate) => candidate.key === entry.key))
+        .map((entry) => entry.key);
+      const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
+      const providerIssues = findProviderIssues(envContent);
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                valid: providerIssues.every((issue) => issue.severity !== 'error'),
+                missing,
+                unconfigured,
+                extra,
+                providerIssues,
+                effective: getEffectiveConfig(envContent),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    'codapult_env_sync',
+    {
+      title: 'Sync Environment',
+      description: `Add missing variables from ${ENV_EXAMPLE_FILE_NAME} to ${ENV_FILE_NAME}`,
+      inputSchema: {
+        dry_run: z
+          .boolean()
+          .default(false)
+          .describe('Preview missing variables without writing the file'),
+      },
+    },
+    ({ dry_run }) => {
+      const root = getRoot();
+      const exampleContent = readProjectFile(root, ENV_EXAMPLE_FILE_NAME);
+      if (!exampleContent) {
+        return {
+          content: [{ type: 'text' as const, text: `${ENV_EXAMPLE_FILE_NAME} not found` }],
+          isError: true,
+        };
+      }
+      const envPath = resolve(root, ENV_FILE_NAME);
+      const fileExisted = existsSync(envPath);
+      const currentContent = fileExisted ? readFileSync(envPath, 'utf-8') : '';
+      const currentKeys = new Set(parseEnvFile(currentContent).map((entry) => entry.key));
+      const missing = parseEnvFile(exampleContent).filter(
+        (entry) => entry.required && !currentKeys.has(entry.key),
+      );
+      if (!dry_run && !existsSync(envPath)) writeFileSync(envPath, exampleContent, 'utf-8');
+      else if (!dry_run && missing.length > 0) {
+        const additions = missing.map((entry) => `${entry.key}=${entry.value}`).join('\n');
+        writeFileSync(envPath, `${currentContent.trimEnd()}\n${additions}\n`, 'utf-8');
+      }
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                dryRun: dry_run,
+                created: !dry_run && !fileExisted,
+                added: missing.map((entry) => entry.key),
+                path: ENV_FILE_NAME,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
   server.registerTool(
     'codapult_env_schema',
     {
@@ -135,7 +259,13 @@ export function registerEnvTools(server: McpServer): void {
         variables,
         missing,
         unconfigured,
-        ...(show_secrets ? { warning: 'Sensitive values are shown in plain text' } : {}),
+        effective: getEffectiveConfig(localContent),
+        ...(show_secrets
+          ? {
+              warning:
+                'SECURITY WARNING: sensitive values are shown in plain text to the MCP client and may be included in the AI context.',
+            }
+          : {}),
       };
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };

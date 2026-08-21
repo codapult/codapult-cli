@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
-import { ENV_FILE_NAME, getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
+import { getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
 import {
   getAdapters,
   getAuthMethods,
@@ -12,6 +12,9 @@ import {
   getOauthProviders,
 } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
+import { commandResponse, runProjectCommand } from '../../utils/command.js';
+import { collectMcpHealth } from '../../utils/health.js';
+import { collectAppConfigSummary } from '../../utils/config-report.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -114,19 +117,14 @@ export function registerProjectTools(server: McpServer): void {
         test: 'pnpm test --run',
       };
 
-      const results: Record<string, { passed: boolean; output: string }> = {};
+      const results: Record<string, ReturnType<typeof runProjectCommand>> = {};
       for (const check of toRun) {
         const cmd = commands[check];
         if (!cmd) continue;
         try {
-          const output = execSync(cmd, { cwd: root, stdio: 'pipe', timeout: 120_000 }).toString();
-          results[check] = { passed: true, output: output.slice(-2000) };
-        } catch (err) {
-          const output =
-            (err as { stdout?: Buffer; stderr?: Buffer }).stderr?.toString() ??
-            (err as { stdout?: Buffer }).stdout?.toString() ??
-            'Check failed';
-          results[check] = { passed: false, output: output.slice(-2000) };
+          results[check] = runProjectCommand(cmd, root);
+        } catch {
+          results[check] = runProjectCommand(cmd, root);
         }
       }
 
@@ -146,46 +144,76 @@ export function registerProjectTools(server: McpServer): void {
     },
     ({ env_source }) => {
       const root = getRoot();
-      const checks: { name: string; status: 'ok' | 'warn' | 'fail'; detail: string }[] = [];
-
-      const requiredFiles = [
-        'package.json',
-        'next.config.ts',
-        'src/lib/db/schema.ts',
-        'src/lib/auth/index.ts',
-        'src/lib/payments/index.ts',
-        'src/config/app.ts',
-      ];
-      for (const f of requiredFiles) {
-        checks.push({
-          name: f,
-          status: existsSync(resolve(root, f)) ? 'ok' : 'fail',
-          detail: existsSync(resolve(root, f)) ? 'exists' : 'missing',
-        });
-      }
-
-      if (env_source === 'process') {
-        checks.push({
-          name: 'Environment source',
-          status: 'ok',
-          detail: 'process.env',
-        });
-      } else {
-        checks.push({
-          name: ENV_FILE_NAME,
-          status: existsSync(resolve(root, ENV_FILE_NAME)) ? 'ok' : 'fail',
-          detail: existsSync(resolve(root, ENV_FILE_NAME)) ? 'exists' : 'missing',
-        });
-      }
-
-      try {
-        execSync('pnpm tsc --noEmit', { cwd: root, stdio: 'pipe', timeout: 60_000 });
-        checks.push({ name: 'TypeScript', status: 'ok', detail: 'compiles cleanly' });
-      } catch {
-        checks.push({ name: 'TypeScript', status: 'fail', detail: 'compilation errors' });
-      }
-
-      return { content: [{ type: 'text' as const, text: JSON.stringify(checks, null, 2) }] };
+      const report = collectMcpHealth(root, {
+        envSource: env_source,
+      });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(report, null, 2) }] };
     },
+  );
+
+  server.registerTool(
+    'codapult_project_context',
+    {
+      title: 'Project Context',
+      description:
+        'Get a compact, structured overview of the current Codapult project for AI-assisted work',
+      inputSchema: {},
+    },
+    () => {
+      const root = getRoot();
+      const packageJson = JSON.parse(
+        readFileSync(resolve(root, 'package.json'), 'utf-8'),
+      ) as Record<string, unknown>;
+      const files = ['AGENTS.md', '.env.example', 'src/config/app.ts', 'src/config/env.ts'];
+      const existingFiles = files.filter((file) => existsSync(resolve(root, file)));
+      const envContent = loadProjectEnv(root).content;
+      const adapters = getAdapters(envContent);
+      const features = getFeatures(envContent);
+      const configDir = resolve(root, 'src/config');
+      const configFiles = existsSync(configDir)
+        ? readdirSync(configDir)
+            .filter((file) => file.endsWith('.ts') && !file.endsWith('.test.ts'))
+            .sort()
+        : [];
+      const scripts = (packageJson.scripts ?? {}) as Record<string, string>;
+      const dependencies = {
+        ...((packageJson.dependencies ?? {}) as Record<string, string>),
+        ...((packageJson.devDependencies ?? {}) as Record<string, string>),
+      };
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                root,
+                name: packageJson.name,
+                version: packageJson.version,
+                scripts,
+                dependencies,
+                existingFiles,
+                configFiles,
+                adapters,
+                enabledFeatures: Object.keys(features).filter((key) => features[key]),
+                appConfig: collectAppConfigSummary(root),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    'codapult_build',
+    {
+      title: 'Build Project',
+      description: 'Run the production build and return structured stdout, stderr, and exit code',
+      inputSchema: {},
+    },
+    () => commandResponse(runProjectCommand('pnpm build', getRoot(), { timeout: 300_000 })),
   );
 }

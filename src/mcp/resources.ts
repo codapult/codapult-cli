@@ -1,11 +1,19 @@
+import { existsSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../utils/project.js';
-import { ENV_EXAMPLE_FILE_NAME } from '../utils/project-env.js';
+import { ENV_EXAMPLE_FILE_NAME, loadProjectEnv } from '../utils/project-env.js';
+import { getAdapters } from '../utils/env-config.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
   if (!root) throw new Error('Not inside a Codapult project');
   return root;
+}
+
+function getSchemaPath(root: string): string {
+  const provider = getAdapters(loadProjectEnv(root).content).database;
+  return provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
 }
 
 export function registerResources(server: McpServer): void {
@@ -15,11 +23,12 @@ export function registerResources(server: McpServer): void {
     {
       title: 'Database Schema',
       description:
-        'Drizzle ORM schema (src/lib/db/schema.ts) — all tables, columns, types, and relations',
+        'Active Drizzle ORM schema selected by DB_PROVIDER — all tables, columns, types, and relations',
       mimeType: 'text/plain',
     },
     () => {
-      const content = readProjectFile(getRoot(), 'src/lib/db/schema.ts') ?? 'Schema file not found';
+      const root = getRoot();
+      const content = readProjectFile(root, getSchemaPath(root)) ?? 'Schema file not found';
       return { contents: [{ uri: 'codapult://schema', text: content, mimeType: 'text/plain' }] };
     },
   );
@@ -117,6 +126,38 @@ export function registerResources(server: McpServer): void {
         readProjectFile(getRoot(), 'src/config/navigation.ts') ?? 'navigation.ts not found';
       return {
         contents: [{ uri: 'codapult://config/navigation', text: content, mimeType: 'text/plain' }],
+      };
+    },
+  );
+
+  server.registerResource(
+    'codapult_config_files',
+    'codapult://config/files',
+    {
+      title: 'Configuration Files',
+      description:
+        'All non-test TypeScript configuration files from src/config, including marketing and navigation configuration',
+      mimeType: 'application/json',
+    },
+    () => {
+      const root = getRoot();
+      const configDir = resolve(root, 'src/config');
+      const files = existsSync(configDir)
+        ? readdirSync(configDir)
+            .filter((file) => file.endsWith('.ts') && !file.endsWith('.test.ts'))
+            .sort()
+        : [];
+      const contents = Object.fromEntries(
+        files.map((file) => [file, readProjectFile(root, `src/config/${file}`) ?? '']),
+      );
+      return {
+        contents: [
+          {
+            uri: 'codapult://config/files',
+            text: JSON.stringify({ files, contents }, null, 2),
+            mimeType: 'application/json',
+          },
+        ],
       };
     },
   );

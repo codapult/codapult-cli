@@ -9,6 +9,7 @@ import {
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn, confirm } from '../utils/ui.js';
+import { renderStructuredReport, summarizeChecks } from '../utils/check-report.js';
 
 interface EnvEntry {
   key: string;
@@ -57,8 +58,6 @@ export function envCheckCommand(options: ProjectEnvOptions = {}): void {
     process.exit(1);
   }
 
-  heading('Environment Check');
-
   const examplePath = resolve(root, ENV_EXAMPLE_FILE_NAME);
   const localPath = resolve(root, ENV_FILE_NAME);
 
@@ -80,21 +79,34 @@ export function envCheckCommand(options: ProjectEnvOptions = {}): void {
   const localKeys = new Set(localEntries.map((e) => e.key));
 
   const requiredKeys = exampleEntries.filter((e) => e.required);
-  let missing = 0;
-  let empty = 0;
+  const checks: {
+    id: string;
+    status: 'ok' | 'warn' | 'fail';
+    message: string;
+  }[] = [];
 
   for (const entry of requiredKeys) {
     if (!localKeys.has(entry.key)) {
-      fail(`Missing: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`);
-      missing += 1;
+      checks.push({
+        id: entry.key,
+        status: 'fail',
+        message: `Missing: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`,
+      });
     } else {
       const local = localEntries.find((e) => e.key === entry.key);
       if (local && (!local.value || local.value === entry.value)) {
         const isPlaceholder = /^(your-|generate-|https?:\/\/your|""?)/.test(local.value);
         if (isPlaceholder || !local.value) {
-          warn(`Not configured: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`);
-          empty += 1;
+          checks.push({
+            id: entry.key,
+            status: 'warn',
+            message: `Not configured: ${entry.key}${entry.comment ? ` — ${entry.comment}` : ''}`,
+          });
+        } else {
+          checks.push({ id: entry.key, status: 'ok', message: `${entry.key} configured` });
         }
+      } else {
+        checks.push({ id: entry.key, status: 'ok', message: `${entry.key} configured` });
       }
     }
   }
@@ -109,13 +121,9 @@ export function envCheckCommand(options: ProjectEnvOptions = {}): void {
     }
   }
 
-  console.log();
-  if (missing === 0 && empty === 0) {
-    success('All required variables are configured');
-  } else {
-    if (missing > 0) fail(`${missing} missing variable(s)`);
-    if (empty > 0) warn(`${empty} variable(s) need configuration`);
-  }
+  const report = summarizeChecks(checks);
+  renderStructuredReport('Environment Check', report);
+  process.exitCode = report.summary.failures > 0 ? 1 : 0;
   console.log();
 }
 

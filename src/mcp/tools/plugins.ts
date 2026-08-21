@@ -7,7 +7,9 @@ import { ENV_FILE_NAME } from '../../utils/project-env.js';
 import { resolveManifest } from '../../utils/manifest.js';
 import {
   patchSchemaImports,
+  patchSchemaImportsPg,
   patchSchemaTables,
+  patchSchemaTablesPg,
   patchDbReExports,
   patchNextConfig,
   createPluginRegistration,
@@ -36,7 +38,9 @@ export function registerPluginTools(server: McpServer): void {
       const root = getRoot();
       const pluginsDir = resolve(root, 'src/plugins');
       if (!existsSync(pluginsDir)) {
-        return { content: [{ type: 'text' as const, text: JSON.stringify({ plugins: [] }) }] };
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify({ plugins: [] }) }],
+        };
       }
 
       const files = readdirSync(pluginsDir).filter((f) => f.endsWith('.ts') && f !== 'index.ts');
@@ -56,7 +60,9 @@ export function registerPluginTools(server: McpServer): void {
         return { name, package: packageName, version: deps[packageName] ?? '' };
       });
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify({ plugins }, null, 2) }] };
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ plugins }, null, 2) }],
+      };
     },
   );
 
@@ -69,9 +75,13 @@ export function registerPluginTools(server: McpServer): void {
       inputSchema: {
         name: z.string().describe('Plugin name (e.g. "ai-kit", "video-player")'),
         env_source: envSourceSchema.optional(),
+        dry_run: z
+          .boolean()
+          .default(false)
+          .describe('Preview changes without modifying the project'),
       },
     },
-    ({ name, env_source }) => {
+    ({ name, env_source, dry_run }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       if (!result) {
@@ -84,6 +94,49 @@ export function registerPluginTools(server: McpServer): void {
       const { manifest, pluginDir } = result;
       const steps: string[] = [];
 
+      if (dry_run) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  dryRun: true,
+                  plugin: manifest.name,
+                  package: manifest.package,
+                  changes: [
+                    'Update package.json',
+                    ...(manifest.install.schemaImports && manifest.install.schemaImports.length > 0
+                      ? ['Update schema imports']
+                      : []),
+                    ...(manifest.install.schemaImportsPg &&
+                    manifest.install.schemaImportsPg.length > 0
+                      ? ['Update PostgreSQL schema imports']
+                      : []),
+                    ...(manifest.install.dbReExports && manifest.install.dbReExports.length > 0
+                      ? ['Update DB re-exports']
+                      : []),
+                    ...(manifest.install.schemaTables ? ['Update schema tables'] : []),
+                    ...(manifest.install.schemaTablesPg ? ['Update PostgreSQL schema tables'] : []),
+                    ...(manifest.install.pages && Object.keys(manifest.install.pages).length > 0
+                      ? ['Create plugin pages']
+                      : []),
+                    'Register plugin',
+                    ...(manifest.install.env &&
+                    Object.keys(manifest.install.env).length > 0 &&
+                    env_source !== 'process'
+                      ? [`Update ${ENV_FILE_NAME}`]
+                      : []),
+                  ],
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
       patchPackageJson(root, manifest.name, manifest.package, pluginDir, 'add');
       steps.push('package.json updated');
 
@@ -91,6 +144,11 @@ export function registerPluginTools(server: McpServer): void {
         const imports = manifest.install.schemaImports;
         patchSchemaImports(root, manifest.name, imports, 'add');
         steps.push(`Schema imports: ${imports.join(', ')}`);
+      }
+      if (manifest.install.schemaImportsPg && manifest.install.schemaImportsPg.length > 0) {
+        const imports = manifest.install.schemaImportsPg;
+        patchSchemaImportsPg(root, manifest.name, imports, 'add');
+        steps.push(`PostgreSQL schema imports: ${imports.join(', ')}`);
       }
       if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
         const reExports = manifest.install.dbReExports;
@@ -100,6 +158,10 @@ export function registerPluginTools(server: McpServer): void {
       if (manifest.install.schemaTables) {
         patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'add');
         steps.push('Schema tables added');
+      }
+      if (manifest.install.schemaTablesPg) {
+        patchSchemaTablesPg(root, manifest.name, pluginDir, manifest.install.schemaTablesPg, 'add');
+        steps.push('PostgreSQL schema tables added');
       }
       if (
         (manifest.install.transpilePackages?.length ?? 0) > 0 ||
@@ -112,7 +174,9 @@ export function registerPluginTools(server: McpServer): void {
       if (manifest.install.pages && Object.keys(manifest.install.pages).length > 0) {
         const conflicts = findPageConflicts(root, manifest.install.pages);
         backedUp = conflicts.filter((c) => !c.isStub).map((c) => c.conflictRel);
-        patchPages(root, manifest.name, manifest.install.pages, 'add', { onConflict: 'backup' });
+        patchPages(root, manifest.name, manifest.install.pages, 'add', {
+          onConflict: 'backup',
+        });
         steps.push(`${Object.keys(manifest.install.pages).length} page(s) created`);
         if (backedUp.length > 0) {
           steps.push(
@@ -144,7 +208,9 @@ export function registerPluginTools(server: McpServer): void {
         ],
       };
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }] };
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
+      };
     },
   );
 
@@ -156,9 +222,13 @@ export function registerPluginTools(server: McpServer): void {
       inputSchema: {
         name: z.string().describe('Plugin name to remove'),
         env_source: envSourceSchema.optional(),
+        dry_run: z
+          .boolean()
+          .default(false)
+          .describe('Preview changes without modifying the project'),
       },
     },
-    ({ name, env_source }) => {
+    ({ name, env_source, dry_run }) => {
       const root = getRoot();
       const result = resolveManifest(root, name);
       const manifest = result?.manifest ?? {
@@ -171,6 +241,31 @@ export function registerPluginTools(server: McpServer): void {
       const pluginDir = result?.pluginDir ?? '';
       const steps: string[] = [];
 
+      if (dry_run) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  dryRun: true,
+                  plugin: manifest.name,
+                  changes: [
+                    'Remove plugin pages',
+                    'Unregister plugin',
+                    'Remove schema changes',
+                    'Update package.json',
+                    ...(env_source !== 'process' ? [`Update ${ENV_FILE_NAME}`] : []),
+                  ],
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
       if (manifest.install.pages && Object.keys(manifest.install.pages).length > 0) {
         patchPages(root, manifest.name, manifest.install.pages, 'remove');
         steps.push('Pages removed');
@@ -182,9 +277,23 @@ export function registerPluginTools(server: McpServer): void {
         patchSchemaTables(root, manifest.name, pluginDir, manifest.install.schemaTables, 'remove');
         steps.push('Schema tables removed');
       }
+      if (manifest.install.schemaTablesPg) {
+        patchSchemaTablesPg(
+          root,
+          manifest.name,
+          pluginDir,
+          manifest.install.schemaTablesPg,
+          'remove',
+        );
+        steps.push('PostgreSQL schema tables removed');
+      }
       if (manifest.install.schemaImports && manifest.install.schemaImports.length > 0) {
         patchSchemaImports(root, manifest.name, manifest.install.schemaImports, 'remove');
         steps.push('Schema imports removed');
+      }
+      if (manifest.install.schemaImportsPg && manifest.install.schemaImportsPg.length > 0) {
+        patchSchemaImportsPg(root, manifest.name, manifest.install.schemaImportsPg, 'remove');
+        steps.push('PostgreSQL schema imports removed');
       }
       if (manifest.install.dbReExports && manifest.install.dbReExports.length > 0) {
         patchDbReExports(root, manifest.name, manifest.install.dbReExports, 'remove');
@@ -210,7 +319,10 @@ export function registerPluginTools(server: McpServer): void {
 
       return {
         content: [
-          { type: 'text' as const, text: JSON.stringify({ plugin: name, steps }, null, 2) },
+          {
+            type: 'text' as const,
+            text: JSON.stringify({ plugin: name, steps }, null, 2),
+          },
         ],
       };
     },
@@ -244,7 +356,9 @@ export function registerPluginTools(server: McpServer): void {
           : [];
 
       if (pluginNames.length === 0) {
-        return { content: [{ type: 'text' as const, text: 'No installed plugins found.' }] };
+        return {
+          content: [{ type: 'text' as const, text: 'No installed plugins found.' }],
+        };
       }
 
       const results: { plugin: string; updated: boolean; error?: string }[] = [];
@@ -252,28 +366,48 @@ export function registerPluginTools(server: McpServer): void {
       for (const pName of pluginNames) {
         const res = resolveManifest(root, pName);
         if (!res) {
-          results.push({ plugin: pName, updated: false, error: 'manifest not found' });
+          results.push({
+            plugin: pName,
+            updated: false,
+            error: 'manifest not found',
+          });
           continue;
         }
 
         const { manifest, pluginDir } = res;
 
-        if (!manifest.install.schemaTables) {
+        if (!manifest.install.schemaTables && !manifest.install.schemaTablesPg) {
           results.push({ plugin: pName, updated: false });
           continue;
         }
 
-        const updated = patchSchemaTables(
-          root,
-          manifest.name,
-          pluginDir,
-          manifest.install.schemaTables,
-          'update',
-        );
+        const updatedSqlite = manifest.install.schemaTables
+          ? patchSchemaTables(
+              root,
+              manifest.name,
+              pluginDir,
+              manifest.install.schemaTables,
+              'update',
+            )
+          : false;
+        const updatedPostgres = manifest.install.schemaTablesPg
+          ? patchSchemaTablesPg(
+              root,
+              manifest.name,
+              pluginDir,
+              manifest.install.schemaTablesPg,
+              'update',
+            )
+          : false;
+        const updated = updatedSqlite || updatedPostgres;
 
         const imports = manifest.install.schemaImports;
         if (updated && imports && imports.length > 0) {
           patchSchemaImports(root, manifest.name, imports, 'add');
+        }
+        const importsPg = manifest.install.schemaImportsPg;
+        if (updated && importsPg && importsPg.length > 0) {
+          patchSchemaImportsPg(root, manifest.name, importsPg, 'add');
         }
 
         results.push({ plugin: pName, updated });
@@ -292,7 +426,9 @@ export function registerPluginTools(server: McpServer): void {
           : [],
       };
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }] };
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(output, null, 2) }],
+      };
     },
   );
 }

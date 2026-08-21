@@ -18,6 +18,7 @@ export type JobProvider = 'memory' | 'bullmq' | 'none';
 export type NotificationTransport = 'poll' | 'sse' | 'ws';
 export type EmbeddingProvider = 'openai' | 'ollama';
 export type VectorStoreProvider = 'sqlite' | 'memory';
+export type SupportProvider = 'crisp' | 'intercom' | 'none';
 
 /** Feature toggle key → ENABLE_* env var. Order = display order. */
 export const FEATURE_ENV: Readonly<Record<string, string>> = {
@@ -40,7 +41,101 @@ export const FEATURE_ENV: Readonly<Record<string, string>> = {
   experiments: 'ENABLE_EXPERIMENTS',
   dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
   plugins: 'ENABLE_PLUGINS',
+  compare: 'ENABLE_COMPARE',
 };
+
+/**
+ * Snapshot of the host env-schema contract. The compatibility check compares
+ * this explicit contract with `src/config/env-schema.ts`; adding a variable to
+ * the template therefore produces an actionable doctor warning until the CLI
+ * mirror is reviewed.
+ */
+export const ENV_SCHEMA_KEYS = [
+  'NEXT_PUBLIC_APP_URL',
+  'NEXT_PUBLIC_APP_NAME',
+  'APP_MODE',
+  'DEMO_URL',
+  'LOG_LEVEL',
+  'DB_PROVIDER',
+  'AUTH_PROVIDER',
+  'PAYMENT_PROVIDER',
+  'STORAGE_PROVIDER',
+  'JOB_PROVIDER',
+  'SSO_PROVIDER',
+  'NOTIFICATION_TRANSPORT',
+  'EMBEDDING_PROVIDER',
+  'VECTOR_STORE_PROVIDER',
+  'SUPPORT_PROVIDER',
+  'TURSO_DATABASE_URL',
+  'TURSO_AUTH_TOKEN',
+  'DATABASE_URL',
+  'ENABLE_TWO_FACTOR',
+  'AUTH_MAGIC_LINK',
+  'AUTH_PASSKEYS',
+  'BETTER_AUTH_SECRET',
+  'BETTER_AUTH_URL',
+  'KINDE_CLIENT_ID',
+  'KINDE_CLIENT_SECRET',
+  'KINDE_ISSUER_URL',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+  'APPLE_CLIENT_ID',
+  'APPLE_CLIENT_SECRET',
+  'DISCORD_CLIENT_ID',
+  'DISCORD_CLIENT_SECRET',
+  'TWITTER_CLIENT_ID',
+  'TWITTER_CLIENT_SECRET',
+  'MICROSOFT_CLIENT_ID',
+  'MICROSOFT_CLIENT_SECRET',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_CONNECT_FEE_PERCENT',
+  'STRIPE_CONNECT_ONBOARDING_RETURN_URL',
+  'STRIPE_CONNECT_ONBOARDING_REFRESH_URL',
+  'LEMONSQUEEZY_API_KEY',
+  'LEMONSQUEEZY_STORE_ID',
+  'LEMONSQUEEZY_WEBHOOK_SECRET',
+  'POLAR_ACCESS_TOKEN',
+  'POLAR_WEBHOOK_SECRET',
+  'S3_BUCKET',
+  'S3_REGION',
+  'S3_ENDPOINT',
+  'S3_ACCESS_KEY_ID',
+  'S3_SECRET_ACCESS_KEY',
+  'S3_PUBLIC_URL',
+  'JOB_QUEUE_NAME',
+  'REDIS_URL',
+  'CODAPULT_WORKER_MODE',
+  'CODAPULT_DISABLE_IN_PROCESS_JOBS',
+  'CUSTOM_DOMAIN_CNAME_TARGET',
+  'REFERRAL_REWARD_AMOUNT',
+  'REFERRAL_REWARD_TYPE',
+  'SSO_PRODUCT',
+  'SSO_DB_ENGINE',
+  'SSO_DB_TYPE',
+  'SSO_DB_URL',
+  'NOTIFICATION_WS_URL',
+  'NOTIFICATION_WS_PORT',
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'OLLAMA_BASE_URL',
+  'OLLAMA_EMBEDDING_MODEL',
+  'RESEND_API_KEY',
+  'EMAIL_FROM',
+  'CRISP_WEBSITE_ID',
+  'INTERCOM_APP_ID',
+  'DEFAULT_MONTHLY_CREDITS',
+  'OTEL_EXPORTER_OTLP_ENDPOINT',
+  'OTEL_SERVICE_NAME',
+  'OTEL_TRACES_SAMPLE_RATE',
+  'OTEL_EXPORTER_OTLP_HEADERS',
+  'POSTHOG_TOKEN',
+  'POSTHOG_HOST',
+  'POSTHOG_UI_HOST',
+  ...Object.values(FEATURE_ENV),
+] as const;
 
 /** Auth-gated features: when AUTH_PROVIDER=none, these are forced off. */
 export const AUTH_GATED_FEATURES: ReadonlySet<string> = new Set([
@@ -84,13 +179,16 @@ export interface Adapters {
   notifications: NotificationTransport;
   embedding: EmbeddingProvider;
   vectorStore: VectorStoreProvider;
+  support: SupportProvider;
 }
 
 /** Resolve all adapters from .env content, applying the same defaults as `env.*`. */
 export function getAdapters(envContent: string): Adapters {
+  const landingMode = readEnv<string>(envContent, 'APP_MODE', 'app') === 'landing';
+  const authProvider = readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth');
   return {
     database: readEnv<DbProvider>(envContent, 'DB_PROVIDER', 'turso'),
-    auth: readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth'),
+    auth: landingMode ? 'none' : authProvider,
     sso: readEnv<SSOProvider>(envContent, 'SSO_PROVIDER', 'none'),
     payments: readEnv<PaymentProvider>(envContent, 'PAYMENT_PROVIDER', 'stripe'),
     storage: readEnv<StorageProvider>(envContent, 'STORAGE_PROVIDER', 'local'),
@@ -98,6 +196,7 @@ export function getAdapters(envContent: string): Adapters {
     notifications: readEnv<NotificationTransport>(envContent, 'NOTIFICATION_TRANSPORT', 'poll'),
     embedding: readEnv<EmbeddingProvider>(envContent, 'EMBEDDING_PROVIDER', 'openai'),
     vectorStore: readEnv<VectorStoreProvider>(envContent, 'VECTOR_STORE_PROVIDER', 'sqlite'),
+    support: readEnv<SupportProvider>(envContent, 'SUPPORT_PROVIDER', 'none'),
   };
 }
 
@@ -110,14 +209,16 @@ export function getAdapters(envContent: string): Adapters {
  * - auth-gated features forced off when AUTH_PROVIDER=none.
  */
 export function getFeatures(envContent: string): Record<string, boolean> {
-  const authProvider = readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth');
+  const appMode = readEnv<string>(envContent, 'APP_MODE', 'app');
+  const authProvider = getAdapters(envContent).auth;
   const authEnabled = authProvider !== 'none';
 
   const features: Record<string, boolean> = { auth: authEnabled };
 
   for (const [key, envVar] of Object.entries(FEATURE_ENV)) {
     const raw = readEnvVar(envContent, envVar);
-    const enabled = raw !== 'false';
+    const defaultEnabled = key === 'compare' ? appMode === 'landing' : true;
+    const enabled = raw == null ? defaultEnabled : raw !== 'false';
     features[key] = enabled && (!AUTH_GATED_FEATURES.has(key) || authEnabled);
   }
 
@@ -132,7 +233,7 @@ export interface AuthMethods {
 }
 
 export function getAuthMethods(envContent: string): AuthMethods {
-  const authEnabled = readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth') !== 'none';
+  const authEnabled = getAdapters(envContent).auth !== 'none';
   return {
     twoFactor: authEnabled && readEnvVar(envContent, 'ENABLE_TWO_FACTOR') !== 'false',
     magicLink: (readEnvVar(envContent, 'AUTH_MAGIC_LINK') ?? 'true') === 'true',
@@ -257,6 +358,21 @@ export function findProviderIssues(envContent: string): EnvIssue[] {
     issues.push({
       key: 'NOTIFICATION_WS_URL',
       message: 'Required when NOTIFICATION_TRANSPORT="ws"',
+      severity: 'error',
+    });
+  }
+
+  if (adapters.support === 'crisp' && !has('CRISP_WEBSITE_ID')) {
+    issues.push({
+      key: 'CRISP_WEBSITE_ID',
+      message: 'Required when SUPPORT_PROVIDER="crisp"',
+      severity: 'error',
+    });
+  }
+  if (adapters.support === 'intercom' && !has('INTERCOM_APP_ID')) {
+    issues.push({
+      key: 'INTERCOM_APP_ID',
+      message: 'Required when SUPPORT_PROVIDER="intercom"',
       severity: 'error',
     });
   }

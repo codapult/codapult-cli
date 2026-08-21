@@ -4,7 +4,13 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { findProjectRoot, readProjectFile } from '../../utils/project.js';
 import { getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
+import { getAdapters } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
+import { commandResponse, runProjectCommand } from '../../utils/command.js';
+import { previewMigration } from '../../utils/db-diff.js';
+import { parseDatabaseSchema } from '../../utils/schema-parser.js';
+import { compareSchemaFiles } from '../../utils/schema-parity.js';
+import { diffSchemaWithLiveDatabase, inspectLiveDatabase } from '../../utils/live-db-diff.js';
 
 function getRoot(): string {
   const root = findProjectRoot();
@@ -12,63 +18,124 @@ function getRoot(): string {
   return root;
 }
 
-interface TableInfo {
-  name: string;
-  columns: {
-    name: string;
-    type: string;
-    constraints: string[];
-  }[];
+function getDatabaseContext(
+  root: string,
+  envSource?: 'file' | 'process',
+): {
+  provider: 'turso' | 'postgres';
+  schemaPath: string;
+} {
+  const envContent = loadProjectEnv(root, getProjectEnvOptions(envSource)).content;
+  const provider = getAdapters(envContent).database;
+  return {
+    provider,
+    schemaPath: provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts',
+  };
 }
 
-function parseSchema(content: string): TableInfo[] {
-  const tables: TableInfo[] = [];
-  const tableRegex =
-    /export\s+const\s+(\w+)\s*=\s*(?:sqliteTable|pgTable)\(\s*['"](\w+)['"]\s*,\s*\{/g;
-
-  let match;
-  while ((match = tableRegex.exec(content)) != null) {
-    const tableName = match[2];
-
-    const startIdx = match.index + match[0].length;
-    let depth = 1;
-    let endIdx = startIdx;
-    for (let i = startIdx; i < content.length && depth > 0; i += 1) {
-      if (content[i] === '{') depth += 1;
-      if (content[i] === '}') depth -= 1;
-      endIdx = i;
-    }
-
-    const body = content.slice(startIdx, endIdx);
-    const columns: TableInfo['columns'] = [];
-
-    const colRegex =
-      /(\w+)\s*:\s*(text|integer|real|blob|boolean|timestamp|serial)\(['"](\w+)['"]/g;
-    let colMatch;
-    while ((colMatch = colRegex.exec(body)) != null) {
-      const colName = colMatch[1];
-      const colType = colMatch[2];
-      const constraints: string[] = [];
-
-      const lineEnd = body.indexOf('\n', colMatch.index + colMatch[0].length);
-      const restOfLine = body.slice(colMatch.index, lineEnd > -1 ? lineEnd : undefined);
-
-      if (restOfLine.includes('.primaryKey()')) constraints.push('PRIMARY KEY');
-      if (restOfLine.includes('.notNull()')) constraints.push('NOT NULL');
-      if (restOfLine.includes('.unique()')) constraints.push('UNIQUE');
-      if (restOfLine.includes('.references(')) constraints.push('FK');
-      if (restOfLine.includes('.$defaultFn(')) constraints.push('DEFAULT');
-
-      columns.push({ name: colName, type: colType, constraints });
-    }
-
-    tables.push({ name: tableName, columns });
-  }
-
-  return tables;
-}
+const parseSchema = parseDatabaseSchema;
 
 export function registerDbTools(server: McpServer): void {
+  server.registerTool(
+    'codapult_db_generate',
+    {
+      title: 'Generate Database Migration',
+      description: 'Generate a database migration from the current Drizzle schema',
+      inputSchema: {
+        dry_run: z.boolean().default(false).describe('Preview without changing files'),
+      },
+    },
+    ({ dry_run }) => {
+      const root = getRoot();
+      const { provider } = getDatabaseContext(root);
+      if (dry_run) {
+        const preview = previewMigration(root, provider, getDatabaseContext(root).schemaPath);
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(preview, null, 2) }],
+          isError: !preview.command.passed,
+        };
+      }
+      return commandResponse(
+        runProjectCommand('pnpm db:generate', root, {
+          env: provider === 'postgres' ? { DB_PROVIDER: 'postgres' } : undefined,
+        }),
+      );
+    },
+  );
+
+  server.registerTool(
+    'codapult_db_migration_diff',
+    {
+      title: 'Preview Database Migration',
+      description:
+        'Generate the pending SQL migration in a temporary directory without changing project files. Compares source schema with local migration history, not the live database.',
+      inputSchema: {},
+    },
+    () => {
+      const root = getRoot();
+      const { provider, schemaPath } = getDatabaseContext(root);
+      const preview = previewMigration(root, provider, schemaPath);
+      return {
+        content: [{ type: 'text' as const, text: JSON.stringify(preview, null, 2) }],
+        isError: !preview.command.passed,
+      };
+    },
+  );
+
+  server.registerTool(
+    'codapult_db_push',
+    {
+      title: 'Push Database Schema',
+      description: 'Apply the current Drizzle schema to the configured database',
+      inputSchema: {
+        dry_run: z.boolean().default(false).describe('Preview without changing the database'),
+      },
+    },
+    ({ dry_run }) => {
+      const root = getRoot();
+      const { provider } = getDatabaseContext(root);
+      if (dry_run) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({ dryRun: true, command: 'pnpm db:push', provider }, null, 2),
+            },
+          ],
+        };
+      }
+      return commandResponse(
+        runProjectCommand('pnpm db:push', root, {
+          env: provider === 'postgres' ? { DB_PROVIDER: 'postgres' } : undefined,
+        }),
+      );
+    },
+  );
+
+  server.registerTool(
+    'codapult_db_seed',
+    {
+      title: 'Seed Database',
+      description: 'Run the project database seed script',
+      inputSchema: {
+        dry_run: z.boolean().default(false).describe('Preview without changing the database'),
+      },
+    },
+    ({ dry_run }) => {
+      if (dry_run) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({ dryRun: true, command: 'pnpm db:seed' }, null, 2),
+            },
+          ],
+        };
+      }
+      return commandResponse(runProjectCommand('pnpm db:seed', getRoot()));
+    },
+  );
+
   server.registerTool(
     'codapult_db_get_tables',
     {
@@ -78,7 +145,8 @@ export function registerDbTools(server: McpServer): void {
     },
     () => {
       const root = getRoot();
-      const content = readProjectFile(root, 'src/lib/db/schema.ts');
+      const { provider, schemaPath } = getDatabaseContext(root);
+      const content = readProjectFile(root, schemaPath);
       if (!content)
         return {
           content: [{ type: 'text' as const, text: 'Schema file not found' }],
@@ -92,7 +160,14 @@ export function registerDbTools(server: McpServer): void {
         columnNames: t.columns.map((c) => c.name),
       }));
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify(summary, null, 2) }] };
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify({ provider, schemaPath, tables: summary }, null, 2),
+          },
+        ],
+      };
     },
   );
 
@@ -108,7 +183,8 @@ export function registerDbTools(server: McpServer): void {
     },
     ({ table }) => {
       const root = getRoot();
-      const content = readProjectFile(root, 'src/lib/db/schema.ts');
+      const { provider, schemaPath } = getDatabaseContext(root);
+      const content = readProjectFile(root, schemaPath);
       if (!content)
         return {
           content: [{ type: 'text' as const, text: 'Schema file not found' }],
@@ -127,7 +203,14 @@ export function registerDbTools(server: McpServer): void {
         };
       }
 
-      return { content: [{ type: 'text' as const, text: JSON.stringify(found, null, 2) }] };
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify({ provider, schemaPath, ...found }, null, 2),
+          },
+        ],
+      };
     },
   );
 
@@ -144,10 +227,11 @@ export function registerDbTools(server: McpServer): void {
       const root = getRoot();
 
       const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
-      const providerMatch = /^DB_PROVIDER\s*=\s*"?(\w+)"?/m.exec(envContent);
-      const provider = providerMatch?.[1] ?? 'turso';
+      const provider = getAdapters(envContent).database;
+      const schemaPath =
+        provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
 
-      const schemaContent = readProjectFile(root, 'src/lib/db/schema.ts') ?? '';
+      const schemaContent = readProjectFile(root, schemaPath) ?? '';
       const tables = parseSchema(schemaContent);
 
       let sqliteMigrations = 0;
@@ -161,8 +245,104 @@ export function registerDbTools(server: McpServer): void {
         pgMigrations = readdirSync(migrPgDir).filter((f) => f.endsWith('.sql')).length;
       }
 
-      const result = { provider, tableCount: tables.length, sqliteMigrations, pgMigrations };
+      const result = {
+        provider,
+        schemaPath,
+        migrationsPath:
+          provider === 'postgres' ? 'src/lib/db/migrations-pg' : 'src/lib/db/migrations',
+        tableCount: tables.length,
+        sqliteMigrations,
+        pgMigrations,
+      };
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    'codapult_db_live_diff',
+    {
+      title: 'Compare Schema With Live Database',
+      description:
+        'Read-only comparison of the active Drizzle schema with the configured live database. Runs only catalog queries; never executes DDL or migration commands.',
+      inputSchema: {
+        env_source: envSourceSchema.optional(),
+      },
+    },
+    ({ env_source }) => {
+      const root = getRoot();
+      const { provider, schemaPath } = getDatabaseContext(root, env_source);
+      const schema = parseSchema(readProjectFile(root, schemaPath) ?? '');
+      try {
+        const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
+        const database = inspectLiveDatabase(root, envContent);
+        const differences = diffSchemaWithLiveDatabase(schema, database);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  provider,
+                  schemaPath,
+                  readOnly: true,
+                  identical: differences.length === 0,
+                  status: differences.length > 0 ? 'fail' : 'ok',
+                  differences,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: error instanceof Error ? error.message : 'Live database inspection failed',
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    'codapult_db_schema_diff',
+    {
+      title: 'Compare Database Schemas',
+      description:
+        'Compare SQLite and PostgreSQL schema files and report missing tables, columns, and type differences',
+      inputSchema: {},
+    },
+    () => {
+      const root = getRoot();
+      const sqlitePath = 'src/lib/db/schema.ts';
+      const postgresPath = 'src/lib/db/schema-pg.ts';
+      const report = compareSchemaFiles(
+        parseSchema(readProjectFile(root, sqlitePath) ?? ''),
+        parseSchema(readProjectFile(root, postgresPath) ?? ''),
+      );
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                ...report,
+                sqlitePath,
+                postgresPath,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+        isError: report.status === 'fail',
+      };
     },
   );
 }

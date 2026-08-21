@@ -625,8 +625,8 @@ function generateMcpConfig(root: string): void {
   const config = {
     mcpServers: {
       codapult: {
-        command: 'node',
-        args: ['../codapult-cli/dist/index.js', 'mcp-server'],
+        command: 'npx',
+        args: ['-y', '@codapult/cli@latest', 'mcp-server'],
         cwd: '.',
       },
     },

@@ -42,21 +42,35 @@ export function registerGenerateTools(server: McpServer): void {
       title: 'Generate Page',
       description:
         'Create a new dashboard page following Codapult conventions (server component, auth, Card UI)',
-      inputSchema: { name: z.string().describe('Page name (e.g. "analytics", "team-settings")') },
+      inputSchema: {
+        name: z.string().describe('Page name (e.g. "analytics", "team-settings")'),
+        dry_run: z.boolean().default(false).describe('Preview without writing files'),
+      },
     },
-    ({ name }) => {
+    ({ name, dry_run }) => {
       validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const pascal = toPascal(name);
       const title = pascal.replace(/([A-Z])/g, ' $1').trim();
+      const path = `src/app/(dashboard)/dashboard/${kebab}/page.tsx`;
+      if (dry_run)
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
 
       const page = `import { getAppSession } from '@/lib/auth';\nimport { redirect } from 'next/navigation';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\n\nexport const metadata = {\n  title: '${title} — Codapult',\n};\n\nexport default async function ${pascal}Page() {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  return (\n    <div className="space-y-6">\n      <div>\n        <h1 className="text-3xl font-bold tracking-tight">${title}</h1>\n        <p className="text-muted-foreground">Manage your ${kebab} settings</p>\n      </div>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>${title}</CardTitle>\n          <CardDescription>Your ${kebab} content goes here</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <p className="text-muted-foreground">Start building your ${kebab} page.</p>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
 
-      const result = writeIfNew(
-        resolve(root, `src/app/(dashboard)/dashboard/${kebab}/page.tsx`),
-        page,
-      );
+      const result = writeIfNew(resolve(root, path), page);
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
     },
   );
@@ -66,18 +80,35 @@ export function registerGenerateTools(server: McpServer): void {
     {
       title: 'Generate API Route',
       description: 'Create a new API route with auth, rate limiting, and Zod validation',
-      inputSchema: { name: z.string().describe('Route name (e.g. "webhooks", "billing")') },
+      inputSchema: {
+        name: z.string().describe('Route name (e.g. "webhooks", "billing")'),
+        dry_run: z.boolean().default(false).describe('Preview without writing files'),
+      },
     },
-    ({ name }) => {
+    ({ name, dry_run }) => {
       validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const schemaName = `${camel}Schema`;
+      const path = `src/app/api/${kebab}/route.ts`;
+      if (dry_run)
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
 
       const route = `import { NextResponse } from 'next/server';\nimport { getAppSession } from '@/lib/auth';\nimport { checkRateLimit } from '@/lib/rate-limit';\nimport { z } from 'zod';\n\nconst ${schemaName} = z.object({\n  // Define your request body schema here\n});\n\nexport async function GET() {\n  const session = await getAppSession();\n  if (!session) {\n    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });\n  }\n\n  const { allowed, resetAt } = checkRateLimit(\`${kebab}:\${session.user.id}\`, {\n    limit: 30,\n    windowSeconds: 60,\n  });\n  if (!allowed) {\n    return NextResponse.json(\n      { error: 'Too many requests. Please wait a moment.' },\n      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) } },\n    );\n  }\n\n  return NextResponse.json({ message: 'ok' });\n}\n\nexport async function POST(req: Request) {\n  const session = await getAppSession();\n  if (!session) {\n    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });\n  }\n\n  const { allowed, resetAt } = checkRateLimit(\`${kebab}:\${session.user.id}\`, {\n    limit: 30,\n    windowSeconds: 60,\n  });\n  if (!allowed) {\n    return NextResponse.json(\n      { error: 'Too many requests. Please wait a moment.' },\n      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) } },\n    );\n  }\n\n  try {\n    const body = ${schemaName}.parse(await req.json());\n    return NextResponse.json({ success: true });\n  } catch {\n    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });\n  }\n}\n`;
 
-      const result = writeIfNew(resolve(root, `src/app/api/${kebab}/route.ts`), route);
+      const result = writeIfNew(resolve(root, path), route);
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
     },
   );
@@ -89,18 +120,33 @@ export function registerGenerateTools(server: McpServer): void {
       description: 'Create a new server action with auth, rate limiting, and Zod validation',
       inputSchema: {
         name: z.string().describe('Action name (e.g. "update-profile", "create-team")'),
+        dry_run: z.boolean().default(false).describe('Preview without writing files'),
       },
     },
-    ({ name }) => {
+    ({ name, dry_run }) => {
       validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const schemaName = `${camel}Schema`;
+      const path = `src/lib/actions/${kebab}.ts`;
+      if (dry_run)
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
 
       const action = `'use server';\n\nimport { redirect } from 'next/navigation';\nimport { revalidatePath } from 'next/cache';\nimport { getAppSession } from '@/lib/auth';\nimport { checkRateLimit } from '@/lib/rate-limit';\nimport { z } from 'zod';\n\nconst ${schemaName} = z.object({\n  // Define your input schema here\n});\n\nconst RATE_LIMIT = { limit: 10, windowSeconds: 60 } as const;\n\nexport async function ${camel}Action(input: unknown): Promise<{ success: boolean }> {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  const { allowed } = checkRateLimit(\`${kebab}:\${session.user.id}\`, RATE_LIMIT);\n  if (!allowed) throw new Error('Too many requests. Please wait a moment.');\n\n  const data = ${schemaName}.parse(input);\n\n  // TODO: implement your action logic\n\n  revalidatePath('/dashboard/${kebab}');\n  return { success: true };\n}\n`;
 
-      const result = writeIfNew(resolve(root, `src/lib/actions/${kebab}.ts`), action);
+      const result = writeIfNew(resolve(root, path), action);
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
     },
   );
@@ -111,15 +157,37 @@ export function registerGenerateTools(server: McpServer): void {
       title: 'Generate Plugin',
       description:
         'Scaffold a new plugin repository with package.json, tsconfig, index.ts, and manifest',
-      inputSchema: { name: z.string().describe('Plugin name (e.g. "my-widget")') },
+      inputSchema: {
+        name: z.string().describe('Plugin name (e.g. "my-widget")'),
+        dry_run: z.boolean().default(false).describe('Preview without creating files'),
+      },
     },
-    ({ name }) => {
+    ({ name, dry_run }) => {
       validateGeneratedName(name);
       const root = getRoot();
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const pascal = toPascal(name);
       const pluginDir = resolve(root, '..', `codapult-plugin-${kebab}`);
+
+      if (dry_run) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  dryRun: true,
+                  path: pluginDir,
+                  files: ['package.json', 'src/index.ts', 'codapult-plugin.json', '.gitignore'],
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
 
       if (existsSync(pluginDir)) {
         return {

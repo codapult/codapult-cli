@@ -24,8 +24,11 @@ import {
   dbSeedCommand,
   dbStudioCommand,
   dbStatusCommand,
+  dbLiveDiffCommand,
+  dbSchemaDiffCommand,
 } from './commands/db.js';
 import { envCheckCommand, envSyncCommand } from './commands/env.js';
+import { mcpContractCheckCommand, mcpDoctorCommand, mcpUpdateCommand } from './commands/mcp.js';
 import {
   deployVercelCommand,
   deployDockerCommand,
@@ -42,9 +45,7 @@ const program = new Command()
     styleCommandText: (str) => pc.yellow(str),
     styleOptionText: (str) => pc.green(str),
   })
-  .hook('postAction', () => {
-    process.exit(0);
-  });
+  .hook('postAction', () => undefined);
 
 function withNoEnvFileOption(command: Command): Command {
   return command.option(
@@ -145,6 +146,12 @@ withNoEnvFileOption(db.command('studio').description('open Drizzle Studio')).act
 withNoEnvFileOption(
   db.command('status').description('show schema info and migration count'),
 ).action(dbStatusCommand);
+withNoEnvFileOption(
+  db.command('live-diff').description('read-only compare schema with the live database'),
+).action(dbLiveDiffCommand);
+db.command('schema-diff')
+  .description('compare SQLite and PostgreSQL schema files')
+  .action(dbSchemaDiffCommand);
 
 const env = program.command('env').description('environment variable management');
 
@@ -170,8 +177,28 @@ withNoEnvFileOption(deploy.command('status').description('check deploy readiness
   deployStatusCommand,
 );
 
-program
+const mcp = program
   .commandsGroup('AI Integration')
+  .command('mcp')
+  .description('manage the project MCP configuration');
+
+mcp
+  .command('update [version]')
+  .description('pin the Codapult MCP server to a version (defaults to the latest npm version)')
+  .option('--dry-run', 'show the update without writing .cursor/mcp.json')
+  .action(mcpUpdateCommand);
+
+mcp
+  .command('doctor')
+  .description('check project health for MCP-assisted work')
+  .action(mcpDoctorCommand);
+
+mcp
+  .command('contract-check')
+  .description('verify env-schema.ts matches the CLI MCP compatibility contract')
+  .action(mcpContractCheckCommand);
+
+program
   .command('mcp-server')
   .description('start MCP server for AI assistant integration (Cursor, Claude, Codex)')
   .action(async () => {

@@ -4,6 +4,10 @@ import { resolve } from 'node:path';
 import { findProjectRoot } from '../utils/project.js';
 import { loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn } from '../utils/ui.js';
+import { parseDatabaseSchema } from '../utils/schema-parser.js';
+import { compareSchemaFiles } from '../utils/schema-parity.js';
+import { renderStructuredReport, summarizeChecks } from '../utils/check-report.js';
+import { diffSchemaWithLiveDatabase, inspectLiveDatabase } from '../utils/live-db-diff.js';
 
 function run(cmd: string, cwd: string): void {
   info(`Running: ${cmd}`);
@@ -16,10 +20,10 @@ function run(cmd: string, cwd: string): void {
   }
 }
 
-function getDbProvider(root: string, options?: ProjectEnvOptions): string {
+function getDbProvider(root: string, options?: ProjectEnvOptions): 'turso' | 'postgres' {
   const { content } = loadProjectEnv(root, options);
   const match = /^DB_PROVIDER\s*=\s*"?(\w+)"?/m.exec(content);
-  if (match) return match[1];
+  if (match?.[1] === 'postgres') return 'postgres';
   return 'turso';
 }
 
@@ -124,4 +128,91 @@ export async function dbStatusCommand(options: ProjectEnvOptions = {}): Promise<
   }
 
   console.log();
+}
+
+export function dbLiveDiffCommand(options: ProjectEnvOptions = {}): void {
+  const root = findProjectRoot();
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exitCode = 1;
+    return;
+  }
+  const env = loadProjectEnv(root, options);
+  const provider = getDbProvider(root, options);
+  const schemaPath = provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
+  heading('Live Database Diff');
+  info('Read-only: querying database metadata; no DDL or migrations will run.');
+  const absoluteSchemaPath = resolve(root, schemaPath);
+  if (!existsSync(absoluteSchemaPath)) {
+    fail(`Active schema file is missing: ${schemaPath}`);
+    process.exitCode = 1;
+    return;
+  }
+  const schema = parseDatabaseSchema(readFileSync(absoluteSchemaPath, 'utf-8'));
+  try {
+    const differences = diffSchemaWithLiveDatabase(schema, inspectLiveDatabase(root, env.content));
+    if (differences.length === 0) success('Live database matches the active schema.');
+    else {
+      warn(`${differences.length} schema difference(s) found:`);
+      for (const difference of differences)
+        dim(
+          `  ${difference.table}: ${difference.issue} ${JSON.stringify(difference.details ?? '')}`,
+        );
+      process.exitCode = 1;
+    }
+  } catch (error) {
+    fail(error instanceof Error ? error.message : 'Live database inspection failed.');
+    process.exitCode = 1;
+  }
+}
+
+export function dbSchemaDiffCommand(): void {
+  const root = findProjectRoot();
+  if (!root) {
+    fail('Not inside a Codapult project.');
+    process.exitCode = 1;
+    return;
+  }
+
+  const sqlitePath = 'src/lib/db/schema.ts';
+  const postgresPath = 'src/lib/db/schema-pg.ts';
+  const sqliteAbsolutePath = resolve(root, sqlitePath);
+  const postgresAbsolutePath = resolve(root, postgresPath);
+  if (!existsSync(sqliteAbsolutePath) || !existsSync(postgresAbsolutePath)) {
+    const missing = [
+      !existsSync(sqliteAbsolutePath) ? sqlitePath : undefined,
+      !existsSync(postgresAbsolutePath) ? postgresPath : undefined,
+    ].filter((path): path is string => path !== undefined);
+    const report = summarizeChecks([
+      {
+        id: 'schema-files',
+        status: 'fail',
+        message: `Schema file(s) missing: ${missing.join(', ')}`,
+        path: root,
+      },
+    ]);
+    renderStructuredReport('Schema Parity', report);
+    process.exitCode = 1;
+    return;
+  }
+
+  const report = compareSchemaFiles(
+    parseDatabaseSchema(readFileSync(sqliteAbsolutePath, 'utf-8')),
+    parseDatabaseSchema(readFileSync(postgresAbsolutePath, 'utf-8')),
+  );
+  const checks = report.differences.map((difference, index) => ({
+    id: `schema-parity-${index + 1}`,
+    status: difference.severity,
+    message: `${difference.table}: ${difference.issue}${difference.details !== undefined ? ` ${JSON.stringify(difference.details)}` : ''}`,
+    path: `${sqlitePath} ↔ ${postgresPath}`,
+  }));
+  renderStructuredReport(
+    'Schema Parity',
+    summarizeChecks(
+      checks.length > 0
+        ? checks
+        : [{ id: 'schema-parity', status: 'ok', message: 'SQLite and PostgreSQL schemas match.' }],
+    ),
+  );
+  process.exitCode = report.status === 'fail' ? 1 : 0;
 }
