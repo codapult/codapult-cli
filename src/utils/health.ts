@@ -152,7 +152,7 @@ export function collectProjectHealth(
     add({
       id: `env-${issue.key.toLowerCase()}`,
       status: issue.severity === 'error' ? 'fail' : 'warn',
-      message: issue.message,
+      message: `${issue.key}: ${issue.message}`,
       details: { key: issue.key, severity: issue.severity },
     });
   }
