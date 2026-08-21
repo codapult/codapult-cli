@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.0](https://github.com/codapult/codapult-cli/compare/v0.15.3...v0.16.0) (2026-08-21)
+
+### Features
+
+* expand CLI and MCP project tooling ([1be5700](https://github.com/codapult/codapult-cli/commit/1be57007041b36badb5c145d2be0db7a7353b437))
+
 ## [0.15.3](https://github.com/codapult/codapult-cli/compare/v0.15.2...v0.15.3) (2026-08-20)
 
 ### Bug Fixes
