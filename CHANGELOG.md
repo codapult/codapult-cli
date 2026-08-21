@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.1](https://github.com/codapult/codapult-cli/compare/v0.16.0...v0.16.1) (2026-08-21)
+
+### Bug Fixes
+
+* enhance error message format in project health checks ([bc3724b](https://github.com/codapult/codapult-cli/commit/bc3724b8c839cf89ba6efb3e1a6d8257afcb860a))
+
 ## [0.16.0](https://github.com/codapult/codapult-cli/compare/v0.15.3...v0.16.0) (2026-08-21)
 
 ### Features
