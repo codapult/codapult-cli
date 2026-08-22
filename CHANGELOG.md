@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.2](https://github.com/codapult/codapult-cli/compare/v0.16.1...v0.16.2) (2026-08-22)
+
+### Bug Fixes
+
+* improve type safety and simplify environment variable checks ([4cc83c3](https://github.com/codapult/codapult-cli/commit/4cc83c390aa0f1235fa642aca939eb16c002df59))
+
 ## [0.16.1](https://github.com/codapult/codapult-cli/compare/v0.16.0...v0.16.1) (2026-08-21)
 
 ### Bug Fixes
