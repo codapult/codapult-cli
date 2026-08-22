@@ -46,7 +46,7 @@ export function checkEnvSchemaCompatibility(root: string): EnvSchemaCompatibilit
   }
 
   const actual = new Set(schemaKeys);
-  const expected = new Set(ENV_SCHEMA_KEYS);
+  const expected = new Set<string>(ENV_SCHEMA_KEYS);
   const schemaOnly = schemaKeys.filter((key) => !expected.has(key));
   const mirrorOnly = ENV_SCHEMA_KEYS.filter((key) => !actual.has(key));
   const drift = schemaOnly.length > 0 || mirrorOnly.length > 0;

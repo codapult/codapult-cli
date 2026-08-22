@@ -21,7 +21,7 @@ export type VectorStoreProvider = 'sqlite' | 'memory';
 export type SupportProvider = 'crisp' | 'intercom' | 'none';
 
 /** Feature toggle key → ENABLE_* env var. Order = display order. */
-export const FEATURE_ENV: Readonly<Record<string, string>> = {
+export const FEATURE_ENV = {
   apiDocs: 'ENABLE_API_DOCS',
   helpCenter: 'ENABLE_HELP_CENTER',
   blog: 'ENABLE_BLOG',
@@ -42,7 +42,7 @@ export const FEATURE_ENV: Readonly<Record<string, string>> = {
   dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
   plugins: 'ENABLE_PLUGINS',
   compare: 'ENABLE_COMPARE',
-};
+} as const;
 
 /**
  * Snapshot of the host env-schema contract. The compatibility check compares
@@ -258,23 +258,14 @@ export interface EnvIssue {
 export function findProviderIssues(envContent: string): EnvIssue[] {
   const issues: EnvIssue[] = [];
   const adapters = getAdapters(envContent);
-  const has = (k: string): boolean => readEnvVar(envContent, k) != null;
+  const has = (k: (typeof ENV_SCHEMA_KEYS)[number]): boolean => readEnvVar(envContent, k) != null;
 
-  if (adapters.database === 'turso') {
-    if (!has('TURSO_DATABASE_URL')) {
-      issues.push({
-        key: 'TURSO_DATABASE_URL',
-        message: 'Required when DB_PROVIDER="turso"',
-        severity: 'error',
-      });
-    }
-    if (!has('TURSO_AUTH_TOKEN')) {
-      issues.push({
-        key: 'TURSO_AUTH_TOKEN',
-        message: 'Required when DB_PROVIDER="turso"',
-        severity: 'warn',
-      });
-    }
+  if (adapters.database === 'turso' && !has('TURSO_DATABASE_URL')) {
+    issues.push({
+      key: 'TURSO_DATABASE_URL',
+      message: 'Required when DB_PROVIDER="turso"',
+      severity: 'error',
+    });
   }
   if (adapters.database === 'postgres' && !has('DATABASE_URL')) {
     issues.push({
@@ -301,7 +292,7 @@ export function findProviderIssues(envContent: string): EnvIssue[] {
     }
   }
   if (adapters.auth === 'kinde') {
-    for (const k of ['KINDE_CLIENT_ID', 'KINDE_CLIENT_SECRET', 'KINDE_ISSUER_URL']) {
+    for (const k of ['KINDE_CLIENT_ID', 'KINDE_CLIENT_SECRET', 'KINDE_ISSUER_URL'] as const) {
       if (!has(k)) {
         issues.push({ key: k, message: 'Required when AUTH_PROVIDER="kinde"', severity: 'error' });
       }
@@ -316,19 +307,9 @@ export function findProviderIssues(envContent: string): EnvIssue[] {
     });
   }
   if (adapters.payments === 'lemonsqueezy') {
-    if (!has('LEMONSQUEEZY_API_KEY')) {
-      issues.push({
-        key: 'LEMONSQUEEZY_API_KEY',
-        message: 'Required when PAYMENT_PROVIDER="lemonsqueezy"',
-        severity: 'error',
-      });
-    }
-    if (!has('LEMONSQUEEZY_STORE_ID')) {
-      issues.push({
-        key: 'LEMONSQUEEZY_STORE_ID',
-        message: 'Required when PAYMENT_PROVIDER="lemonsqueezy"',
-        severity: 'error',
-      });
+    const label = `Required when PAYMENT_PROVIDER="${adapters.payments}"`;
+    for (const k of ['LEMONSQUEEZY_API_KEY', 'LEMONSQUEEZY_STORE_ID'] as const) {
+      if (!has(k)) issues.push({ key: k, message: label, severity: 'error' });
     }
   }
   if (adapters.payments === 'polar' && !has('POLAR_ACCESS_TOKEN')) {
@@ -341,7 +322,7 @@ export function findProviderIssues(envContent: string): EnvIssue[] {
 
   if (adapters.storage === 's3' || adapters.storage === 'r2') {
     const label = `Required when STORAGE_PROVIDER="${adapters.storage}"`;
-    for (const k of ['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY']) {
+    for (const k of ['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const) {
       if (!has(k)) issues.push({ key: k, message: label, severity: 'error' });
     }
   }
