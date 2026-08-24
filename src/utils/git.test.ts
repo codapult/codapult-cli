@@ -28,8 +28,8 @@ describe('dirNameFromGitUrl', () => {
   });
 
   it('extracts name from HTTPS URL without .git suffix', () => {
-    expect(dirNameFromGitUrl('https://github.com/org/codapult-plugin-ai-kit')).toBe(
-      'codapult-plugin-ai-kit',
+    expect(dirNameFromGitUrl('https://github.com/org/codapult-plugin-crm')).toBe(
+      'codapult-plugin-crm',
     );
   });
 

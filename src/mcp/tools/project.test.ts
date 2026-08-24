@@ -100,7 +100,7 @@ describe('registerProjectTools', () => {
         ].join('\n'),
       });
       mockedExists.mockReturnValue(true);
-      mockedReaddir.mockReturnValue(['ai-kit.ts', 'crm.ts', 'index.ts'] as unknown as ReturnType<
+      mockedReaddir.mockReturnValue(['analytics.ts', 'crm.ts', 'index.ts'] as unknown as ReturnType<
         typeof readdirSync
       >);
       mockedExec.mockImplementation((cmd: string) => {
@@ -128,7 +128,7 @@ describe('registerProjectTools', () => {
       expect(parsed.adapters.embedding).toBe('openai');
       expect(parsed.adapters.vectorStore).toBe('sqlite');
       expect(parsed.oauthProviders).toEqual(['google']);
-      expect(parsed.plugins).toEqual(['ai-kit', 'crm']);
+      expect(parsed.plugins).toEqual(['analytics', 'crm']);
       expect(parsed.features.enabled).toContain('aiChat');
       expect(parsed.features.enabled).toContain('blog');
       expect(parsed.features.disabled).toContain('teams');

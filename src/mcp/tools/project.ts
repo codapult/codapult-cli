@@ -87,7 +87,7 @@ export function registerProjectTools(server: McpServer): void {
     'codapult_project_config',
     {
       title: 'Project Config',
-      description: 'Read the app configuration from src/config/app.ts (brand, ai, company)',
+      description: 'Read the app configuration from src/config/app.ts (brand, company)',
     },
     () => {
       const root = getRoot();

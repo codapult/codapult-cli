@@ -28,7 +28,12 @@ export const FEATURE_ENV = {
   waitlist: 'ENABLE_WAITLIST',
   featureRequests: 'ENABLE_FEATURE_REQUESTS',
   changelog: 'ENABLE_CHANGELOG',
+  aiCore: 'ENABLE_AI_CORE',
   aiChat: 'ENABLE_AI_CHAT',
+  aiRag: 'ENABLE_AI_RAG',
+  aiAgents: 'ENABLE_AI_AGENTS',
+  aiBatch: 'ENABLE_AI_BATCH',
+  aiPlayground: 'ENABLE_AI_PLAYGROUND',
   teams: 'ENABLE_TEAMS',
   referrals: 'ENABLE_REFERRALS',
   analytics: 'ENABLE_ANALYTICS',
@@ -120,6 +125,27 @@ export const ENV_SCHEMA_KEYS = [
   'NOTIFICATION_WS_PORT',
   'OPENAI_API_KEY',
   'ANTHROPIC_API_KEY',
+  'GOOGLE_GENERATIVE_AI_API_KEY',
+  'GROQ_API_KEY',
+  'TOGETHER_AI_API_KEY',
+  'CUSTOM_AI_BASE_URL',
+  'CUSTOM_AI_API_KEY',
+  'SERPER_API_KEY',
+  'TAVILY_API_KEY',
+  'AI_DEFAULT_MODEL',
+  'AI_ALLOWED_MODELS',
+  'AI_FALLBACK_CHAIN',
+  'AI_MAX_RETRIES',
+  'AI_DEFAULT_TEMPERATURE',
+  'AI_DEFAULT_MAX_TOKENS',
+  'AI_DEFAULT_TOP_P',
+  'AI_DAILY_BUDGET_USD',
+  'AI_MONTHLY_BUDGET_USD',
+  'AI_HTTP_ALLOWLIST',
+  'AI_RAG_MAX_DOCUMENT_SIZE',
+  'AI_RAG_MAX_BATCH_DOCUMENTS',
+  'AI_RAG_MAX_CHUNKS_PER_QUERY',
+  'AI_RAG_MIN_SCORE',
   'OLLAMA_BASE_URL',
   'OLLAMA_EMBEDDING_MODEL',
   'RESEND_API_KEY',
@@ -143,6 +169,11 @@ export const AUTH_GATED_FEATURES: ReadonlySet<string> = new Set([
   'featureRequests',
   'changelog',
   'aiChat',
+  'aiCore',
+  'aiRag',
+  'aiAgents',
+  'aiBatch',
+  'aiPlayground',
   'teams',
   'referrals',
 ]);
@@ -217,9 +248,18 @@ export function getFeatures(envContent: string): Record<string, boolean> {
 
   for (const [key, envVar] of Object.entries(FEATURE_ENV)) {
     const raw = readEnvVar(envContent, envVar);
-    const defaultEnabled = key === 'compare' ? appMode === 'landing' : true;
+    const defaultEnabled =
+      key === 'compare' ? appMode === 'landing' : key === 'aiRag' ? false : true;
     const enabled = raw == null ? defaultEnabled : raw !== 'false';
     features[key] = enabled && (!AUTH_GATED_FEATURES.has(key) || authEnabled);
+  }
+
+  if (!features.aiCore) {
+    features.aiChat = false;
+    features.aiRag = false;
+    features.aiAgents = false;
+    features.aiBatch = false;
+    features.aiPlayground = false;
   }
 
   return features;

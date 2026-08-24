@@ -36,6 +36,10 @@ interface ProjectConfig {
   jobProvider: 'memory' | 'bullmq' | 'none';
   enableAuth: boolean;
   enableAI: boolean;
+  enableRAG: boolean;
+  enableAgents: boolean;
+  enableBatch: boolean;
+  enablePlayground: boolean;
   enableBlog: boolean;
   enableTeams: boolean;
   enableWaitlist: boolean;
@@ -55,7 +59,6 @@ interface ProjectConfig {
   enableReferrals: boolean;
   enableAnalytics: boolean;
   enableChangelog: boolean;
-  enableRAG: boolean;
   enableWebhooks: boolean;
   enableAuditLog: boolean;
   enableReports: boolean;
@@ -77,6 +80,9 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     ssoProvider: 'none',
     enableAuth: false,
     enableAI: false,
+    enableAgents: false,
+    enableBatch: false,
+    enablePlayground: false,
     enableTeams: false,
     enableConnect: false,
     enableSSO: false,
@@ -120,6 +126,9 @@ const DEFAULT_CONFIG: ProjectConfig = {
   jobProvider: 'memory',
   enableAuth: true,
   enableAI: true,
+  enableAgents: true,
+  enableBatch: true,
+  enablePlayground: true,
   enableBlog: true,
   enableTeams: true,
   enableWaitlist: true,
@@ -139,7 +148,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableReferrals: true,
   enableAnalytics: true,
   enableChangelog: true,
-  enableRAG: true,
+  enableRAG: false,
   enableWebhooks: true,
   enableAuditLog: true,
   enableReports: true,
@@ -191,6 +200,12 @@ function resolvePreset(raw: string): ProjectConfig {
   if (config.authProvider === 'none') {
     config.enableAuth = false;
   }
+  if (!config.enableAI) {
+    config.enableRAG = false;
+    config.enableAgents = false;
+    config.enableBatch = false;
+    config.enablePlayground = false;
+  }
 
   return config;
 }
@@ -230,12 +245,39 @@ const MODULE_REMOVALS: {
   {
     key: 'enableAI',
     paths: [
-      `${APP}/(protected)/(dashboard)/dashboard/ai-chat`,
-      'src/app/api/chat',
+      `${APP}/(protected)/(dashboard)/dashboard/ai`,
       'src/components/ai',
+      'src/hooks/ai',
       'src/lib/ai',
+      'src/app/api/ai',
     ],
     label: 'AI Chat',
+  },
+  {
+    key: 'enableAgents',
+    paths: [
+      `${APP}/(protected)/(dashboard)/dashboard/ai/agents`,
+      'src/components/ai/AgentBuilder.tsx',
+      'src/components/ai/AgentSelector.tsx',
+    ],
+    label: 'AI Agents',
+  },
+  {
+    key: 'enableBatch',
+    paths: [
+      `${APP}/(protected)/(dashboard)/dashboard/ai/batch`,
+      'src/components/ai/BatchJobManager.tsx',
+    ],
+    label: 'AI Batch',
+  },
+  {
+    key: 'enablePlayground',
+    paths: [
+      `${APP}/(protected)/(dashboard)/dashboard/ai/playground`,
+      'src/components/ai/AIPlayground.tsx',
+      'src/components/ai/PlaygroundComparison.tsx',
+    ],
+    label: 'AI Playground',
   },
   {
     key: 'enableBlog',
@@ -427,18 +469,6 @@ const MODULE_REMOVALS: {
     label: 'Built-in Analytics',
   },
   {
-    key: 'enableRAG',
-    paths: [
-      'src/lib/ai/chunker.ts',
-      'src/lib/ai/chunker.test.ts',
-      'src/lib/ai/embeddings',
-      'src/lib/ai/vector-store',
-      'src/lib/ai/rag.ts',
-      'src/app/api/ai',
-    ],
-    label: 'RAG Pipeline',
-  },
-  {
     key: 'enableWebhooks',
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/webhooks`,
@@ -516,7 +546,7 @@ const MODULE_REMOVALS: {
 // everything else is removed from disk by `removeModules`.
 //
 // Install-time-only features (no runtime ENABLE_* — file removal only):
-//   enableGraphQL, enableEventStore, enableOtel, enableRAG, enableConnect.
+//   enableGraphQL, enableEventStore, enableOtel, enableConnect.
 // These are infrastructure-flavoured and either always-on or only meaningful
 // at build-time, so they don't expose a user-facing env toggle.
 const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
@@ -527,7 +557,11 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableWaitlist: 'ENABLE_WAITLIST',
   enableFeatureRequests: 'ENABLE_FEATURE_REQUESTS',
   enableCompare: 'ENABLE_COMPARE',
-  enableAI: 'ENABLE_AI_CHAT',
+  enableAI: 'ENABLE_AI_CORE',
+  enableRAG: 'ENABLE_AI_RAG',
+  enableAgents: 'ENABLE_AI_AGENTS',
+  enableBatch: 'ENABLE_AI_BATCH',
+  enablePlayground: 'ENABLE_AI_PLAYGROUND',
   enableTeams: 'ENABLE_TEAMS',
   enableReferrals: 'ENABLE_REFERRALS',
   enableAnalytics: 'ENABLE_ANALYTICS',
@@ -582,10 +616,16 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
   };
 
   for (const [cliKey, envVar] of Object.entries(FEATURE_ENV_VARS)) {
-    if (config[cliKey as keyof ProjectConfig] === false) {
-      replacements[envVar] = 'false';
-    }
+    const key = cliKey as keyof ProjectConfig;
+    const enabled = config[key] as boolean;
+    if (!enabled) replacements[envVar] = 'false';
+    if (key === 'enableRAG' && enabled) replacements[envVar] = 'true';
   }
+
+  // The setup command treats AI as a product bundle. Keep chat enabled by
+  // default for that bundle, while allowing users to disable it manually
+  // after setup without disabling the shared AI core.
+  replacements.ENABLE_AI_CHAT = config.enableAI ? 'true' : 'false';
 
   for (const [key, value] of Object.entries(replacements)) {
     const regex = new RegExp(`^${key}=.*$`, 'm');
@@ -808,7 +848,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     ]),
     enableAuth: authEnabled,
     enableSSO: ssoEnabled,
-    enableAI: emptyLine() && (await confirm(iface, 'Enable AI Chat module?')),
+    enableAI: emptyLine() && (await confirm(iface, 'Enable AI core and chat module?')),
     enableBlog: await confirm(iface, 'Enable Blog module?'),
     enableTeams: authEnabled && (await confirm(iface, 'Enable Teams/Organizations?')),
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
@@ -827,7 +867,10 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableReferrals: authEnabled && (await confirm(iface, 'Enable referral program?')),
     enableAnalytics: await confirm(iface, 'Enable built-in analytics?'),
     enableChangelog: await confirm(iface, 'Enable Changelog page?'),
-    enableRAG: await confirm(iface, 'Enable RAG pipeline (vector search)?'),
+    enableRAG: await confirm(iface, 'Enable RAG pipeline (vector search)?', false),
+    enableAgents: await confirm(iface, 'Enable AI agents and tools?', true),
+    enableBatch: await confirm(iface, 'Enable AI batch processing?', true),
+    enablePlayground: await confirm(iface, 'Enable AI playground?', true),
     enableWebhooks: authEnabled && (await confirm(iface, 'Enable outgoing webhooks?')),
     enableAuditLog: authEnabled && (await confirm(iface, 'Enable audit log / activity feed?')),
     enableReports: authEnabled && (await confirm(iface, 'Enable scheduled email reports?')),

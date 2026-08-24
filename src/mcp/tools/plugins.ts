@@ -73,7 +73,7 @@ export function registerPluginTools(server: McpServer): void {
       description:
         'Install a Codapult plugin by name. Patches schema, config, pages, and env automatically.',
       inputSchema: {
-        name: z.string().describe('Plugin name (e.g. "ai-kit", "video-player")'),
+        name: z.string().describe('Plugin name (e.g. "crm", "video-player")'),
         env_source: envSourceSchema.optional(),
         dry_run: z
           .boolean()

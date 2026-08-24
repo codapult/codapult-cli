@@ -11,13 +11,11 @@ describe('collectAppConfigSummary', () => {
       export const appConfig = {
         brand: { name: 'Codapult', description: 'Starter', logo: '/logo.svg' },
         company: { contactEmail: 'hello@example.com', githubUrl: 'https://github.com/codapult' },
-        ai: { defaultModel: 'gpt-5', ragEnabled: true, ragMaxChunks: 12, ragMinScore: 0.4 },
       };
     `);
     expect(collectAppConfigSummary('/project')).toEqual({
       brand: { name: 'Codapult', description: 'Starter', logo: '/logo.svg' },
       company: { contactEmail: 'hello@example.com', githubUrl: 'https://github.com/codapult' },
-      ai: { defaultModel: 'gpt-5', ragEnabled: true, ragMaxChunks: '12', ragMinScore: '0.4' },
     });
   });
 });

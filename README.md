@@ -147,8 +147,8 @@ Resources are read-only project files or computed context that MCP clients can l
 | Resource                | URI                            | Description                                                                       |
 | ----------------------- | ------------------------------ | --------------------------------------------------------------------------------- |
 | `codapult_schema`       | `codapult://schema`            | Active Drizzle schema selected by the database provider.                          |
-| `codapult_app_config`   | `codapult://config/app`        | Application identity, brand, and AI configuration.                                |
-| `codapult_env_config`   | `codapult://config/env`        | Typed environment access, feature flags, providers, and checkout resolution.      |
+| `codapult_app_config`   | `codapult://config/app`        | Application identity, brand, and company configuration.                           |
+| `codapult_env_config`   | `codapult://config/env`        | Typed environment access, AI feature flags, providers, and checkout resolution.   |
 | `codapult_agents_md`    | `codapult://agents`            | Project structure, conventions, and AI-agent rules from `AGENTS.md`.              |
 | `codapult_env_example`  | `codapult://env-example`       | Environment variable template with descriptions and defaults.                     |
 | `codapult_validation`   | `codapult://validation`        | Project Zod validation schemas.                                                   |

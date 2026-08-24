@@ -48,13 +48,6 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
     if (contactEmail) label('  Contact email', contactEmail);
     if (githubUrl) label('  GitHub', githubUrl);
     console.log();
-
-    info('AI');
-    const { defaultModel, ragEnabled, ragMaxChunks, ragMinScore } = appConfig.ai;
-    if (defaultModel) label('  Default model', defaultModel);
-    if (ragEnabled != null) label('  RAG', ragEnabled ? 'enabled' : 'disabled');
-    if (ragMaxChunks) label('  RAG max chunks', ragMaxChunks);
-    if (ragMinScore) label('  RAG min score', ragMinScore);
   } else {
     dim('src/config/app.ts not found — run `codapult setup`');
   }

@@ -40,14 +40,14 @@ describe('resolveManifest', () => {
   it('resolves manifest from sibling dir with codapult-plugin- prefix', () => {
     mockedExists.mockImplementation((p) => {
       const path = p as string;
-      return path === '/codapult-plugin-ai-kit/codapult-plugin.json';
+      return path === '/codapult-plugin-crm/codapult-plugin.json';
     });
     mockedRead.mockReturnValue(validManifest);
 
-    const result = resolveManifest(ROOT, 'ai-kit');
+    const result = resolveManifest(ROOT, 'crm');
 
     expect(result).not.toBeNull();
-    expect(result!.pluginDir).toContain('codapult-plugin-ai-kit');
+    expect(result!.pluginDir).toContain('codapult-plugin-crm');
   });
 
   it('resolves manifest from sibling dir with codapult- prefix', () => {

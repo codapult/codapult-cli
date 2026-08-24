@@ -61,7 +61,10 @@ Codapult conventions:
 - Error responses: always \`{ error: string }\`, never expose stack traces
 - Database: Drizzle ORM, snake_case tables/columns, text PKs, integer timestamps
 - Class merging: use \`cn()\` from \`@/lib/utils\`
-- AI: embedding/vector store use adapter pattern, RAG config from appConfig.ai
+- AI: use the shared /api/ai gateway for chat, agents, tools, guardrails, metering, and streaming
+- RAG: use the adapter pattern for embeddings/vector storage; it is opt-in via env.features.aiRag, requires env.features.aiCore, and all indexed data must be scoped to the active organization
+- RAG indexing/search limits come from env (AI_RAG_MAX_DOCUMENT_SIZE, AI_RAG_MAX_BATCH_DOCUMENTS, AI_RAG_MAX_CHUNKS_PER_QUERY, AI_RAG_MIN_SCORE)
+- AI defaults come from env (AI_DEFAULT_MODEL, AI_DEFAULT_TEMPERATURE, AI_DEFAULT_MAX_TOKENS, AI_DEFAULT_TOP_P, AI_MAX_RETRIES)
 - Org quotas: enforce via checkOrgQuota() for AI and API routes${projectContext}
 
 Code to review:

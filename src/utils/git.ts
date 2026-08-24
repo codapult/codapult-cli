@@ -17,7 +17,7 @@ export function getCacheDir(projectRoot: string): string {
  *
  * Examples:
  *   git@github.com:org/codapult-plugin-onboarding.git → codapult-plugin-onboarding
- *   https://github.com/org/codapult-plugin-ai-kit     → codapult-plugin-ai-kit
+ *   https://github.com/org/codapult-plugin-crm        → codapult-plugin-crm
  */
 export function dirNameFromGitUrl(url: string): string {
   const last = url.split('/').pop() ?? url;

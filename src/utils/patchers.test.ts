@@ -405,18 +405,18 @@ describe('patchNextConfig', () => {
 describe('regenerateBarrel', () => {
   it('generates barrel with sorted imports', () => {
     mockedExists.mockReturnValue(true);
-    mockedReaddir.mockReturnValue(['crm.ts', 'ai-kit.ts', 'index.ts'] as unknown as ReturnType<
+    mockedReaddir.mockReturnValue(['crm.ts', 'analytics.ts', 'index.ts'] as unknown as ReturnType<
       typeof readdirSync
     >);
 
     regenerateBarrel(ROOT);
 
     const written = mockedWrite.mock.calls[0][1] as string;
-    expect(written).toContain("import './ai-kit';");
+    expect(written).toContain("import './analytics';");
     expect(written).toContain("import './crm';");
     expect(written).not.toContain('index');
-    // ai-kit should come before crm (sorted)
-    expect(written.indexOf('ai-kit')).toBeLessThan(written.indexOf('crm'));
+    // analytics should come before crm (sorted)
+    expect(written.indexOf('analytics')).toBeLessThan(written.indexOf('crm'));
   });
 
   it('does nothing when plugins dir does not exist', () => {
