@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.0](https://github.com/codapult/codapult-cli/compare/v0.16.2...v0.17.0) (2026-08-26)
+
+### Features
+
+* **cli:** update AI configuration and MCP integration ([4c5f968](https://github.com/codapult/codapult-cli/commit/4c5f968b647dbc61b5faf466fe887a723d515401))
+
 ## [0.16.2](https://github.com/codapult/codapult-cli/compare/v0.16.1...v0.16.2) (2026-08-22)
 
 ### Bug Fixes
