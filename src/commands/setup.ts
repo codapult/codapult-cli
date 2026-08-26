@@ -232,6 +232,7 @@ const MODULE_REMOVALS: {
       `${APP}/(protected)/(dashboard)`,
       `${APP}/(protected)/(admin)`,
       'src/app/api/auth',
+      'src/lib/auth/index.test.ts',
       'src/lib/auth/adapters',
       'src/lib/auth/client-adapter.test.ts',
       'src/components/auth/AuthForm.tsx',
@@ -334,8 +335,6 @@ const MODULE_REMOVALS: {
       'src/lib/actions/organizations.test.ts',
       'src/lib/payments/seats.ts',
       'src/lib/payments/seats.test.ts',
-      'src/lib/guards.ts',
-      'src/lib/guards.test.ts',
       'src/app/api/scim',
     ],
     label: 'Teams',
@@ -618,8 +617,10 @@ const PRUNE_MARKER_FILES = [
   'src/lib/actions/admin.ts',
   'src/lib/actions/impersonation.ts',
   'src/lib/scheduled-reports/index.ts',
+  'src/lib/guards.ts',
+  'src/lib/guards.test.ts',
   'src/config/marketing.test.ts',
-  'src/config/app.ts',
+  'src/config/env-schema.ts',
   'src/instrumentation.ts',
 ] as const;
 
