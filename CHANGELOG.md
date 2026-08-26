@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/codapult/codapult-cli/compare/v0.17.0...v0.17.1) (2026-08-26)
+
+### Bug Fixes
+
+* **setup:** add AI Chat and RAG pipeline options to project configuration ([283e4b4](https://github.com/codapult/codapult-cli/commit/283e4b460ece593ea5e3cb2a935ad02f9a2c8500))
+* **setup:** update module removals and prune marker files ([a25868c](https://github.com/codapult/codapult-cli/commit/a25868c7802b20da26051fe5ca081d3b5f747184))
+
 ## [0.17.0](https://github.com/codapult/codapult-cli/compare/v0.16.2...v0.17.0) (2026-08-26)
 
 ### Features
