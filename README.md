@@ -4,7 +4,7 @@ CLI tool for managing [Codapult](https://codapult.dev) SaaS projects.
 
 ## Installation
 
-This is the maintained CLI package used by Codapult projects. Buyers normally invoke the published package through `npx` or the generated MCP configuration; they do not clone or build this repository. The development and release sections below are for Codapult maintainers.
+This is the maintained CLI package used by Codapult projects. Buyers normally invoke the published package through `npx` or the generated MCP configuration; they do not clone or build this repository. The CLI also powers Codapult MCP, exposing project-aware tools, resources, and prompt templates to compatible AI coding clients. The development and release sections below are for Codapult maintainers.
 
 ```shell
 npm install -g @codapult/cli
