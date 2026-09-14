@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.17.2](https://github.com/codapult/codapult-cli/compare/v0.17.1...v0.17.2) (2026-09-14)
+
+### Bug Fixes
+
+* **cli:** update version retrieval to use package.json dynamically ([c7ad3fa](https://github.com/codapult/codapult-cli/commit/c7ad3fa58a3bb39e7bae23ce546efe71a14754c1))
+
 ## [0.17.1](https://github.com/codapult/codapult-cli/compare/v0.17.0...v0.17.1) (2026-08-26)
 
 ### Bug Fixes
