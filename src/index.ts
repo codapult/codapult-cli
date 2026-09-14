@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 import pc from 'picocolors';
 import { setupCommand } from './commands/setup.js';
 import { updateCommand } from './commands/update.js';
@@ -36,10 +37,13 @@ import {
 } from './commands/deploy.js';
 import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from './utils/project-env.js';
 
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
+
 const program = new Command()
   .name('codapult')
   .description('Codapult CLI — manage your SaaS project')
-  .version('0.1.0')
+  .version(packageJson.version)
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.cyan(str)),
     styleCommandText: (str) => pc.yellow(str),
