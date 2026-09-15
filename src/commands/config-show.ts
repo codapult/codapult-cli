@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { findProjectRoot, readJsonFile } from '../utils/project.js';
+import { checkProjectRoot, readJsonFile } from '../utils/project.js';
 import { ENV_FILE_NAME, loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
 import {
   getAdapters,
@@ -8,17 +8,14 @@ import {
   getOauthProviders,
   FEATURE_ENV,
 } from '../utils/env-config.js';
-import { heading, success, fail, info, dim, label } from '../utils/ui.js';
+import { heading, success, info, dim, label } from '../utils/ui.js';
 import { collectAppConfigSummary } from '../utils/config-report.js';
+import { config } from '../utils/config.js';
 
 export function configShowCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
-  heading('Codapult Configuration');
+  heading(`${config.projectName} Configuration`);
   label('Project root', root);
 
   // --- Package info ---
@@ -49,7 +46,7 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
     if (githubUrl) label('  GitHub', githubUrl);
     console.log();
   } else {
-    dim('src/config/app.ts not found — run `codapult setup`');
+    dim(`src/config/app.ts not found — run \`${config.commandName} setup\``);
   }
   console.log();
 

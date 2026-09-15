@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import { heading, success, fail, warn, info, dim, confirm, label } from '../utils/ui.js';
 
 const UPSTREAM_REMOTE = 'codapult-upstream';
@@ -90,11 +90,7 @@ export async function updateCommand(
   version: string | undefined,
   options: UpdateOptions,
 ): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   ensureUpstreamRemote(root);
   fetchUpstream(root);

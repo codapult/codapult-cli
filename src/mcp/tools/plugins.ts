@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot } from '../../utils/project.js';
+import { checkProjectRoot } from '../../utils/project.js';
 import { ENV_FILE_NAME } from '../../utils/project-env.js';
 import { resolveManifest } from '../../utils/manifest.js';
 import {
@@ -20,12 +20,6 @@ import {
 } from '../../utils/patchers.js';
 import { envSourceSchema } from './schemas.js';
 
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
-
 export function registerPluginTools(server: McpServer): void {
   server.registerTool(
     'codapult_plugins_list',
@@ -35,7 +29,7 @@ export function registerPluginTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const pluginsDir = resolve(root, 'src/plugins');
       if (!existsSync(pluginsDir)) {
         return {
@@ -82,7 +76,7 @@ export function registerPluginTools(server: McpServer): void {
       },
     },
     ({ name, env_source, dry_run }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const result = resolveManifest(root, name);
       if (!result) {
         return {
@@ -229,7 +223,7 @@ export function registerPluginTools(server: McpServer): void {
       },
     },
     ({ name, env_source, dry_run }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const result = resolveManifest(root, name);
       const manifest = result?.manifest ?? {
         name,
@@ -344,7 +338,7 @@ export function registerPluginTools(server: McpServer): void {
       },
     },
     ({ name }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
 
       const pluginsDir = resolve(root, 'src/plugins');
       const pluginNames: string[] = name

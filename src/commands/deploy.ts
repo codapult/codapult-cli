@@ -1,7 +1,7 @@
 import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import {
   ENV_FILE_NAME,
   getProjectEnvSource,
@@ -14,6 +14,7 @@ import {
   summarizeChecks,
   type ReportCheck,
 } from '../utils/check-report.js';
+import { config } from '../utils/config.js';
 
 function hasCommand(cmd: string): boolean {
   return spawnSync(cmd, ['--version'], { stdio: 'ignore' }).status === 0;
@@ -24,11 +25,7 @@ function hasCommand(cmd: string): boolean {
 // ---------------------------------------------------------------------------
 
 export async function deployVercelCommand(options: ProjectEnvOptions = {}): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Deploy to Vercel');
 
@@ -100,11 +97,7 @@ export async function deployVercelCommand(options: ProjectEnvOptions = {}): Prom
 export async function deployDockerCommand(
   opts: { tag?: string } & ProjectEnvOptions = {},
 ): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Deploy with Docker');
 
@@ -135,7 +128,7 @@ export async function deployDockerCommand(
     string,
     unknown
   >;
-  const appName = (pkg.name as string) || 'codapult';
+  const appName = (pkg.name as string) || config.appName;
   const tag = opts.tag || 'latest';
   const imageName = `${appName}:${tag}`;
 
@@ -191,11 +184,7 @@ export async function deployDockerCommand(
 // ---------------------------------------------------------------------------
 
 export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const checks = [
     { name: 'Dockerfile', path: 'Dockerfile' },
@@ -274,7 +263,7 @@ export function deployStatusCommand(options: ProjectEnvOptions = {}): void {
   process.exitCode = report.summary.failures > 0 ? 1 : 0;
   console.log();
   dim('Deploy targets:');
-  dim('  codapult deploy vercel   — Vercel (recommended)');
-  dim('  codapult deploy docker   — Docker build + run');
+  dim(`  ${config.commandName} deploy vercel   — Vercel (recommended)`);
+  dim(`  ${config.commandName} deploy docker   — Docker build + run`);
   console.log();
 }

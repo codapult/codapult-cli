@@ -2,14 +2,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot } from '../../utils/project.js';
+import { checkProjectRoot } from '../../utils/project.js';
 import { validateGeneratedName } from '../../utils/validation.js';
-
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
 
 function toKebab(name: string): string {
   return name
@@ -49,24 +43,25 @@ export function registerGenerateTools(server: McpServer): void {
     },
     ({ name, dry_run }) => {
       validateGeneratedName(name);
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const kebab = toKebab(name);
       const pascal = toPascal(name);
       const title = pascal.replace(/([A-Z])/g, ' $1').trim();
       const path = `src/app/(dashboard)/dashboard/${kebab}/page.tsx`;
-      if (dry_run)
+      if (dry_run) {
         return {
           content: [
             {
               type: 'text' as const,
               text: JSON.stringify(
-                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(root, path)) },
                 null,
                 2,
               ),
             },
           ],
         };
+      }
 
       const page = `import { getAppSession } from '@/lib/auth';\nimport { redirect } from 'next/navigation';\nimport { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\n\nexport const metadata = {\n  title: '${title} — Codapult',\n};\n\nexport default async function ${pascal}Page() {\n  const session = await getAppSession();\n  if (!session) redirect('/sign-in');\n\n  return (\n    <div className="space-y-6">\n      <div>\n        <h1 className="text-3xl font-bold tracking-tight">${title}</h1>\n        <p className="text-muted-foreground">Manage your ${kebab} settings</p>\n      </div>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>${title}</CardTitle>\n          <CardDescription>Your ${kebab} content goes here</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <p className="text-muted-foreground">Start building your ${kebab} page.</p>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
 
@@ -87,7 +82,7 @@ export function registerGenerateTools(server: McpServer): void {
     },
     ({ name, dry_run }) => {
       validateGeneratedName(name);
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const schemaName = `${camel}Schema`;
@@ -98,7 +93,7 @@ export function registerGenerateTools(server: McpServer): void {
             {
               type: 'text' as const,
               text: JSON.stringify(
-                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(root, path)) },
                 null,
                 2,
               ),
@@ -125,7 +120,7 @@ export function registerGenerateTools(server: McpServer): void {
     },
     ({ name, dry_run }) => {
       validateGeneratedName(name);
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const schemaName = `${camel}Schema`;
@@ -136,7 +131,7 @@ export function registerGenerateTools(server: McpServer): void {
             {
               type: 'text' as const,
               text: JSON.stringify(
-                { dryRun: true, path, wouldCreate: !existsSync(resolve(getRoot(), path)) },
+                { dryRun: true, path, wouldCreate: !existsSync(resolve(root, path)) },
                 null,
                 2,
               ),
@@ -164,7 +159,7 @@ export function registerGenerateTools(server: McpServer): void {
     },
     ({ name, dry_run }) => {
       validateGeneratedName(name);
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const kebab = toKebab(name);
       const camel = toCamel(name);
       const pascal = toPascal(name);

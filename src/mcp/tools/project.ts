@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { checkProjectRoot, readProjectFile } from '../../utils/project.js';
 import { getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
 import {
   getAdapters,
@@ -15,12 +15,6 @@ import { envSourceSchema } from './schemas.js';
 import { commandResponse, runProjectCommand } from '../../utils/command.js';
 import { collectMcpHealth } from '../../utils/health.js';
 import { collectAppConfigSummary } from '../../utils/config-report.js';
-
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
 
 export function registerProjectTools(server: McpServer): void {
   server.registerTool(
@@ -34,7 +28,7 @@ export function registerProjectTools(server: McpServer): void {
       },
     },
     ({ env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as Record<
         string,
         unknown
@@ -90,7 +84,7 @@ export function registerProjectTools(server: McpServer): void {
       description: 'Read the app configuration from src/config/app.ts (brand, company)',
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const content = readProjectFile(root, 'src/config/app.ts') ?? 'Config file not found';
       return { content: [{ type: 'text' as const, text: content }] };
     },
@@ -109,7 +103,7 @@ export function registerProjectTools(server: McpServer): void {
       },
     },
     ({ checks }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const toRun = checks ?? ['lint', 'typecheck', 'test'];
       const commands: Record<string, string> = {
         lint: 'pnpm lint',
@@ -143,7 +137,7 @@ export function registerProjectTools(server: McpServer): void {
       },
     },
     ({ env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const report = collectMcpHealth(root, {
         envSource: env_source,
       });
@@ -160,7 +154,7 @@ export function registerProjectTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const packageJson = JSON.parse(
         readFileSync(resolve(root, 'package.json'), 'utf-8'),
       ) as Record<string, unknown>;
@@ -214,6 +208,9 @@ export function registerProjectTools(server: McpServer): void {
       description: 'Run the production build and return structured stdout, stderr, and exit code',
       inputSchema: {},
     },
-    () => commandResponse(runProjectCommand('pnpm build', getRoot(), { timeout: 300_000 })),
+    () =>
+      commandResponse(
+        runProjectCommand('pnpm build', checkProjectRoot('throw'), { timeout: 300_000 }),
+      ),
   );
 }

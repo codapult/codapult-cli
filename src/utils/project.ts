@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { fail } from './ui.js';
+import { config } from './config.js';
 
 /**
  * Walk upward from cwd to find the Codapult project root
@@ -29,6 +31,20 @@ export function findProjectRoot(from: string = process.cwd()): string | undefine
     dir = dirname(dir);
   }
   return undefined;
+}
+
+export function checkProjectRoot<T extends 'exit' | 'code' | 'throw'>(
+  exit: T,
+): T extends 'code' ? string | undefined : string {
+  const root = findProjectRoot();
+  if (!root) {
+    const msg = `Not inside a ${config.projectName} project.`;
+    if (exit === 'throw') throw new Error(msg);
+    fail(msg);
+    if (exit === 'exit') process.exit(1);
+    else if (exit === 'code') process.exitCode = 1;
+  }
+  return root as T extends 'code' ? string | undefined : string;
 }
 
 /** Read and parse a JSON file, returning null on failure. */

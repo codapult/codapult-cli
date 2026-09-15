@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import { loadProjectEnv, type ProjectEnvOptions } from '../utils/project-env.js';
 import { heading, success, fail, info, dim, warn } from '../utils/ui.js';
 import { parseDatabaseSchema } from '../utils/schema-parser.js';
@@ -28,11 +28,7 @@ function getDbProvider(root: string, options?: ProjectEnvOptions): 'turso' | 'po
 }
 
 export function dbPushCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Database Push');
   const provider = getDbProvider(root, options);
@@ -41,11 +37,7 @@ export function dbPushCommand(options: ProjectEnvOptions = {}): void {
 }
 
 export function dbGenerateCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Generate Migration');
   const provider = getDbProvider(root, options);
@@ -59,22 +51,14 @@ export function dbGenerateCommand(options: ProjectEnvOptions = {}): void {
 }
 
 export function dbSeedCommand(_options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Seed Database');
   run('pnpm db:seed', root);
 }
 
 export function dbStudioCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Drizzle Studio');
   const provider = getDbProvider(root, options);
@@ -89,11 +73,7 @@ export function dbStudioCommand(options: ProjectEnvOptions = {}): void {
 }
 
 export async function dbStatusCommand(options: ProjectEnvOptions = {}): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Database Status');
 
@@ -131,12 +111,9 @@ export async function dbStatusCommand(options: ProjectEnvOptions = {}): Promise<
 }
 
 export function dbLiveDiffCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exitCode = 1;
-    return;
-  }
+  const root = checkProjectRoot('code');
+  if (!root) return;
+
   const env = loadProjectEnv(root, options);
   const provider = getDbProvider(root, options);
   const schemaPath = provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
@@ -167,12 +144,8 @@ export function dbLiveDiffCommand(options: ProjectEnvOptions = {}): void {
 }
 
 export function dbSchemaDiffCommand(): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exitCode = 1;
-    return;
-  }
+  const root = checkProjectRoot('code');
+  if (!root) return;
 
   const sqlitePath = 'src/lib/db/schema.ts';
   const postgresPath = 'src/lib/db/schema-pg.ts';

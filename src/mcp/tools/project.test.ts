@@ -4,7 +4,7 @@ import { ENV_FILE_NAME } from '../../utils/project-env.js';
 vi.mock('node:fs');
 vi.mock('node:child_process');
 vi.mock('../../utils/project.js', () => ({
-  findProjectRoot: vi.fn(),
+  checkProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
   readJsonFile: vi.fn(),
 }));
@@ -19,11 +19,11 @@ vi.mock('../../utils/project-env.js', () => ({
 
 const { existsSync, readFileSync, readdirSync } = await import('node:fs');
 const { execSync } = await import('node:child_process');
-const { findProjectRoot, readProjectFile, readJsonFile } = await import('../../utils/project.js');
+const { checkProjectRoot, readProjectFile, readJsonFile } = await import('../../utils/project.js');
 const { loadProjectEnv } = await import('../../utils/project-env.js');
 const { registerProjectTools } = await import('./project.js');
 
-const mockedFindRoot = vi.mocked(findProjectRoot);
+const mockedCheckRoot = vi.mocked(checkProjectRoot);
 const mockedReadProject = vi.mocked(readProjectFile);
 const mockedLoadProjectEnv = vi.mocked(loadProjectEnv);
 const mockedExists = vi.mocked(existsSync);
@@ -34,7 +34,7 @@ const mockedExec = vi.mocked(execSync);
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mockedFindRoot.mockReturnValue('/project');
+  mockedCheckRoot.mockReturnValue('/project');
   mockedLoadProjectEnv.mockReturnValue({
     source: 'file',
     filePath: `/project/${ENV_FILE_NAME}`,

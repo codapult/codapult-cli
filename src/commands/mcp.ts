@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import { collectMcpHealth } from '../utils/health.js';
 import { checkEnvSchemaCompatibility } from '../utils/env-compatibility.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
@@ -34,11 +34,7 @@ function resolveVersion(version?: string): string {
 }
 
 export function mcpUpdateCommand(version?: string, options: { dryRun?: boolean } = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const configPath = getConfigPath(root);
   const targetVersion = resolveVersion(version);
@@ -72,11 +68,7 @@ export function mcpUpdateCommand(version?: string, options: { dryRun?: boolean }
 }
 
 export function mcpDoctorCommand(): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const report = collectMcpHealth(root);
   renderHealthReport('MCP Doctor', report);
@@ -84,12 +76,9 @@ export function mcpDoctorCommand(): void {
 }
 
 export function mcpContractCheckCommand(): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exitCode = 1;
-    return;
-  }
+  const root = checkProjectRoot('code');
+  if (!root) return;
+
   const result = checkEnvSchemaCompatibility(root);
   heading('MCP Contract Check');
   if (result.status === 'ok') {

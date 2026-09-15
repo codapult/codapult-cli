@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import {
   ENV_EXAMPLE_FILE_NAME,
   ENV_FILE_NAME,
@@ -52,11 +52,7 @@ function parseEnvFile(content: string): EnvEntry[] {
 // ---------------------------------------------------------------------------
 
 export function envCheckCommand(options: ProjectEnvOptions = {}): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const examplePath = resolve(root, ENV_EXAMPLE_FILE_NAME);
   const localPath = resolve(root, ENV_FILE_NAME);
@@ -132,11 +128,7 @@ export function envCheckCommand(options: ProjectEnvOptions = {}): void {
 // ---------------------------------------------------------------------------
 
 export async function envSyncCommand(options: ProjectEnvOptions = {}): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading(`Sync ${ENV_FILE_NAME} with ${ENV_EXAMPLE_FILE_NAME}`);
 

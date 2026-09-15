@@ -4,15 +4,15 @@ import { ENV_FILE_NAME } from '../../utils/project-env.js';
 vi.mock('node:fs');
 vi.mock('node:child_process');
 vi.mock('../../utils/project.js', () => ({
-  findProjectRoot: vi.fn(),
+  checkProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
 }));
 
 const { existsSync, readdirSync } = await import('node:fs');
-const { findProjectRoot, readProjectFile } = await import('../../utils/project.js');
+const { checkProjectRoot, readProjectFile } = await import('../../utils/project.js');
 const { registerDbTools } = await import('./db.js');
 
-const mockedFindRoot = vi.mocked(findProjectRoot);
+const mockedFindRoot = vi.mocked(checkProjectRoot);
 const mockedReadProject = vi.mocked(readProjectFile);
 const mockedExists = vi.mocked(existsSync);
 const mockedReaddir = vi.mocked(readdirSync);

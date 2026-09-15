@@ -1,14 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot } from '../../utils/project.js';
+import { checkProjectRoot } from '../../utils/project.js';
 import { ENV_FILE_NAME } from '../../utils/project-env.js';
-
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
 
 export function registerDeployTools(server: McpServer): void {
   server.registerTool(
@@ -20,7 +14,7 @@ export function registerDeployTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
 
       const checks = [
         { name: 'Dockerfile', path: 'Dockerfile' },

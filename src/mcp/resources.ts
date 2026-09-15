@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot, readProjectFile } from '../utils/project.js';
+import { checkProjectRoot, readProjectFile } from '../utils/project.js';
 import { ENV_EXAMPLE_FILE_NAME, loadProjectEnv } from '../utils/project-env.js';
 import { getAdapters } from '../utils/env-config.js';
 
@@ -27,7 +27,7 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const content = readProjectFile(root, getSchemaPath(root)) ?? 'Schema file not found';
       return { contents: [{ uri: 'codapult://schema', text: content, mimeType: 'text/plain' }] };
     },
@@ -42,7 +42,8 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
-      const content = readProjectFile(getRoot(), 'src/config/app.ts') ?? 'Config file not found';
+      const root = checkProjectRoot('throw');
+      const content = readProjectFile(root, 'src/config/app.ts') ?? 'Config file not found';
       return {
         contents: [{ uri: 'codapult://config/app', text: content, mimeType: 'text/plain' }],
       };
@@ -58,7 +59,8 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
-      const content = readProjectFile(getRoot(), 'src/config/env.ts') ?? 'Config file not found';
+      const root = checkProjectRoot('throw');
+      const content = readProjectFile(root, 'src/config/env.ts') ?? 'Config file not found';
       return {
         contents: [{ uri: 'codapult://config/env', text: content, mimeType: 'text/plain' }],
       };
@@ -74,7 +76,8 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/markdown',
     },
     () => {
-      const content = readProjectFile(getRoot(), 'AGENTS.md') ?? 'AGENTS.md not found';
+      const root = checkProjectRoot('throw');
+      const content = readProjectFile(root, 'AGENTS.md') ?? 'AGENTS.md not found';
       return { contents: [{ uri: 'codapult://agents', text: content, mimeType: 'text/markdown' }] };
     },
   );
@@ -88,8 +91,9 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
+      const root = checkProjectRoot('throw');
       const content =
-        readProjectFile(getRoot(), ENV_EXAMPLE_FILE_NAME) ?? `${ENV_EXAMPLE_FILE_NAME} not found`;
+        readProjectFile(root, ENV_EXAMPLE_FILE_NAME) ?? `${ENV_EXAMPLE_FILE_NAME} not found`;
       return {
         contents: [{ uri: 'codapult://env-example', text: content, mimeType: 'text/plain' }],
       };
@@ -105,8 +109,8 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
-      const content =
-        readProjectFile(getRoot(), 'src/lib/validation.ts') ?? 'validation.ts not found';
+      const root = checkProjectRoot('throw');
+      const content = readProjectFile(root, 'src/lib/validation.ts') ?? 'validation.ts not found';
       return {
         contents: [{ uri: 'codapult://validation', text: content, mimeType: 'text/plain' }],
       };
@@ -122,8 +126,9 @@ export function registerResources(server: McpServer): void {
       mimeType: 'text/plain',
     },
     () => {
+      const root = checkProjectRoot('throw');
       const content =
-        readProjectFile(getRoot(), 'src/config/navigation.ts') ?? 'navigation.ts not found';
+        readProjectFile(root, 'src/config/navigation.ts') ?? 'navigation.ts not found';
       return {
         contents: [{ uri: 'codapult://config/navigation', text: content, mimeType: 'text/plain' }],
       };
@@ -140,7 +145,7 @@ export function registerResources(server: McpServer): void {
       mimeType: 'application/json',
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const configDir = resolve(root, 'src/config');
       const files = existsSync(configDir)
         ? readdirSync(configDir)

@@ -3,15 +3,15 @@ import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from '../../utils/project-env.js
 
 vi.mock('node:fs');
 vi.mock('../../utils/project.js', () => ({
-  findProjectRoot: vi.fn(),
+  checkProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
 }));
 
 const { existsSync, readFileSync, writeFileSync } = await import('node:fs');
-const { findProjectRoot, readProjectFile } = await import('../../utils/project.js');
+const { checkProjectRoot, readProjectFile } = await import('../../utils/project.js');
 const { registerEnvTools } = await import('./env.js');
 
-const mockedFindRoot = vi.mocked(findProjectRoot);
+const mockedCheckRoot = vi.mocked(checkProjectRoot);
 const mockedReadProject = vi.mocked(readProjectFile);
 const mockedExists = vi.mocked(existsSync);
 const mockedRead = vi.mocked(readFileSync);
@@ -19,7 +19,7 @@ const mockedWrite = vi.mocked(writeFileSync);
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mockedFindRoot.mockReturnValue('/project');
+  mockedCheckRoot.mockReturnValue('/project');
 });
 
 interface ToolRegistration {

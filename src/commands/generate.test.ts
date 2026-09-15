@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('node:fs');
-vi.mock('../utils/project.js', () => ({
+vi.mock('../utils/project.js', async (importOriginal) => ({
   findProjectRoot: vi.fn(),
+  checkProjectRoot: vi.fn(
+    (await importOriginal<typeof import('../utils/project.js')>()).checkProjectRoot,
+  ),
 }));
 vi.mock('../utils/ui.js', () => ({
   heading: vi.fn(),
@@ -13,11 +16,12 @@ vi.mock('../utils/ui.js', () => ({
 }));
 
 const { existsSync, writeFileSync, mkdirSync } = await import('node:fs');
-const { findProjectRoot } = await import('../utils/project.js');
+const { checkProjectRoot, findProjectRoot } = await import('../utils/project.js');
 const { generatePageCommand, generateApiCommand, generateActionCommand, generatePluginCommand } =
   await import('./generate.js');
 
 const mockedFindRoot = vi.mocked(findProjectRoot);
+const mockedCheckRoot = vi.mocked(checkProjectRoot);
 const mockedExists = vi.mocked(existsSync);
 const mockedWrite = vi.mocked(writeFileSync);
 const mockedMkdir = vi.mocked(mkdirSync);
@@ -31,7 +35,7 @@ beforeEach(() => {
 
 describe('generatePageCommand', () => {
   it('generates a dashboard page file with correct naming', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generatePageCommand('userSettings');
@@ -47,7 +51,7 @@ describe('generatePageCommand', () => {
   });
 
   it('converts camelCase to kebab-case in path', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generatePageCommand('myDashboard');
@@ -57,7 +61,7 @@ describe('generatePageCommand', () => {
   });
 
   it('does not overwrite existing page', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(true);
 
     generatePageCommand('analytics');
@@ -75,7 +79,7 @@ describe('generatePageCommand', () => {
 
 describe('generateApiCommand', () => {
   it('generates an API route with auth and rate limiting', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generateApiCommand('webhooks');
@@ -90,7 +94,7 @@ describe('generateApiCommand', () => {
   });
 
   it('converts multi-word names to kebab-case', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generateApiCommand('userBilling');
@@ -103,7 +107,7 @@ describe('generateApiCommand', () => {
 
 describe('generateActionCommand', () => {
   it('generates a server action file', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generateActionCommand('updateProfile');
@@ -121,7 +125,7 @@ describe('generateActionCommand', () => {
 
 describe('generatePluginCommand', () => {
   it('scaffolds a complete plugin directory', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generatePluginCommand('my-widget');
@@ -137,7 +141,7 @@ describe('generatePluginCommand', () => {
   });
 
   it('generates correct plugin name references', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(false);
 
     generatePluginCommand('dataSync');
@@ -151,7 +155,7 @@ describe('generatePluginCommand', () => {
   });
 
   it('exits when target directory already exists', () => {
-    mockedFindRoot.mockReturnValue('/project');
+    mockedCheckRoot.mockReturnValue('/project');
     mockedExists.mockReturnValue(true);
 
     expect(() => generatePluginCommand('existing')).toThrow('process.exit');

@@ -36,13 +36,14 @@ import {
   deployStatusCommand,
 } from './commands/deploy.js';
 import { ENV_EXAMPLE_FILE_NAME, ENV_FILE_NAME } from './utils/project-env.js';
+import { config } from './utils/config.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version: string };
 
 const program = new Command()
-  .name('codapult')
-  .description('Codapult CLI — manage your SaaS project')
+  .name(config.commandName)
+  .description(`${config.projectName} CLI — manage your SaaS project`)
   .version(packageJson.version)
   .configureHelp({
     styleTitle: (str) => pc.bold(pc.cyan(str)),
@@ -68,7 +69,7 @@ program
 
 program
   .command('update [version]')
-  .description('update from upstream Codapult releases')
+  .description(`update from upstream ${config.projectName} releases`)
   .option('--dry-run', 'show what would change without applying')
   .option('--list', 'list available versions')
   .action(updateCommand);
@@ -84,7 +85,7 @@ withNoEnvFileOption(
 const plugins = program
   .commandsGroup('Plugins')
   .command('plugins')
-  .description('manage Codapult plugins');
+  .description(`manage ${config.projectName} plugins`);
 
 withNoEnvFileOption(
   plugins
@@ -188,7 +189,9 @@ const mcp = program
 
 mcp
   .command('update [version]')
-  .description('pin the Codapult MCP server to a version (defaults to the latest npm version)')
+  .description(
+    `pin the ${config.projectName} MCP server to a version (defaults to the latest npm version)`,
+  )
   .option('--dry-run', 'show the update without writing .cursor/mcp.json')
   .action(mcpUpdateCommand);
 

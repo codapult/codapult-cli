@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import {
   ENV_EXAMPLE_FILE_NAME,
   ENV_FILE_NAME,
@@ -913,11 +913,7 @@ interface SetupOptions extends Pick<ProjectEnvOptions, 'envFile'> {
 }
 
 export async function setupCommand(options: SetupOptions): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project. Run this from your project directory.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const presetRaw = options.preset;
 

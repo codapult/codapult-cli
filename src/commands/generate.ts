@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
 import { validateGeneratedName } from '../utils/validation.js';
 
@@ -37,11 +37,7 @@ function writeIfNotExists(filePath: string, content: string): boolean {
 export function generatePageCommand(name: string): void {
   validateGeneratedName(name);
 
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const kebab = toKebab(name);
   const pascal = toPascal(name);
@@ -100,11 +96,7 @@ export default async function ${pascal}Page() {
 export function generateApiCommand(name: string): void {
   validateGeneratedName(name);
 
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -187,11 +179,7 @@ export async function POST(req: Request) {
 export function generateActionCommand(name: string): void {
   validateGeneratedName(name);
 
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const kebab = toKebab(name);
   const camel = toCamel(name);
@@ -247,11 +235,7 @@ export async function ${camel}Action(input: unknown): Promise<{ success: boolean
 export function generatePluginCommand(name: string): void {
   validateGeneratedName(name);
 
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const kebab = toKebab(name);
   const camel = toCamel(name);

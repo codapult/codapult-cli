@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { checkProjectRoot, readProjectFile } from '../../utils/project.js';
 import {
   ENV_EXAMPLE_FILE_NAME,
   ENV_FILE_NAME,
@@ -18,12 +18,6 @@ import {
   readEnv,
 } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
-
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
 
 export interface EnvEntry {
   key: string;
@@ -99,7 +93,7 @@ export function registerEnvTools(server: McpServer): void {
       inputSchema: { env_source: envSourceSchema.optional() },
     },
     ({ env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const example = parseEnvFile(readProjectFile(root, ENV_EXAMPLE_FILE_NAME) ?? '');
       const local = parseEnvFile(loadProjectEnv(root, getProjectEnvOptions(env_source)).content);
       const localKeys = new Set(local.map((entry) => entry.key));
@@ -151,7 +145,7 @@ export function registerEnvTools(server: McpServer): void {
       },
     },
     ({ dry_run }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const exampleContent = readProjectFile(root, ENV_EXAMPLE_FILE_NAME);
       if (!exampleContent) {
         return {
@@ -199,7 +193,7 @@ export function registerEnvTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const content = readProjectFile(root, ENV_EXAMPLE_FILE_NAME);
       if (!content)
         return {
@@ -226,7 +220,7 @@ export function registerEnvTools(server: McpServer): void {
       },
     },
     ({ show_secrets, env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const env = loadProjectEnv(root, getProjectEnvOptions(env_source));
       const localContent = env.content;
       if (!localContent && env.source === 'file')
@@ -296,7 +290,7 @@ export function registerEnvTools(server: McpServer): void {
         };
       }
 
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       if (env_source === 'process') {
         return {
           content: [

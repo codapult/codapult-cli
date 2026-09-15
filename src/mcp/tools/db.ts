@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { findProjectRoot, readProjectFile } from '../../utils/project.js';
+import { checkProjectRoot, readProjectFile } from '../../utils/project.js';
 import { getProjectEnvOptions, loadProjectEnv } from '../../utils/project-env.js';
 import { getAdapters } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
@@ -11,12 +11,6 @@ import { previewMigration } from '../../utils/db-diff.js';
 import { parseDatabaseSchema } from '../../utils/schema-parser.js';
 import { compareSchemaFiles } from '../../utils/schema-parity.js';
 import { diffSchemaWithLiveDatabase, inspectLiveDatabase } from '../../utils/live-db-diff.js';
-
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
 
 function getDatabaseContext(
   root: string,
@@ -46,7 +40,7 @@ export function registerDbTools(server: McpServer): void {
       },
     },
     ({ dry_run }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider } = getDatabaseContext(root);
       if (dry_run) {
         const preview = previewMigration(root, provider, getDatabaseContext(root).schemaPath);
@@ -72,7 +66,7 @@ export function registerDbTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider, schemaPath } = getDatabaseContext(root);
       const preview = previewMigration(root, provider, schemaPath);
       return {
@@ -92,7 +86,7 @@ export function registerDbTools(server: McpServer): void {
       },
     },
     ({ dry_run }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider } = getDatabaseContext(root);
       if (dry_run) {
         return {
@@ -132,7 +126,8 @@ export function registerDbTools(server: McpServer): void {
           ],
         };
       }
-      return commandResponse(runProjectCommand('pnpm db:seed', getRoot()));
+      const root = checkProjectRoot('throw');
+      return commandResponse(runProjectCommand('pnpm db:seed', root));
     },
   );
 
@@ -144,7 +139,7 @@ export function registerDbTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider, schemaPath } = getDatabaseContext(root);
       const content = readProjectFile(root, schemaPath);
       if (!content)
@@ -182,7 +177,7 @@ export function registerDbTools(server: McpServer): void {
       },
     },
     ({ table }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider, schemaPath } = getDatabaseContext(root);
       const content = readProjectFile(root, schemaPath);
       if (!content)
@@ -224,7 +219,7 @@ export function registerDbTools(server: McpServer): void {
       },
     },
     ({ env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
 
       const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
       const provider = getAdapters(envContent).database;
@@ -269,7 +264,7 @@ export function registerDbTools(server: McpServer): void {
       },
     },
     ({ env_source }) => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const { provider, schemaPath } = getDatabaseContext(root, env_source);
       const schema = parseSchema(readProjectFile(root, schemaPath) ?? '');
       try {
@@ -318,7 +313,7 @@ export function registerDbTools(server: McpServer): void {
       inputSchema: {},
     },
     () => {
-      const root = getRoot();
+      const root = checkProjectRoot('throw');
       const sqlitePath = 'src/lib/db/schema.ts';
       const postgresPath = 'src/lib/db/schema-pg.ts';
       const report = compareSchemaFiles(

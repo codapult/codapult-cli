@@ -1,7 +1,7 @@
 import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { findProjectRoot } from '../utils/project.js';
+import { checkProjectRoot } from '../utils/project.js';
 import {
   ENV_FILE_NAME,
   getProjectEnvSource,
@@ -46,11 +46,7 @@ export async function pluginsAddCommand(
   name: string,
   options: PluginsAddCommandOptions = {},
 ): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading(`Installing plugin: ${name}`);
 
@@ -278,11 +274,7 @@ export async function pluginsRemoveCommand(
   name: string,
   options: PluginsRemoveCommandOptions = {},
 ): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading(`Removing plugin: ${name}`);
 
@@ -412,11 +404,7 @@ export async function pluginsMigrateCommand(
   name: string | undefined,
   options: { push?: boolean },
 ): Promise<void> {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   const pluginNames = name ? [name] : getInstalledPluginNames(root);
 
@@ -532,11 +520,7 @@ export async function pluginsMigrateCommand(
 // ---------------------------------------------------------------------------
 
 export function pluginsListCommand(): void {
-  const root = findProjectRoot();
-  if (!root) {
-    fail('Not inside a Codapult project.');
-    process.exit(1);
-  }
+  const root = checkProjectRoot('exit');
 
   heading('Installed Plugins');
 
