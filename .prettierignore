@@ -1,4 +1,6 @@
-dist
-node_modules
-pnpm-lock.yaml
+.codapult/
+coverage/
+dist/
+node_modules/
 CHANGELOG.md
+pnpm-lock.yaml

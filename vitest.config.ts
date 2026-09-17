@@ -4,5 +4,11 @@ export default defineConfig({
   test: {
     globals: true,
     restoreMocks: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts'],
+      reporter: ['text', 'json-summary'],
+    },
   },
 });
