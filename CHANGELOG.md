@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.18.1](https://github.com/codapult/codapult-cli/compare/v0.18.0...v0.18.1) (2026-09-18)
+
+### Bug Fixes
+
+* remove --provenance flag from npm publish command ([e16e2a7](https://github.com/codapult/codapult-cli/commit/e16e2a7e8c046006b6af450db698486504efdf98))
+
 ## [0.18.0](https://github.com/codapult/codapult-cli/compare/v0.17.2...v0.18.0) (2026-09-18)
 
 ### Features
