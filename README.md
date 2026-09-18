@@ -1,7 +1,26 @@
 # @codapult/cli
 
+[![CI](https://github.com/codapult/codapult-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/codapult/codapult-cli/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@codapult/cli?logo=npm)](https://www.npmjs.com/package/@codapult/cli)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js >=20.19](https://img.shields.io/badge/node-%3E%3D20.19-339933.svg?logo=node.js&logoColor=white)](package.json)
+
 CLI tool for managing [Codapult](https://codapult.dev) SaaS projects, with the universal
 `@codapult/guard` architecture guard built in for AI-assisted development.
+
+`@codapult/cli` is the open-source Codapult integration layer: a CLI and MCP server for
+Codapult-based SaaS projects. It combines project setup, updates, plugins, database and
+deployment tooling with the standalone Guard engine.
+
+For a non-Codapult JavaScript or TypeScript project, install
+[`@codapult/guard`](https://github.com/codapult/codapult-guard) directly. The CLI does not make
+Guard universal by adding Codapult assumptions to it; it connects the Codapult-specific tools to
+the same published Guard package through a thin adapter.
+
+| Package                                                         | Use it when                                                                                                     |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [`@codapult/guard`](https://github.com/codapult/codapult-guard) | You need architecture guardrails, project memory, MCP, and AI-agent verification in any JS/TS project.          |
+| `@codapult/cli`                                                 | You are building a Codapult SaaS and also need setup, plugins, database, environment, and deployment workflows. |
 
 ## Installation
 
@@ -233,6 +252,9 @@ pnpm lint         # lint
 pnpm typecheck    # type-check without emitting
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the public repository workflow and
+[SECURITY.md](SECURITY.md) for vulnerability reporting and safe CLI usage.
+
 ## Releasing
 
 Releases are managed with [release-it](https://github.com/release-it/release-it). The workflow:
@@ -241,9 +263,9 @@ Releases are managed with [release-it](https://github.com/release-it/release-it)
 
 ```shell
 pnpm run release          # interactive — prompts for version bump type
-pnpm run release -- patch # non-interactive patch bump (0.1.0 → 0.1.1)
-pnpm run release -- minor # minor bump (0.1.0 → 0.2.0)
-pnpm run release -- major # major bump (0.1.0 → 1.0.0)
+pnpm run release -- patch # non-interactive patch bump (0.18.1 → 0.18.2)
+pnpm run release -- minor # minor bump (0.18.1 → 0.19.0)
+pnpm run release -- major # major bump (0.18.1 → 1.0.0)
 ```
 
 2. `release-it` will automatically:
@@ -253,8 +275,11 @@ pnpm run release -- major # major bump (0.1.0 → 1.0.0)
    - Commit the changes (`chore: release v<version>`)
    - Create a Git tag (`v<version>`)
    - Push the commit and tag to `origin`
+   - Create a published GitHub Release for the tag
 
-3. The `v*` tag push triggers the **Publish** GitHub Actions workflow, which builds and publishes the package to npm.
+3. The published GitHub Release triggers `.github/workflows/release.yml`, which checks out the
+   exact tag, validates the package, and publishes it to npm. GitHub Release is the reviewed
+   release record; npm remains the distribution channel.
 
 ### Dry run
 
@@ -267,6 +292,8 @@ pnpm run release -- --dry-run
 ### Prerequisites
 
 - npm [trusted publishing](https://docs.npmjs.com/trusted-publishers) must be configured for the `@codapult/cli` package on npmjs.com.
+- The npm trusted publisher must point to this repository's `.github/workflows/release.yml` workflow
+  and allow direct `npm publish`.
 - Before publishing a CLI release, the standalone `codapult-guard` package must be available on npm and the CLI dependency must use its published version rather than the pre-release workspace `file:` dependency.
 - Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/) for meaningful changelogs (e.g. `feat:`, `fix:`, `chore:`).
 
