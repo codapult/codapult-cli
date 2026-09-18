@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.1](https://github.com/codapult/codapult-cli/compare/v0.19.0...v0.19.1) (2026-09-18)
+
+### Bug Fixes
+
+* **ci:** update CI workflow to use Node.js version 24 only and enhance release process with provenance flag ([6d9deac](https://github.com/codapult/codapult-cli/commit/6d9deac68ee5f684122133b22563b83dbfeff9c9))
+
 ## [0.19.0](https://github.com/codapult/codapult-cli/compare/v0.18.1...v0.19.0) (2026-09-18)
 
 ### Features
