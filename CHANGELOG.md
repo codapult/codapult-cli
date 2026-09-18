@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.19.0](https://github.com/codapult/codapult-cli/compare/v0.18.1...v0.19.0) (2026-09-18)
+
+### Features
+
+* add contributing and security policy documentation ([4a615de](https://github.com/codapult/codapult-cli/commit/4a615de0aa5b521be1c769d2865c0b4fe08e5490))
+* add dependabot configuration for automated dependency updates ([68fe5c6](https://github.com/codapult/codapult-cli/commit/68fe5c61b204b27f36f8decff26806aa787632b4))
+* implement CI release workflow and clean distribution directory ([3b93411](https://github.com/codapult/codapult-cli/commit/3b93411c33572cef94b335f5160689386fba978f))
+* update README with additional usage details and installation instructions ([11aea78](https://github.com/codapult/codapult-cli/commit/11aea78ade58e7797eb19a3a3023bffb6abf7e59))
+
 ## [0.18.1](https://github.com/codapult/codapult-cli/compare/v0.18.0...v0.18.1) (2026-09-18)
 
 ### Bug Fixes
