@@ -47,4 +47,4 @@ jobs:
           test "$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")" = "${RELEASE_SHA}"
 
       - name: Publish
-        run: npm publish --access public --provenance
+        run: npm publish --access public
