@@ -1,7 +1,7 @@
 {
   "name": "@codapult/cli",
   "version": "0.18.1",
-  "description": "Codapult CLI — manage, update, and diagnose your Codapult SaaS project",
+  "description": "Open-source CLI and MCP server for Codapult SaaS projects, with architecture guardrails for AI-assisted development",
   "license": "MIT",
   "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
   "engines": {
@@ -15,7 +15,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "clean": "node scripts/clean-dist.mjs",
+    "build": "pnpm clean && tsc -p tsconfig.build.json",
     "dev": "tsc --watch",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
@@ -26,7 +27,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "tsc",
+    "prepublishOnly": "tsc -p tsconfig.build.json",
     "release": "release-it"
   },
   "keywords": [
@@ -34,7 +35,13 @@
     "saas",
     "boilerplate",
     "cli",
-    "nextjs"
+    "nextjs",
+    "mcp",
+    "ai-agents",
+    "architecture",
+    "guardrails",
+    "drizzle",
+    "deployment"
   ],
   "homepage": "https://codapult.dev",
   "repository": {
