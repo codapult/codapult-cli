@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.18.0](https://github.com/codapult/codapult-cli/compare/v0.17.2...v0.18.0) (2026-09-18)
+
+### Features
+
+* enhance publish workflow with package verification and provenance flag ([f5266aa](https://github.com/codapult/codapult-cli/commit/f5266aa14c8d4b2a49f4a24553940545d9fb992e))
+* integrate @codapult/guard for architecture protection commands ([6c9a0d6](https://github.com/codapult/codapult-cli/commit/6c9a0d6e0adc2b7c43da4bd7d9236bd9e93b9f86))
+
+### Bug Fixes
+
+* ensure test exclusions include dist and node_modules directories ([e8b9c2f](https://github.com/codapult/codapult-cli/commit/e8b9c2f3086ba292e1d4e00d01dd4a3e2a2667a0))
+
 ## [0.17.2](https://github.com/codapult/codapult-cli/compare/v0.17.1...v0.17.2) (2026-09-14)
 
 ### Bug Fixes
