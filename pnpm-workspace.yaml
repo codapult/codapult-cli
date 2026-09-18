@@ -4,3 +4,6 @@ overrides:
 peerDependencyRules:
   allowedVersions:
     '@release-it/conventional-changelog>release-it': '>=18'
+minimumReleaseAgeExclude:
+  - '@codapult/*'
+  - '@js-toolkit/*'

@@ -1,6 +1,7 @@
 # @codapult/cli
 
-CLI tool for managing [Codapult](https://codapult.dev) SaaS projects.
+CLI tool for managing [Codapult](https://codapult.dev) SaaS projects, with the universal
+`@codapult/guard` architecture guard built in for AI-assisted development.
 
 ## Installation
 
@@ -16,7 +17,15 @@ Or run directly with npx:
 npx @codapult/cli <command>
 ```
 
-The command reference below uses the installed `codapult` binary. Project users who do not install the CLI globally should prefix commands with `npx @codapult/cli`, for example `npx @codapult/cli db schema-diff`.
+The command reference below uses the installed `codapult` binary. For reproducible project and CI
+usage, install and pin it as a dev dependency:
+
+```shell
+pnpm add -D @codapult/cli
+```
+
+Project users who do not install the CLI globally should prefix commands with `npx @codapult/cli`,
+for example `npx @codapult/cli db schema-diff`.
 
 ## Commands
 
@@ -62,6 +71,37 @@ The command reference below uses the installed `codapult` binary. Project users 
 - `codapult deploy docker` — build Docker image
 - `codapult deploy status` — check deploy readiness
 
+### Architecture Guard
+
+Codapult CLI includes the standalone [`@codapult/guard`](https://github.com/codapult/codapult-guard)
+engine and keeps the `codapult guard ...` command surface as a Codapult-friendly entrypoint.
+Guard is responsible for project architecture memory, approved contracts, baselines, changed-file
+regressions, impact context, and AI-agent review packets. It does not replace ESLint, TypeScript,
+tests, SAST, or a general PR-review service.
+
+- `codapult guard init` — discover the project and create `.codapult/guard/` state and baseline
+- `codapult guard analyze` — refresh project facts without changing the baseline
+- `codapult guard propose` — generate evidence-based rules and contract proposals
+- `codapult guard check --changed` — check new architecture violations
+- `codapult guard audit` — inspect the complete current state, including baseline findings
+- `codapult guard review` — prepare a bounded diff and project-context packet for an AI reviewer
+- `codapult guard verify` — run Guard verification and configured project checks
+- `codapult guard doctor` — diagnose missing or invalid Guard artifacts
+- `codapult guard rules ...` — approve proposed rules
+- `codapult guard contracts ...` — approve or reject proposed contracts
+- `codapult guard baseline ...` — inspect or intentionally update accepted findings
+
+For any JavaScript or TypeScript project, install the standalone package directly:
+
+```shell
+pnpm add -D @codapult/guard
+pnpm exec codapult-guard init
+```
+
+The Codapult CLI adapter and the standalone Guard package share the same implementation; Guard
+logic is not duplicated in this repository. See the [Guard documentation](https://github.com/codapult/codapult-guard/tree/main/docs)
+for the full lifecycle, contracts, AI-agent workflow, MCP tools, and CI example.
+
 ### AI Integration
 
 - `codapult mcp update [version]` — pin or update the MCP version in `.cursor/mcp.json`
@@ -75,7 +115,7 @@ Mutation commands (`db push`, `db generate`, `plugins add/remove`, env sync, and
 
 ## MCP Server
 
-The CLI includes an MCP (Model Context Protocol) server with 29 tools, 8 resources, and 2 prompt templates for AI-assisted development. The following is the complete MCP surface exposed by the current CLI.
+The CLI includes an MCP (Model Context Protocol) server with 39 tools, 12 resources, and 4 prompt templates for AI-assisted development. The following is the complete MCP surface exposed by the current CLI.
 
 ### MCP Tools
 
@@ -137,6 +177,21 @@ The CLI includes an MCP (Model Context Protocol) server with 29 tools, 8 resourc
 | Tool                     | Description                                                     |
 | ------------------------ | --------------------------------------------------------------- |
 | `codapult_deploy_status` | Check Docker, Helm, Terraform, and Pulumi deployment readiness. |
+
+#### Architecture Guard
+
+| Tool                             | Description                                                            |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `codapult_guard_init`            | Discover the project and create Guard state and an initial baseline.   |
+| `codapult_guard_context`         | Return project architecture context for an AI agent.                   |
+| `codapult_guard_propose`         | Generate evidence-based rule and contract proposals.                   |
+| `codapult_guard_proposal_decide` | Approve or reject proposed Guard policy.                               |
+| `codapult_guard_check`           | Check active Guard policy against the project or changed files.        |
+| `codapult_guard_audit`           | Run a complete Guard scan, including baseline-suppressed findings.     |
+| `codapult_guard_review`          | Prepare a bounded semantic-review packet from the current diff.        |
+| `codapult_guard_verify`          | Run Guard, project checks, adapters, and contract verification.        |
+| `codapult_guard_impact`          | Analyze affected modules and architecture impact paths.                |
+| `codapult_guard_explain`         | Explain Guard findings and project-specific architectural constraints. |
 
 Mutating MCP tools support `dry_run` where applicable. The tool returns the planned operations without writing project files, changing environment files, running migrations, or applying database changes. `codapult_env_read` masks sensitive values by default; `show_secrets: true` is optional and returns a security warning.
 
@@ -212,6 +267,7 @@ pnpm run release -- --dry-run
 ### Prerequisites
 
 - npm [trusted publishing](https://docs.npmjs.com/trusted-publishers) must be configured for the `@codapult/cli` package on npmjs.com.
+- Before publishing a CLI release, the standalone `codapult-guard` package must be available on npm and the CLI dependency must use its published version rather than the pre-release workspace `file:` dependency.
 - Commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/) for meaningful changelogs (e.g. `feat:`, `fix:`, `chore:`).
 
 ## License

@@ -31,6 +31,23 @@ import {
 import { envCheckCommand, envSyncCommand } from './commands/env.js';
 import { mcpContractCheckCommand, mcpDoctorCommand, mcpUpdateCommand } from './commands/mcp.js';
 import {
+  guardCheckCommand,
+  guardAuditCommand,
+  guardInitCommand,
+  guardAnalyzeCommand,
+  guardProposeCommand,
+  guardInstallAgentCommand,
+  guardDoctorCommand,
+  guardHistoryCommand,
+  guardHistoryDiffCommand,
+  guardVerifyCommand,
+  guardReviewCommand,
+  guardRulesApproveCommand,
+  guardContractsApproveCommand,
+  guardContractsRejectCommand,
+  guardBaselineCommand,
+} from './commands/guard.js';
+import {
   deployVercelCommand,
   deployDockerCommand,
   deployStatusCommand,
@@ -159,6 +176,116 @@ db.command('schema-diff')
   .action(dbSchemaDiffCommand);
 
 const env = program.command('env').description('environment variable management');
+
+const guard = program
+  .commandsGroup('Architecture')
+  .command('guard')
+  .description('protect project architecture from new violations');
+
+guard
+  .command('init')
+  .description('create local Guard rules and baseline')
+  .option('--force', 'replace an existing Guard baseline and generated memory')
+  .action(guardInitCommand);
+guard
+  .command('analyze')
+  .description('analyze project structure, dependencies, AST, and conventions')
+  .action(guardAnalyzeCommand);
+guard
+  .command('propose')
+  .description('generate evidence-based rule and contract proposals for an AI agent')
+  .option('--json', 'print a machine-readable proposal packet')
+  .action(guardProposeCommand);
+guard
+  .command('install-agent [target]')
+  .description('install or update the Guard instruction block for an AI agent')
+  .option('--json', 'emit machine-readable JSON')
+  .action(guardInstallAgentCommand);
+guard
+  .command('doctor')
+  .description('diagnose Guard artifacts and configuration')
+  .option('--json', 'print a machine-readable report')
+  .action(guardDoctorCommand);
+guard
+  .command('history')
+  .description('list persisted Guard project snapshots')
+  .action(guardHistoryCommand);
+guard
+  .command('history-diff <from> <to>')
+  .description('compare two Guard project snapshots')
+  .option('--json', 'print a machine-readable report')
+  .action(guardHistoryDiffCommand);
+guard
+  .command('check')
+  .description('check architecture rules against the project')
+  .option('--changed', 'check only files changed from HEAD')
+  .option('--json', 'print a machine-readable report')
+  .option('--sarif', 'print a SARIF report for CI code-scanning integrations')
+  .action(guardCheckCommand);
+guard
+  .command('audit')
+  .description('run a full Guard audit, including baseline findings')
+  .option('--json', 'print a machine-readable report')
+  .action(guardAuditCommand);
+guard
+  .command('verify')
+  .description('verify checks, build, and architecture regressions')
+  .option('--checks <list>', 'comma-separated: lint,typecheck,test,build')
+  .option('--tools <mode>', 'external tools: auto, on, or off', 'auto')
+  .option('--strict', 'fail when an explicitly requested check or adapter is not configured')
+  .option('--no-project-checks', 'skip project lint/typecheck/test/build checks')
+  .option('--requirement <file>', 'read acceptance criteria from a UTF-8 text file')
+  .option('--changed', 'check architecture only in changed and untracked files')
+  .option('--json', 'print a machine-readable report')
+  .action(guardVerifyCommand);
+guard
+  .command('review')
+  .description('prepare a semantic review packet for an AI agent')
+  .option('--max-diff-chars <number>', 'limit diff size in the packet', '120000')
+  .option('--base <ref>', 'review the PR diff from a base ref, for example origin/main')
+  .option('--requirement <file>', 'read acceptance criteria from a UTF-8 text file')
+  .action(guardReviewCommand);
+const guardRules = guard.command('rules').description('manage discovered Guard rules');
+guardRules
+  .command('approve [ids]')
+  .description('activate proposed rules by comma-separated ID')
+  .option('--all', 'activate all proposed rules')
+  .action(guardRulesApproveCommand);
+const guardContracts = guard.command('contracts').description('manage project Guard contracts');
+guardContracts
+  .command('approve [ids]')
+  .description('activate proposed contracts by comma-separated ID')
+  .option('--all', 'activate all proposed contracts')
+  .action(guardContractsApproveCommand);
+guardContracts
+  .command('reject [ids]')
+  .description('reject proposed contracts by comma-separated ID')
+  .option('--all', 'reject all proposed contracts')
+  .action(guardContractsRejectCommand);
+const guardBaseline = guard.command('baseline').description('manage suppressed Guard findings');
+guardBaseline
+  .command('list')
+  .description('list baseline fingerprints')
+  .option('--json', 'print a machine-readable report')
+  .action((options: { json?: boolean }) => guardBaselineCommand('list', undefined, options));
+guardBaseline
+  .command('accept [ids]')
+  .description('accept findings into the baseline by fingerprint')
+  .option('--all', 'accept all current findings')
+  .option('--reason <text>', 'record why the findings are accepted')
+  .option('--json', 'print a machine-readable report')
+  .action((ids: string | undefined, options: { all?: boolean; reason?: string; json?: boolean }) =>
+    guardBaselineCommand('accept', ids, options),
+  );
+guardBaseline
+  .command('remove [ids]')
+  .description('remove fingerprints from the baseline')
+  .option('--all', 'remove all current findings')
+  .option('--reason <text>', 'record why the findings are removed')
+  .option('--json', 'print a machine-readable report')
+  .action((ids: string | undefined, options: { all?: boolean; reason?: string; json?: boolean }) =>
+    guardBaselineCommand('remove', ids, options),
+  );
 
 withNoEnvFileOption(
   env.command('check').description(`validate env vars against ${ENV_EXAMPLE_FILE_NAME}`),

@@ -5,12 +5,6 @@ import { checkProjectRoot, readProjectFile } from '../utils/project.js';
 import { ENV_EXAMPLE_FILE_NAME, loadProjectEnv } from '../utils/project-env.js';
 import { getAdapters } from '../utils/env-config.js';
 
-function getRoot(): string {
-  const root = findProjectRoot();
-  if (!root) throw new Error('Not inside a Codapult project');
-  return root;
-}
-
 function getSchemaPath(root: string): string {
   const provider = getAdapters(loadProjectEnv(root).content).database;
   return provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';

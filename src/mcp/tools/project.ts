@@ -13,6 +13,7 @@ import {
 } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
 import { commandResponse, runProjectCommand } from '../../utils/command.js';
+import { runProjectChecks } from '../../utils/project-checks.js';
 import { collectMcpHealth } from '../../utils/health.js';
 import { collectAppConfigSummary } from '../../utils/config-report.js';
 
@@ -105,22 +106,7 @@ export function registerProjectTools(server: McpServer): void {
     ({ checks }) => {
       const root = checkProjectRoot('throw');
       const toRun = checks ?? ['lint', 'typecheck', 'test'];
-      const commands: Record<string, string> = {
-        lint: 'pnpm lint',
-        typecheck: 'pnpm tsc --noEmit',
-        test: 'pnpm test --run',
-      };
-
-      const results: Record<string, ReturnType<typeof runProjectCommand>> = {};
-      for (const check of toRun) {
-        const cmd = commands[check];
-        if (!cmd) continue;
-        try {
-          results[check] = runProjectCommand(cmd, root);
-        } catch {
-          results[check] = runProjectCommand(cmd, root);
-        }
-      }
+      const results = runProjectChecks(root, toRun);
 
       return { content: [{ type: 'text' as const, text: JSON.stringify(results, null, 2) }] };
     },

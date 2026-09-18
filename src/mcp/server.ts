@@ -9,6 +9,9 @@ import { registerGenerateTools } from './tools/generate.js';
 import { registerDeployTools } from './tools/deploy.js';
 import { registerPrompts } from './prompts.js';
 import { registerResources } from './resources.js';
+import { registerGuardTools } from '@codapult/guard/mcp';
+import { registerGuardPrompts } from '@codapult/guard/mcp/prompts';
+import { registerGuardResources } from '@codapult/guard/mcp/resources';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../../package.json') as { version: string };
@@ -26,6 +29,9 @@ registerGenerateTools(server);
 registerDeployTools(server);
 registerPrompts(server);
 registerResources(server);
+registerGuardTools(server);
+registerGuardPrompts(server);
+registerGuardResources(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
