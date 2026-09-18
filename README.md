@@ -104,6 +104,7 @@ tests, SAST, or a general PR-review service.
 - `codapult guard check --changed` — check new architecture violations
 - `codapult guard audit` — inspect the complete current state, including baseline findings
 - `codapult guard review` — prepare a bounded diff and project-context packet for an AI reviewer
+- `codapult guard impact <files...>` — explain dependencies, transitive dependents, capabilities, and relevant contracts
 - `codapult guard verify` — run Guard verification and configured project checks
 - `codapult guard doctor` — diagnose missing or invalid Guard artifacts
 - `codapult guard rules ...` — approve proposed rules
@@ -118,8 +119,11 @@ pnpm exec codapult-guard init
 ```
 
 The Codapult CLI adapter and the standalone Guard package share the same implementation; Guard
-logic is not duplicated in this repository. See the [Guard documentation](https://github.com/codapult/codapult-guard/tree/main/docs)
-for the full lifecycle, contracts, AI-agent workflow, MCP tools, and CI example.
+logic is not duplicated in this repository. This section documents only the Codapult-specific
+entrypoints. The standalone [Guard README](https://github.com/codapult/codapult-guard) and
+[Guard documentation](https://github.com/codapult/codapult-guard/tree/main/docs) are the source of
+truth for the complete lifecycle, contracts, impact analysis, AI-agent workflow, MCP tools, CI,
+and current Guard capabilities.
 
 ### AI Integration
 
@@ -199,18 +203,18 @@ The CLI includes an MCP (Model Context Protocol) server with 39 tools, 12 resour
 
 #### Architecture Guard
 
-| Tool                             | Description                                                            |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `codapult_guard_init`            | Discover the project and create Guard state and an initial baseline.   |
-| `codapult_guard_context`         | Return project architecture context for an AI agent.                   |
-| `codapult_guard_propose`         | Generate evidence-based rule and contract proposals.                   |
-| `codapult_guard_proposal_decide` | Approve or reject proposed Guard policy.                               |
-| `codapult_guard_check`           | Check active Guard policy against the project or changed files.        |
-| `codapult_guard_audit`           | Run a complete Guard scan, including baseline-suppressed findings.     |
-| `codapult_guard_review`          | Prepare a bounded semantic-review packet from the current diff.        |
-| `codapult_guard_verify`          | Run Guard, project checks, adapters, and contract verification.        |
-| `codapult_guard_impact`          | Analyze affected modules and architecture impact paths.                |
-| `codapult_guard_explain`         | Explain Guard findings and project-specific architectural constraints. |
+| Tool                             | Description                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `codapult_guard_init`            | Discover the project and create Guard state and an initial baseline.                                 |
+| `codapult_guard_context`         | Return project architecture context for an AI agent.                                                 |
+| `codapult_guard_propose`         | Generate evidence-based rule and contract proposals.                                                 |
+| `codapult_guard_proposal_decide` | Approve or reject proposed Guard policy.                                                             |
+| `codapult_guard_check`           | Check active Guard policy against the project or changed files.                                      |
+| `codapult_guard_audit`           | Run a complete Guard scan, including baseline-suppressed findings.                                   |
+| `codapult_guard_review`          | Prepare a bounded semantic-review packet from the current diff.                                      |
+| `codapult_guard_verify`          | Run Guard, project checks, adapters, and contract verification.                                      |
+| `codapult_guard_impact`          | Analyze dependencies, transitive dependents, capabilities, contracts, and architecture impact paths. |
+| `codapult_guard_explain`         | Explain Guard findings and project-specific architectural constraints.                               |
 
 Mutating MCP tools support `dry_run` where applicable. The tool returns the planned operations without writing project files, changing environment files, running migrations, or applying database changes. `codapult_env_read` masks sensitive values by default; `show_secrets: true` is optional and returns a security warning.
 
