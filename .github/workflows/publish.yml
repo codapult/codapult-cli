@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install pnpm
@@ -41,10 +41,9 @@ jobs:
 
       - name: Verify release tag
         env:
-          RELEASE_TAG: ${{ github.event.workflow_run.head_branch }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
         run: |
-          git fetch --no-tags origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
           test "$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")" = "${RELEASE_SHA}"
 
       - name: Publish
