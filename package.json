@@ -53,11 +53,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@codapult/guard": "^0.1.0",
+    "@codapult/guard": "^0.2.0",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@js-toolkit/config-utils": "^1.0.1",

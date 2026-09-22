@@ -13,11 +13,11 @@ importers:
   .:
     dependencies:
       '@codapult/guard':
-        specifier: ^0.1.0
-        version: 0.1.0(supports-color@7.2.0)
+        specifier: ^0.2.0
+        version: 0.2.0(supports-color@7.2.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
-        version: 1.30.0(supports-color@7.2.0)(zod@4.4.3)
+        version: 1.30.0(supports-color@7.2.0)(zod@4.6.5)
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -28,8 +28,8 @@ importers:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@js-toolkit/config-utils':
         specifier: ^1.0.1
@@ -100,8 +100,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@codapult/guard@0.1.0':
-    resolution: {integrity: sha512-Lf4CA4i5fVcAqxvfERfWQNUPXGDn/yfGoqXXk87sYR+VM7bb+wK+JWYKVlDiI2CI8839uGX5ivLlHtIe95Zrqg==}
+  '@codapult/guard@0.2.0':
+    resolution: {integrity: sha512-7lkkiXnbaePDBfcc4AKGqyVVxNGCuErLxOftn96eRKL9CIO6rUPHr0ygUPjhrGbG7ht+yZ1kcxdk25zZXWlo/w==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -2326,8 +2326,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
 snapshots:
 
@@ -2346,15 +2346,15 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@codapult/guard@0.1.0(supports-color@7.2.0)':
+  '@codapult/guard@0.2.0(supports-color@7.2.0)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.30.0(supports-color@7.2.0)(zod@4.4.3)
+      '@modelcontextprotocol/sdk': 1.30.0(supports-color@7.2.0)(zod@4.6.5)
       commander: 15.0.0
       picocolors: 1.1.1
       semver: 7.8.5
       ts-morph: 28.0.0
       typescript: '@typescript/typescript6@6.0.2'
-      zod: 4.4.3
+      zod: 4.6.5
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - supports-color
@@ -2616,7 +2616,7 @@ snapshots:
 
   '@js-toolkit/tsconfig@1.0.1': {}
 
-  '@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3)':
+  '@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.6.5)':
     dependencies:
       '@hono/node-server': 2.1.0(hono@4.13.1)
       ajv: 8.20.0
@@ -2633,8 +2633,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
+      zod: 4.6.5
+      zod-to-json-schema: 3.25.2(zod@4.6.5)
     transitivePeerDependencies:
       - supports-color
 
@@ -4424,8 +4424,8 @@ snapshots:
 
   yoctocolors@2.2.0: {}
 
-  zod-to-json-schema@3.25.2(zod@4.4.3):
+  zod-to-json-schema@3.25.2(zod@4.6.5):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.5
 
-  zod@4.4.3: {}
+  zod@4.6.5: {}
