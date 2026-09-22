@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { resolve, join, isAbsolute, relative } from 'node:path';
+import { z } from 'zod';
 import { getCacheDir } from './git.js';
 
 export interface PluginManifestEnvVar {
@@ -31,6 +32,54 @@ export interface PluginManifest {
 
 const MANIFEST_FILENAME = 'codapult-plugin.json';
 
+const nonEmptyString = z.string().trim().min(1);
+const packageName = z.string().regex(/^@?[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)?$/);
+const relativePluginPath = nonEmptyString.refine(
+  (value) => !isAbsolute(value) && !value.split(/[\\/]+/).includes('..'),
+  'Plugin paths must stay inside the plugin directory',
+);
+
+const pluginManifestSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*$/),
+  package: packageName,
+  version: nonEmptyString,
+  description: z.string(),
+  install: z
+    .object({
+      schemaImports: z.array(nonEmptyString).optional(),
+      schemaImportsPg: z.array(nonEmptyString).optional(),
+      dbReExports: z.array(nonEmptyString).optional(),
+      schemaTables: relativePluginPath.optional(),
+      schemaTablesPg: relativePluginPath.optional(),
+      transpilePackages: z.array(packageName).optional(),
+      serverExternalPackages: z.array(packageName).optional(),
+      shadcnComponents: z.array(z.string().regex(/^[a-z][a-z0-9-]*$/)).optional(),
+      // Keys are project-relative page paths; values are package import specifiers.
+      pages: z.record(nonEmptyString, nonEmptyString).optional(),
+      env: z
+        .record(
+          z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+          z.object({
+            default: z.string().optional(),
+            required: z.boolean(),
+            description: z.string().optional(),
+          }),
+        )
+        .optional(),
+      optionalDeps: z.record(packageName, z.string()).optional(),
+    })
+    .default({}),
+});
+
+function realPathOrOriginal(path: string): string {
+  try {
+    const resolved = realpathSync(path);
+    return typeof resolved === 'string' ? resolved : path;
+  } catch {
+    return path;
+  }
+}
+
 /**
  * Verifies the resolved directory stays within expected boundaries
  * (sibling of projectRoot or inside .codapult/plugins/).
@@ -38,9 +87,12 @@ const MANIFEST_FILENAME = 'codapult-plugin.json';
 function isWithinAllowedScope(dir: string, projectRoot: string): boolean {
   const parentDir = resolve(projectRoot, '..');
   const cacheDir = getCacheDir(projectRoot);
+  const resolvedDir = existsSync(dir) ? realPathOrOriginal(dir) : dir;
+  const resolvedParent = existsSync(parentDir) ? realPathOrOriginal(parentDir) : parentDir;
+  const resolvedCache = existsSync(cacheDir) ? realPathOrOriginal(cacheDir) : cacheDir;
 
-  const relToParent = relative(parentDir, dir);
-  const relToCache = relative(cacheDir, dir);
+  const relToParent = relative(resolvedParent, resolvedDir);
+  const relToCache = relative(resolvedCache, resolvedDir);
 
   const isUnderParent = !relToParent.startsWith('..') && !isAbsolute(relToParent);
   const isUnderCache = !relToCache.startsWith('..') && !isAbsolute(relToCache);
@@ -88,8 +140,10 @@ export function resolveManifest(
     if (existsSync(manifestPath)) {
       try {
         const content = readFileSync(manifestPath, 'utf-8');
-        const manifest = JSON.parse(content) as PluginManifest;
-        return { manifest, pluginDir: dir };
+        const parsed = pluginManifestSchema.safeParse(JSON.parse(content));
+        if (parsed.success) {
+          return { manifest: parsed.data, pluginDir: dir };
+        }
       } catch {
         // Invalid JSON
       }

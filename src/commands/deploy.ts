@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkProjectRoot } from '../utils/project.js';
@@ -65,7 +65,7 @@ export async function deployVercelCommand(options: ProjectEnvOptions = {}): Prom
   // 4. Build check
   info('Running build check...');
   try {
-    execSync('pnpm build', { cwd: root, stdio: 'pipe' });
+    execFileSync('pnpm', ['build'], { cwd: root, stdio: 'pipe' });
     success('Build passed');
   } catch {
     fail('Build failed — fix errors before deploying');
@@ -82,7 +82,7 @@ export async function deployVercelCommand(options: ProjectEnvOptions = {}): Prom
 
   info('Deploying...');
   try {
-    execSync('vercel --prod', { cwd: root, stdio: 'inherit' });
+    execFileSync('vercel', ['--prod'], { cwd: root, stdio: 'inherit' });
     success('Deployed to Vercel');
   } catch {
     fail('Vercel deploy failed');
@@ -143,7 +143,10 @@ export async function deployDockerCommand(
   // 5. Build
   info('Building Docker image...');
   try {
-    execSync(`docker build -t ${imageName} .`, { cwd: root, stdio: 'inherit' });
+    execFileSync('docker', ['build', '-t', imageName, '.'], {
+      cwd: root,
+      stdio: 'inherit',
+    });
     success(`Image built: ${imageName}`);
   } catch {
     fail('Docker build failed');
@@ -167,7 +170,7 @@ export async function deployDockerCommand(
     info('Starting container...');
     dim(`docker run -p 3000:3000 --env-file ${ENV_FILE_NAME} ${imageName}`);
     try {
-      execSync(`docker run -p 3000:3000 --env-file ${ENV_FILE_NAME} ${imageName}`, {
+      execFileSync('docker', ['run', '-p', '3000:3000', '--env-file', ENV_FILE_NAME, imageName], {
         cwd: root,
         stdio: 'inherit',
       });

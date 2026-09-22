@@ -123,6 +123,21 @@ describe('resolveManifest', () => {
     expect(result).toBeNullable();
   });
 
+  it('returns null for a structurally invalid manifest', () => {
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockReturnValue(
+      JSON.stringify({
+        name: 'test-plugin',
+        package: '@codapult/plugin-test',
+        version: '0.1.0',
+        description: 'A test plugin',
+        install: { schemaTables: '../outside.ts', optionalDeps: { 'bad package': 'unsafe' } },
+      }),
+    );
+
+    expect(resolveManifest(ROOT, 'broken')).toBeNullable();
+  });
+
   it('prioritizes direct path over sibling directories', () => {
     mockedExists.mockImplementation((p) => {
       const path = p as string;

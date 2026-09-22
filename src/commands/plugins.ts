@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { checkProjectRoot } from '../utils/project.js';
@@ -24,10 +24,9 @@ import {
 } from '../utils/patchers.js';
 import { heading, success, fail, warn, info, dim, confirm } from '../utils/ui.js';
 
-function execQuiet(cmd: string, cwd: string): boolean {
+function execQuiet(args: string[], cwd: string): boolean {
   try {
-    execSync(cmd, { cwd, stdio: 'pipe' });
-    return true;
+    return spawnSync('pnpm', args, { cwd, stdio: 'pipe' }).status === 0;
   } catch {
     return false;
   }
@@ -216,7 +215,7 @@ export async function pluginsAddCommand(
 
   // 10. pnpm install
   info('Installing dependencies...');
-  if (!execQuiet('pnpm install --no-frozen-lockfile', root)) {
+  if (!execQuiet(['install', '--no-frozen-lockfile'], root)) {
     warn('pnpm install failed — run manually: pnpm install --no-frozen-lockfile');
   } else {
     success('Dependencies installed');
@@ -233,7 +232,7 @@ export async function pluginsAddCommand(
   // 11. pnpm db:push
   if (manifest.install.schemaTables) {
     info('Applying database schema...');
-    if (!execQuiet('pnpm db:push', root)) {
+    if (!execQuiet(['db:push'], root)) {
       warn('db:push failed — run manually: pnpm db:push');
     } else {
       success('Database schema applied');
@@ -249,9 +248,12 @@ export async function pluginsAddCommand(
     }
     const installOptional = await confirm('Install optional dependencies?', false);
     if (installOptional) {
-      const pkgs = Object.keys(manifest.install.optionalDeps).join(' ');
-      execQuiet(`pnpm add ${pkgs}`, root);
-      success('Optional dependencies installed');
+      const pkgs = Object.keys(manifest.install.optionalDeps);
+      if (execQuiet(['add', ...pkgs], root)) {
+        success('Optional dependencies installed');
+      } else {
+        warn('Optional dependency installation failed');
+      }
     }
   }
 
@@ -379,7 +381,7 @@ export async function pluginsRemoveCommand(
 
   // 10. pnpm install
   info('Updating dependencies...');
-  execQuiet('pnpm install --no-frozen-lockfile', root);
+  execQuiet(['install', '--no-frozen-lockfile'], root);
   success('Dependencies updated');
 
   heading('Done!');
@@ -481,7 +483,7 @@ export async function pluginsMigrateCommand(
 
   if (options.push) {
     info('Applying schema changes (db:push)...');
-    if (!execQuiet('pnpm db:push', root)) {
+    if (!execQuiet(['db:push'], root)) {
       fail('db:push failed — run manually: pnpm db:push');
       process.exit(1);
     }
@@ -489,7 +491,7 @@ export async function pluginsMigrateCommand(
   } else {
     info('Generating migration...');
     try {
-      execSync('pnpm db:generate', { cwd: root, stdio: 'inherit' });
+      execFileSync('pnpm', ['db:generate'], { cwd: root, stdio: 'inherit' });
       success('Migration generated');
     } catch {
       fail('db:generate failed — run manually: pnpm db:generate');
@@ -500,7 +502,7 @@ export async function pluginsMigrateCommand(
     const apply = await confirm('Apply the migration now (pnpm db:migrate)?');
     if (apply) {
       try {
-        execSync('pnpm db:migrate', { cwd: root, stdio: 'inherit' });
+        execFileSync('pnpm', ['db:migrate'], { cwd: root, stdio: 'inherit' });
         success('Migration applied');
       } catch {
         fail('db:migrate failed — run manually: pnpm db:migrate');

@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { checkProjectRoot } from '../utils/project.js';
 import { heading, success, fail, warn, info, dim, confirm, label } from '../utils/ui.js';
 
@@ -10,47 +10,57 @@ interface UpdateOptions {
   list?: boolean;
 }
 
-function exec(cmd: string, cwd: string, silent = false): string {
+function runGit(args: string[], cwd: string, silent = false): string {
   const stdio = silent ? 'pipe' : 'inherit';
-  const result = execSync(cmd, { cwd, encoding: 'utf-8', stdio });
+  const result = execFileSync('git', args, { cwd, encoding: 'utf-8', stdio });
   return typeof result === 'string' ? result : '';
 }
 
-function execQuiet(cmd: string, cwd: string): string {
+function execQuiet(args: string[], cwd: string): string {
   try {
-    return execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
+    return runGit(args, cwd, true).trim();
   } catch {
     return '';
   }
 }
 
+function isSafeGitRef(value: string): boolean {
+  return (
+    /^[A-Za-z0-9._/@-]+$/.test(value) &&
+    !value.startsWith('-') &&
+    !value.endsWith('.') &&
+    !value.includes('..') &&
+    !value.includes('@{')
+  );
+}
+
 function hasUncommittedChanges(cwd: string): boolean {
-  const status = execQuiet('git status --porcelain', cwd);
+  const status = execQuiet(['status', '--porcelain'], cwd);
   return status.length > 0;
 }
 
 function ensureUpstreamRemote(cwd: string): void {
-  const remotes = execQuiet('git remote', cwd);
+  const remotes = execQuiet(['remote'], cwd);
   if (!remotes.split('\n').includes(UPSTREAM_REMOTE)) {
     info(`Adding upstream remote "${UPSTREAM_REMOTE}"...`);
-    execQuiet(`git remote add ${UPSTREAM_REMOTE} ${UPSTREAM_URL}`, cwd);
+    runGit(['remote', 'add', UPSTREAM_REMOTE, UPSTREAM_URL], cwd, true);
     success(`Remote "${UPSTREAM_REMOTE}" added`);
   }
 }
 
 function fetchUpstream(cwd: string): void {
   info('Fetching upstream releases...');
-  execQuiet(`git fetch ${UPSTREAM_REMOTE} --tags`, cwd);
+  execQuiet(['fetch', UPSTREAM_REMOTE, '--tags'], cwd);
 }
 
 function getAvailableTags(cwd: string): string[] {
-  const raw = execQuiet(`git tag -l "v*" --sort=-v:refname`, cwd);
+  const raw = execQuiet(['tag', '-l', 'v*', '--sort=-v:refname'], cwd);
   if (!raw) return [];
   return raw.split('\n').filter(Boolean);
 }
 
 function getCurrentVersion(cwd: string): string {
-  const tag = execQuiet('git describe --tags --abbrev=0 2>/dev/null', cwd);
+  const tag = execQuiet(['describe', '--tags', '--abbrev=0'], cwd);
   return tag || '(no version tag)';
 }
 
@@ -65,7 +75,7 @@ const SAFE_ZONE_PATTERNS = [
 ];
 
 function classifyConflicts(cwd: string): { safe: string[]; caution: string[]; core: string[] } {
-  const raw = execQuiet('git diff --name-only --diff-filter=U', cwd);
+  const raw = execQuiet(['diff', '--name-only', '--diff-filter=U'], cwd);
   if (!raw) return { safe: [], caution: [], core: [] };
 
   const files = raw.split('\n').filter(Boolean);
@@ -130,16 +140,23 @@ export async function updateCommand(
     process.exit(1);
   }
 
+  if (!isSafeGitRef(target)) {
+    fail(`Invalid version or Git ref: ${target}`);
+    process.exit(1);
+  }
+
   label('Target version', target);
   console.log();
 
   if (options.dryRun) {
     info('Dry run — showing changes without applying:');
     console.log();
-    exec(
-      `git log --oneline ${current}..${UPSTREAM_REMOTE}/${target} 2>/dev/null || git log --oneline ..${target} 2>/dev/null`,
-      root,
-    );
+    const currentRef = isSafeGitRef(current) ? current : 'HEAD';
+    try {
+      runGit(['log', '--oneline', `${currentRef}..${UPSTREAM_REMOTE}/${target}`], root);
+    } catch {
+      runGit(['log', '--oneline', `..${target}`], root);
+    }
     console.log();
     dim('Run without --dry-run to apply the update.');
     return;
@@ -155,7 +172,7 @@ export async function updateCommand(
   console.log();
 
   try {
-    exec(`git merge ${target} --no-edit`, root);
+    runGit(['merge', target, '--no-edit'], root);
     success('Update merged successfully!');
   } catch {
     warn('Merge conflicts detected.');
