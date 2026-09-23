@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.2](https://github.com/codapult/codapult-cli/compare/v0.19.1...v0.19.2) (2026-09-23)
+
+### Bug Fixes
+
+* harden cli command and plugin inputs ([6d7690a](https://github.com/codapult/codapult-cli/commit/6d7690a548fb269e91631738b3b5caba3987816c))
+
 ## [0.19.1](https://github.com/codapult/codapult-cli/compare/v0.19.0...v0.19.1) (2026-09-18)
 
 ### Bug Fixes
