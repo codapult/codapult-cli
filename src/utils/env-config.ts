@@ -36,6 +36,7 @@ export const FEATURE_ENV = {
   aiPlayground: 'ENABLE_AI_PLAYGROUND',
   teams: 'ENABLE_TEAMS',
   referrals: 'ENABLE_REFERRALS',
+  promotions: 'ENABLE_PROMOTIONS',
   analytics: 'ENABLE_ANALYTICS',
   workflows: 'ENABLE_WORKFLOWS',
   webhooks: 'ENABLE_WEBHOOKS',
