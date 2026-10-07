@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolvePreset } from './setup.js';
+import { buildEnvContent, resolvePreset } from './setup.js';
 
 describe('setup presets', () => {
   it('sets marketing mode for the marketing preset', () => {
@@ -20,5 +20,13 @@ describe('setup presets', () => {
 
   it('keeps app mode for custom presets by default', () => {
     expect(resolvePreset('enableAI=false').appMode).toBe('app');
+  });
+
+  it('writes the selected app mode into generated env content', () => {
+    const marketing = buildEnvContent('# APP_MODE="demo"\n', resolvePreset('marketing'));
+    const demo = buildEnvContent('# APP_MODE="demo"\n', resolvePreset('demo'));
+
+    expect(marketing).toContain('APP_MODE=landing');
+    expect(demo).toContain('APP_MODE=demo');
   });
 });

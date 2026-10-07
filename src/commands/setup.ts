@@ -26,7 +26,7 @@ function emptyLine(): boolean {
   return true;
 }
 
-interface ProjectConfig {
+export interface ProjectConfig {
   appName: string;
   appUrl: string;
   appMode: 'app' | 'landing' | 'demo';
@@ -628,16 +628,8 @@ const PRUNE_MARKER_FILES = [
   'src/instrumentation.ts',
 ] as const;
 
-function generateEnvFile(root: string, config: ProjectConfig): void {
-  const envExamplePath = join(root, ENV_EXAMPLE_FILE_NAME);
-  const envLocalPath = join(root, ENV_FILE_NAME);
-
-  if (existsSync(envLocalPath)) {
-    info(`${ENV_FILE_NAME} already exists — creating ${ENV_FILE_NAME}.new instead`);
-  }
-
-  let content = existsSync(envExamplePath) ? readFileSync(envExamplePath, 'utf-8') : '';
-
+export function buildEnvContent(content: string, config: ProjectConfig): string {
+  let result = content;
   const replacements: Record<string, string> = {
     NEXT_PUBLIC_APP_NAME: config.appName,
     NEXT_PUBLIC_APP_URL: config.appUrl,
@@ -656,12 +648,26 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
 
   for (const [key, value] of Object.entries(replacements)) {
     const regex = new RegExp(`^${key}=.*$`, 'm');
-    if (regex.test(content)) {
-      content = content.replace(regex, `${key}=${value}`);
+    if (regex.test(result)) {
+      result = result.replace(regex, `${key}=${value}`);
     } else {
-      content += `\n${key}=${value}`;
+      result += `\n${key}=${value}`;
     }
   }
+
+  return result;
+}
+
+function generateEnvFile(root: string, config: ProjectConfig): void {
+  const envExamplePath = join(root, ENV_EXAMPLE_FILE_NAME);
+  const envLocalPath = join(root, ENV_FILE_NAME);
+
+  if (existsSync(envLocalPath)) {
+    info(`${ENV_FILE_NAME} already exists — creating ${ENV_FILE_NAME}.new instead`);
+  }
+
+  const exampleContent = existsSync(envExamplePath) ? readFileSync(envExamplePath, 'utf-8') : '';
+  const content = buildEnvContent(exampleContent, config);
 
   const outputPath = existsSync(envLocalPath) ? `${envLocalPath}.new` : envLocalPath;
   writeFileSync(outputPath, content, 'utf-8');
