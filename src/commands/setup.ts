@@ -29,6 +29,7 @@ function emptyLine(): boolean {
 interface ProjectConfig {
   appName: string;
   appUrl: string;
+  appMode: 'app' | 'landing' | 'demo';
   authProvider: 'better-auth' | 'kinde' | 'none';
   paymentProvider: 'stripe' | 'lemonsqueezy' | 'polar';
   ssoProvider: 'jackson' | 'none';
@@ -76,6 +77,7 @@ interface ProjectConfig {
 const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
   // Marketing-only site.
   marketing: {
+    appMode: 'landing',
     authProvider: 'none',
     jobProvider: 'none',
     ssoProvider: 'none',
@@ -114,6 +116,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     removeUnusedCode: true,
   },
   demo: {
+    appMode: 'demo',
     authProvider: 'better-auth',
   },
 };
@@ -121,6 +124,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
 const DEFAULT_CONFIG: ProjectConfig = {
   appName: 'Codapult',
   appUrl: 'http://localhost:3000',
+  appMode: 'app',
   authProvider: 'better-auth',
   ssoProvider: 'none',
   paymentProvider: 'stripe',
@@ -196,7 +200,7 @@ function parsePresetValue(raw: string): Partial<ProjectConfig> {
   return { ...base, ...result };
 }
 
-function resolvePreset(raw: string): ProjectConfig {
+export function resolvePreset(raw: string): ProjectConfig {
   const overrides = parsePresetValue(raw);
   const config = { ...DEFAULT_CONFIG, ...overrides };
 
@@ -637,6 +641,7 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
   const replacements: Record<string, string> = {
     NEXT_PUBLIC_APP_NAME: config.appName,
     NEXT_PUBLIC_APP_URL: config.appUrl,
+    APP_MODE: config.appMode,
     AUTH_PROVIDER: config.authProvider,
     PAYMENT_PROVIDER: config.paymentProvider,
     STORAGE_PROVIDER: config.storageProvider,
@@ -851,6 +856,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
   const config: ProjectConfig = {
     appName,
     appUrl,
+    appMode: 'app',
     authProvider,
     ssoProvider,
     paymentProvider: await selectPrompt<ProjectConfig['paymentProvider']>(
