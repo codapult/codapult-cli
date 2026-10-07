@@ -45,6 +45,7 @@ describe('generatePageCommand', () => {
 
     const [path, content] = mockedWrite.mock.calls[0] as [string, string, string];
     expect(path).toContain('user-settings/page.tsx');
+    expect(path).toContain('src/app/[locale]/(protected)/(dashboard)/dashboard');
     expect(content).toContain('UserSettingsPage');
     expect(content).toContain("title: 'User Settings — Codapult'");
     expect(content).toContain('getAppSession');
@@ -58,6 +59,7 @@ describe('generatePageCommand', () => {
 
     const [path] = mockedWrite.mock.calls[0] as [string, string, string];
     expect(path).toContain('my-dashboard/page.tsx');
+    expect(path).toContain('[locale]/(protected)/(dashboard)');
   });
 
   it('does not overwrite existing page', () => {
@@ -138,6 +140,12 @@ describe('generatePluginCommand', () => {
     expect(writtenPaths.some((p) => p.includes('package.json'))).toBe(true);
     expect(writtenPaths.some((p) => p.includes('src/index.ts'))).toBe(true);
     expect(writtenPaths.some((p) => p.includes('codapult-plugin.json'))).toBe(true);
+    const manifestWrite = mockedWrite.mock.calls.find(([p]) =>
+      (p as string).includes('codapult-plugin.json'),
+    );
+    expect(manifestWrite?.[1]).toContain(
+      'src/app/[locale]/(protected)/(dashboard)/dashboard/my-widget/page.tsx',
+    );
   });
 
   it('generates correct plugin name references', () => {

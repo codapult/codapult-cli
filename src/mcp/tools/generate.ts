@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { checkProjectRoot } from '../../utils/project.js';
+import { dashboardPagePath } from '../../utils/project-paths.js';
 import { validateGeneratedName } from '../../utils/validation.js';
 
 function toKebab(name: string): string {
@@ -47,7 +48,7 @@ export function registerGenerateTools(server: McpServer): void {
       const kebab = toKebab(name);
       const pascal = toPascal(name);
       const title = pascal.replace(/([A-Z])/g, ' $1').trim();
-      const path = `src/app/(dashboard)/dashboard/${kebab}/page.tsx`;
+      const path = dashboardPagePath(kebab);
       if (dry_run) {
         return {
           content: [

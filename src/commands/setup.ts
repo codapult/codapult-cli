@@ -520,7 +520,7 @@ const MODULE_REMOVALS: {
   {
     key: 'enableReports',
     paths: [
-      `${APP}/(dashboard)/dashboard/reports`,
+      `${APP}/(protected)/(dashboard)/dashboard/reports`,
       'src/app/api/reports',
       'src/lib/scheduled-reports',
       'src/components/dashboard/ReportSchedules.tsx',

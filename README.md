@@ -5,17 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js >=20.19](https://img.shields.io/badge/node-%3E%3D20.19-339933.svg?logo=node.js&logoColor=white)](package.json)
 
-CLI tool for managing [Codapult](https://codapult.dev) SaaS projects, with the universal
-`@codapult/guard` architecture guard built in for AI-assisted development.
+CLI tool for managing [Codapult](https://codapult.dev) SaaS projects, including architecture-control
+workflows powered by `@codapult/guard`.
 
-`@codapult/cli` is the open-source Codapult integration layer: a CLI and MCP server for
-Codapult-based SaaS projects. It combines project setup, updates, plugins, database and
-deployment tooling with the standalone Guard engine.
+`@codapult/cli` is the open-source developer CLI and MCP server for Codapult-based SaaS projects.
+It provides project setup, updates, plugins, database, deployment, MCP, and architecture-control
+workflows.
 
 For a non-Codapult JavaScript or TypeScript project, install
 [`@codapult/guard`](https://github.com/codapult/codapult-guard) directly. The CLI does not make
-Guard universal by adding Codapult assumptions to it; it connects the Codapult-specific tools to
-the same published Guard package through a thin adapter.
+Guard universal by adding Codapult assumptions to it; within Codapult projects, the CLI includes the
+same published Guard package through a thin adapter.
 
 | Package                                                         | Use it when                                                                                                     |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -92,8 +92,8 @@ for example `npx @codapult/cli db schema-diff`.
 
 ### Architecture Guard
 
-Codapult CLI includes the standalone [`@codapult/guard`](https://github.com/codapult/codapult-guard)
-engine and keeps the `codapult guard ...` command surface as a Codapult-friendly entrypoint.
+Codapult CLI includes the [`@codapult/guard`](https://github.com/codapult/codapult-guard) engine and
+keeps the `codapult guard ...` command surface as a Codapult-friendly entrypoint.
 Guard is responsible for project architecture memory, approved contracts, baselines, changed-file
 regressions, impact context, and AI-agent review packets. It does not replace ESLint, TypeScript,
 tests, SAST, or a general PR-review service.
@@ -138,9 +138,16 @@ Mutation commands (`db push`, `db generate`, `plugins add/remove`, env sync, and
 
 ## MCP Server
 
-The CLI includes an MCP (Model Context Protocol) server with 39 tools, 12 resources, and 4 prompt templates for AI-assisted development. The following is the complete MCP surface exposed by the current CLI.
+The CLI includes an MCP (Model Context Protocol) server for working with Codapult projects. Its
+core integration exposes 29 tools, 8 resources, and 2 prompt templates. The integrated Guard
+capabilities add 14 tools, 6 resources, and 2 prompt templates. The resulting current full surface
+is 43 tools, 14 resources, and 4 prompt templates.
 
 ### MCP Tools
+
+The tools below are the Codapult template integration. Guard tools are documented in the
+[`@codapult/guard` repository](https://github.com/codapult/codapult-guard) and are registered by
+the CLI as its architecture-control layer.
 
 #### Project
 

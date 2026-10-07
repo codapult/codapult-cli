@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { checkProjectRoot } from '../utils/project.js';
+import { dashboardPageManifestPath, dashboardPagePath } from '../utils/project-paths.js';
 import { heading, success, fail, info, dim } from '../utils/ui.js';
 import { validateGeneratedName } from '../utils/validation.js';
 
@@ -45,7 +46,7 @@ export function generatePageCommand(name: string): void {
 
   heading(`Generating dashboard page: ${kebab}`);
 
-  const pagePath = resolve(root, `src/app/(dashboard)/dashboard/${kebab}/page.tsx`);
+  const pagePath = resolve(root, dashboardPagePath(kebab));
   const page = `import { getAppSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -345,7 +346,7 @@ export default ${camel}Plugin;
         install: {
           transpilePackages: [`@codapult/plugin-${kebab}`],
           pages: {
-            [`src/app/(dashboard)/dashboard/${kebab}/page.tsx`]: `@codapult/plugin-${kebab}/pages/${kebab}-page`,
+            [dashboardPageManifestPath(kebab)]: `@codapult/plugin-${kebab}/pages/${kebab}-page`,
           },
           env: {},
         },
