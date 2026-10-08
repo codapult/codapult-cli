@@ -75,6 +75,25 @@ export interface ProjectConfig {
 // ---------------------------------------------------------------------------
 
 const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
+  saas: {},
+  'ai-saas': {
+    enableAI: true,
+    enableRAG: true,
+    enableAgents: true,
+    enableBatch: true,
+    enablePlayground: true,
+  },
+  'b2b-saas': {
+    authProvider: 'better-auth',
+    ssoProvider: 'jackson',
+    enableAuth: true,
+    enableSSO: true,
+    enableTeams: true,
+    enableBranding: true,
+    enableAuditLog: true,
+    enableReports: true,
+    enableWebhooks: true,
+  },
   // Marketing-only site.
   marketing: {
     appMode: 'landing',
@@ -216,6 +235,10 @@ export function resolvePreset(raw: string): ProjectConfig {
   }
 
   return config;
+}
+
+export function getPresetNames(): string[] {
+  return Object.keys(BUILT_IN_PRESETS);
 }
 
 // All app-router paths are under `src/app/[locale]/...` (next-intl).

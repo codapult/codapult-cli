@@ -2,9 +2,32 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildEnvContent, resolvePreset, setupCommand } from './setup.js';
+import { buildEnvContent, getPresetNames, resolvePreset, setupCommand } from './setup.js';
 
 describe('setup presets', () => {
+  it('exposes the starter profiles', () => {
+    expect(getPresetNames()).toEqual(
+      expect.arrayContaining(['saas', 'ai-saas', 'b2b-saas', 'marketing', 'demo']),
+    );
+  });
+
+  it('configures the AI SaaS profile', () => {
+    const config = resolvePreset('ai-saas');
+
+    expect(config.enableAI).toBe(true);
+    expect(config.enableRAG).toBe(true);
+    expect(config.enableAgents).toBe(true);
+  });
+
+  it('configures the B2B SaaS profile', () => {
+    const config = resolvePreset('b2b-saas');
+
+    expect(config.enableSSO).toBe(true);
+    expect(config.ssoProvider).toBe('jackson');
+    expect(config.enableTeams).toBe(true);
+    expect(config.enableBranding).toBe(true);
+  });
+
   it('sets marketing mode for the marketing preset', () => {
     const config = resolvePreset('marketing');
 

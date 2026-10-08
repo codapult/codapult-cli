@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { createRequire } from 'node:module';
 import pc from 'picocolors';
 import { setupCommand } from './commands/setup.js';
+import { recipeApplyCommand, recipeListCommand, recipeShowCommand } from './commands/recipes.js';
 import { updateCommand } from './commands/update.js';
 import { doctorCommand } from './commands/doctor.js';
 import { configShowCommand } from './commands/config-show.js';
@@ -83,6 +84,18 @@ program
   .option('--preset <value>', 'apply a preset non-interactively (name, key=value pairs, or both)')
   .option('--no-env-file', `do not create ${ENV_FILE_NAME}; read env vars from process.env instead`)
   .action(setupCommand);
+
+const recipe = program
+  .commandsGroup('Project')
+  .command('recipe')
+  .description('show or apply a Codapult starter recipe');
+recipe.command('list').description('list starter recipes').action(recipeListCommand);
+recipe.command('show <name>').description('show a recipe').action(recipeShowCommand);
+recipe
+  .command('apply <name>')
+  .description('apply a recipe to the current project')
+  .option('--no-env-file', `do not create ${ENV_FILE_NAME}`)
+  .action(recipeApplyCommand);
 
 program
   .command('update [version]')

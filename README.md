@@ -51,6 +51,7 @@ for example `npx @codapult/cli db schema-diff`.
 ### Project
 
 - `codapult setup` — interactive project setup wizard (or non-interactive with `--preset`)
+- `codapult recipe list|show|apply <name>` — inspect or apply a starter workflow
 - `codapult update [version]` — update from upstream Codapult releases
 - `codapult doctor` — check project health and configuration (exit code 1 on failures for CI)
 - `codapult config` — show current project configuration
