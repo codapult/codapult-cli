@@ -24,6 +24,7 @@
     "format:check": "prettier --check .",
     "release:check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && npm pack --dry-run",
     "test": "vitest run",
+    "test:golden": "pnpm build && pnpm --dir ../codapult-create build && node scripts/golden-path.mjs",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
