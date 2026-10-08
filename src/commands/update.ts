@@ -64,36 +64,9 @@ function getCurrentVersion(cwd: string): string {
   return tag || '(no version tag)';
 }
 
-const SAFE_ZONE_PATTERNS = [
-  'src/config/app.ts',
-  'src/config/navigation.ts',
-  'src/config/marketing.ts',
-  'src/app/globals.css',
-  'messages/',
-  'content/',
-  '.env',
-];
-
-function classifyConflicts(cwd: string): { safe: string[]; caution: string[]; core: string[] } {
+function getConflictFiles(cwd: string): string[] {
   const raw = execQuiet(['diff', '--name-only', '--diff-filter=U'], cwd);
-  if (!raw) return { safe: [], caution: [], core: [] };
-
-  const files = raw.split('\n').filter(Boolean);
-  const safe: string[] = [];
-  const caution: string[] = [];
-  const core: string[] = [];
-
-  for (const file of files) {
-    if (SAFE_ZONE_PATTERNS.some((p) => file.startsWith(p))) {
-      safe.push(file);
-    } else if (file === 'pnpm-lock.yaml' || file === 'package.json' || file.endsWith('schema.ts')) {
-      caution.push(file);
-    } else {
-      core.push(file);
-    }
-  }
-
-  return { safe, caution, core };
+  return raw ? raw.split('\n').filter(Boolean) : [];
 }
 
 export async function updateCommand(
@@ -178,30 +151,10 @@ export async function updateCommand(
     warn('Merge conflicts detected.');
     console.log();
 
-    const { safe, caution, core } = classifyConflicts(root);
-
-    if (safe.length > 0) {
-      info('Safe-zone conflicts (keep YOUR version):');
-      for (const f of safe) dim(`  ${f}`);
-      console.log();
-    }
-
-    if (caution.length > 0) {
-      warn('Caution-zone conflicts (review carefully):');
-      for (const f of caution) {
-        dim(`  ${f}`);
-        if (f === 'pnpm-lock.yaml') {
-          dim('    → Resolve: accept either side, then run pnpm install');
-        } else if (f.endsWith('schema.ts')) {
-          dim('    → Resolve: merge both column additions, then pnpm db:push');
-        }
-      }
-      console.log();
-    }
-
-    if (core.length > 0) {
-      info('Core conflicts (review the upstream changes):');
-      for (const f of core) dim(`  ${f}`);
+    const conflicts = getConflictFiles(root);
+    if (conflicts.length > 0) {
+      info('Files requiring manual conflict resolution:');
+      for (const file of conflicts) dim(`  ${file}`);
       console.log();
     }
 
