@@ -10,17 +10,87 @@ export const RECIPES = {
   'ai-saas': {
     preset: 'ai-saas',
     description: 'AI product with chat, agents, batch processing, playground, and RAG.',
-    steps: ['setup --preset ai-saas', 'pnpm install', 'pnpm db:push', 'pnpm dev'],
+    steps: [
+      'setup --preset ai-saas',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
   },
   'b2b-saas': {
     preset: 'b2b-saas',
     description: 'Team product with organizations, SSO, branding, audit, and operations modules.',
-    steps: ['setup --preset b2b-saas', 'pnpm install', 'pnpm db:push', 'pnpm dev'],
+    steps: [
+      'setup --preset b2b-saas',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
+  },
+  'ai-chatbot': {
+    preset: 'ai-chatbot',
+    description: 'Focused AI chatbot with chat, tenant context, quotas, and audit-ready events.',
+    steps: [
+      'setup --preset ai-chatbot',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
+  },
+  marketplace: {
+    preset: 'marketplace',
+    description: 'Marketplace with organizations, Stripe Connect, webhooks, audit, and branding.',
+    steps: [
+      'setup --preset marketplace',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
+  },
+  'internal-tool': {
+    preset: 'internal-tool',
+    description:
+      'Internal tool with auth, organizations, workflows, analytics, audit, and reports.',
+    steps: [
+      'setup --preset internal-tool',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
+  },
+  'content-saas': {
+    preset: 'content-saas',
+    description:
+      'Content and productivity SaaS with blog, workflows, onboarding, analytics, and growth surfaces.',
+    steps: [
+      'setup --preset content-saas',
+      'pnpm install',
+      'pnpm db:push',
+      'pnpm db:seed',
+      'npx @codapult/cli doctor',
+      'npx @codapult/cli mcp doctor',
+      'pnpm dev',
+    ],
   },
   marketing: {
     preset: 'marketing',
     description: 'Marketing site without authentication or dashboard modules.',
-    steps: ['setup --preset marketing', 'pnpm install', 'pnpm dev'],
+    steps: ['setup --preset marketing', 'pnpm install', 'npx @codapult/cli doctor', 'pnpm dev'],
   },
 } as const;
 

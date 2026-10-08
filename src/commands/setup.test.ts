@@ -7,7 +7,17 @@ import { buildEnvContent, getPresetNames, resolvePreset, setupCommand } from './
 describe('setup presets', () => {
   it('exposes the starter profiles', () => {
     expect(getPresetNames()).toEqual(
-      expect.arrayContaining(['saas', 'ai-saas', 'b2b-saas', 'marketing', 'demo']),
+      expect.arrayContaining([
+        'saas',
+        'ai-saas',
+        'b2b-saas',
+        'ai-chatbot',
+        'marketplace',
+        'internal-tool',
+        'content-saas',
+        'marketing',
+        'demo',
+      ]),
     );
   });
 
@@ -26,6 +36,27 @@ describe('setup presets', () => {
     expect(config.ssoProvider).toBe('jackson');
     expect(config.enableTeams).toBe(true);
     expect(config.enableBranding).toBe(true);
+  });
+
+  it('configures product recipes from existing setup flags', () => {
+    const chatbot = resolvePreset('ai-chatbot');
+    expect(chatbot.enableAI).toBe(true);
+    expect(chatbot.enableAiChat).toBe(true);
+    expect(chatbot.enableAgents).toBe(false);
+
+    const marketplace = resolvePreset('marketplace');
+    expect(marketplace.enableConnect).toBe(true);
+    expect(marketplace.enableTeams).toBe(true);
+
+    const internalTool = resolvePreset('internal-tool');
+    expect(internalTool.enableAI).toBe(false);
+    expect(internalTool.enableWorkflows).toBe(true);
+    expect(internalTool.removeUnusedCode).toBe(true);
+
+    const contentSaas = resolvePreset('content-saas');
+    expect(contentSaas.enableBlog).toBe(true);
+    expect(contentSaas.enableTeams).toBe(false);
+    expect(contentSaas.enableWorkflows).toBe(true);
   });
 
   it('sets marketing mode for the marketing preset', () => {

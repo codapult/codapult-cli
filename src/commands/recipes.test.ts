@@ -3,7 +3,16 @@ import { RECIPES, recipeShowCommand } from './recipes.js';
 
 describe('starter recipes', () => {
   it('has a setup recipe for each supported profile', () => {
-    expect(Object.keys(RECIPES)).toEqual(['saas', 'ai-saas', 'b2b-saas', 'marketing']);
+    expect(Object.keys(RECIPES)).toEqual([
+      'saas',
+      'ai-saas',
+      'b2b-saas',
+      'ai-chatbot',
+      'marketplace',
+      'internal-tool',
+      'content-saas',
+      'marketing',
+    ]);
     expect(
       Object.values(RECIPES).every((recipe) => recipe.steps[0].startsWith('setup --preset ')),
     ).toBe(true);
