@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -32,18 +32,6 @@ function parseToolText(result) {
 function createSourceFixture() {
   mkdirSync(join(source, 'src/config'), { recursive: true });
   mkdirSync(join(source, 'test'), { recursive: true });
-  writeFileSync(
-    join(source, 'package.json'),
-    `${JSON.stringify(
-      {
-        name: 'codapult',
-        version: '0.1.0',
-        scripts: { test: 'node --test' },
-      },
-      null,
-      2,
-    )}\n`,
-  );
   writeFileSync(join(source, '.env.example'), 'APP_MODE="app"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
   writeFileSync(
     join(source, 'src/config/app.ts'),
@@ -53,12 +41,45 @@ function createSourceFixture() {
     join(source, 'test/golden-path.test.mjs'),
     "import test from 'node:test';\n\ntest('scaffold test passes', () => {});\n",
   );
+  writeFileSync(
+    join(source, 'server.mjs'),
+    "import { createServer } from 'node:http';\n\nconst server = createServer((request, response) => {\n  if (request.url === '/api/health') {\n    response.writeHead(200, { 'content-type': 'application/json' });\n    response.end(JSON.stringify({ status: 'ok', app: 'Codapult' }));\n    return;\n  }\n  response.writeHead(404);\n  response.end();\n});\n\nserver.listen(Number(process.env.PORT ?? 0), '127.0.0.1');\n",
+  );
+  writeFileSync(
+    join(source, 'package.json'),
+    `${JSON.stringify(
+      {
+        name: 'codapult',
+        version: '0.1.0',
+        scripts: { start: 'node server.mjs', test: 'node --test' },
+      },
+      null,
+      2,
+    )}\n`,
+  );
 
   run('git', ['init', '--quiet'], source);
   run('git', ['config', 'user.email', 'golden-path@example.com'], source);
   run('git', ['config', 'user.name', 'Codapult Golden Path'], source);
   run('git', ['add', '.'], source);
   run('git', ['commit', '--quiet', '-m', 'golden fixture'], source);
+}
+
+async function waitForHealth(url, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const body = await response.json();
+        if (body.status === 'ok') return;
+      }
+    } catch {
+      // The server may still be starting.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Project did not become healthy at ${url}`);
 }
 
 async function main() {
@@ -76,84 +97,107 @@ async function main() {
     throw new Error('setup did not create MCP configuration');
   }
 
-  const server = createMcpServer();
-  const client = new Client({ name: 'codapult-golden-path', version: '1.0.0' });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const port = 38_000 + Math.floor(Math.random() * 1_000);
+  const app = spawn(process.execPath, ['server.mjs'], {
+    cwd: project,
+    env: { ...process.env, PORT: String(port) },
+    stdio: 'pipe',
+  });
 
   try {
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await waitForHealth(`http://127.0.0.1:${port}/api/health`);
 
-    const status = parseToolText(
-      await client.callTool({ name: 'codapult_project_status', arguments: {} }),
-    );
-    if (status.name !== 'codapult') throw new Error('MCP status did not identify the project');
+    const server = createMcpServer();
+    const client = new Client({ name: 'codapult-golden-path', version: '1.0.0' });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
-    const generated = parseToolText(
-      await client.callTool({
-        name: 'codapult_generate_page',
-        arguments: { name: 'saved-reports' },
-      }),
-    );
-    const generatedPath = join(
-      project,
-      'src/app/[locale]/(protected)/(dashboard)/dashboard/saved-reports/page.tsx',
-    );
-    if (!generated.created || generated.path !== generatedPath || !existsSync(generatedPath)) {
-      throw new Error('MCP generation did not create the expected page');
+    try {
+      await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+      const status = parseToolText(
+        await client.callTool({ name: 'codapult_project_status', arguments: {} }),
+      );
+      if (status.name !== 'codapult') throw new Error('MCP status did not identify the project');
+
+      const generated = parseToolText(
+        await client.callTool({
+          name: 'codapult_generate_page',
+          arguments: { name: 'saved-reports' },
+        }),
+      );
+      const generatedPath = join(
+        project,
+        'src/app/[locale]/(protected)/(dashboard)/dashboard/saved-reports/page.tsx',
+      );
+      if (!generated.created || generated.path !== generatedPath || !existsSync(generatedPath)) {
+        throw new Error('MCP generation did not create the expected page');
+      }
+
+      const checks = parseToolText(
+        await client.callTool({
+          name: 'codapult_run_checks',
+          arguments: { root: project, checks: ['test'] },
+        }),
+      );
+      if (checks.test?.status !== 'passed') {
+        throw new Error(`MCP project checks failed: ${JSON.stringify(checks)}`);
+      }
+
+      run('pnpm', ['test'], project);
+
+      const guardInit = parseToolText(
+        await client.callTool({
+          name: 'codapult_guard_init',
+          arguments: { root: project, confirm: true, no_wait: true },
+        }),
+      );
+      if (guardInit.status !== 'ok') throw new Error('Guard initialization failed');
+
+      const proposal = parseToolText(
+        await client.callTool({
+          name: 'codapult_guard_propose',
+          arguments: { root: project, persist: true, confirm: true },
+        }),
+      );
+      if (proposal.status !== 'ok' || !proposal.persisted) {
+        throw new Error('Guard proposal was not persisted');
+      }
+
+      const verify = parseToolText(
+        await client.callTool({
+          name: 'codapult_guard_verify',
+          arguments: {
+            root: project,
+            checks: ['test'],
+            project_checks: true,
+            tools: 'off',
+          },
+        }),
+      );
+      if (verify.outcome !== 'pass' || verify.checks?.test?.status !== 'passed') {
+        throw new Error(`Guard verification failed: ${JSON.stringify(verify)}`);
+      }
+
+      console.log(
+        JSON.stringify(
+          {
+            setup: 'passed',
+            run: 'passed',
+            mcp: 'passed',
+            generate: generatedPath,
+            guard: 'passed',
+            test: 'passed',
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      await client.close();
+      await server.close();
     }
-
-    run('pnpm', ['test'], project);
-
-    const guardInit = parseToolText(
-      await client.callTool({
-        name: 'codapult_guard_init',
-        arguments: { root: project, confirm: true, no_wait: true },
-      }),
-    );
-    if (guardInit.status !== 'ok') throw new Error('Guard initialization failed');
-
-    const proposal = parseToolText(
-      await client.callTool({
-        name: 'codapult_guard_propose',
-        arguments: { root: project, persist: true, confirm: true },
-      }),
-    );
-    if (proposal.status !== 'ok' || !proposal.persisted) {
-      throw new Error('Guard proposal was not persisted');
-    }
-
-    const verify = parseToolText(
-      await client.callTool({
-        name: 'codapult_guard_verify',
-        arguments: {
-          root: project,
-          checks: ['test'],
-          project_checks: true,
-          tools: 'off',
-        },
-      }),
-    );
-    if (verify.outcome !== 'pass' || verify.checks?.test?.status !== 'passed') {
-      throw new Error(`Guard verification failed: ${JSON.stringify(verify)}`);
-    }
-
-    console.log(
-      JSON.stringify(
-        {
-          setup: 'passed',
-          run: 'passed',
-          mcp: 'passed',
-          generate: generatedPath,
-          guard: 'passed',
-          test: 'passed',
-        },
-        null,
-        2,
-      ),
-    );
   } finally {
-    await client.close();
-    await server.close();
+    app.kill('SIGTERM');
   }
 }
 

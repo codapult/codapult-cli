@@ -46,6 +46,27 @@ pnpm add -D @codapult/cli
 Project users who do not install the CLI globally should prefix commands with `npx @codapult/cli`,
 for example `npx @codapult/cli db schema-diff`.
 
+### Verified project workflow
+
+The CLI repository includes an executable golden-path contract for the workflow used by a new
+Codapult project:
+
+```text
+create → setup → run → MCP status/generate → project checks → Guard → test
+```
+
+Maintainers can run it with:
+
+```shell
+pnpm test:golden
+```
+
+The check creates a temporary shallow-clone source, starts the generated project locally, verifies
+its health endpoint, connects to MCP, generates a page, runs the project test through MCP, and
+finishes with Guard initialization, proposal, and verification. It uses no external provider
+credentials. Authentication and payment-provider flows remain covered by their focused adapter,
+route, webhook, and application E2E tests.
+
 ## Commands
 
 ### Project
