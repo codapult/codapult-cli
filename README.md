@@ -62,6 +62,7 @@ for example `npx @codapult/cli db schema-diff`.
 - `codapult plugins remove <name>` — uninstall a plugin
 - `codapult plugins migrate [name]` — update plugin schema and generate DB migration (`--push` for dev mode)
 - `codapult plugins list` — list installed plugins
+- `codapult plugins check [name]` — verify plugin install compatibility without changing files
 
 ### Code Generation
 

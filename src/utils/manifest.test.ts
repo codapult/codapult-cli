@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resolveManifest } from './manifest.js';
+import {
+  CURRENT_PLUGIN_API_VERSION,
+  getPluginCompatibilityIssues,
+  resolveManifest,
+} from './manifest.js';
 
 vi.mock('node:fs');
 
@@ -153,5 +157,54 @@ describe('resolveManifest', () => {
 
     expect(result).not.toBeNull();
     expect(result!.pluginDir).toBe('/direct');
+  });
+});
+
+describe('getPluginCompatibilityIssues', () => {
+  it('accepts a legacy manifest using the current default contract', () => {
+    const issues = getPluginCompatibilityIssues(
+      {
+        name: 'test-plugin',
+        package: '@codapult/plugin-test',
+        version: '0.1.0',
+        description: 'A test plugin',
+        install: {},
+      },
+      '/plugin',
+    );
+
+    expect(issues).toEqual([]);
+  });
+
+  it('rejects an unsupported plugin API version', () => {
+    const issues = getPluginCompatibilityIssues(
+      {
+        name: 'test-plugin',
+        package: '@codapult/plugin-test',
+        version: '0.1.0',
+        description: 'A test plugin',
+        apiVersion: CURRENT_PLUGIN_API_VERSION + 1,
+        install: {},
+      },
+      '/plugin',
+    );
+
+    expect(issues.map((issue) => issue.code)).toEqual(['unsupported-api-version']);
+  });
+
+  it('reports missing schema install files', () => {
+    mockedExists.mockReturnValue(false);
+    const issues = getPluginCompatibilityIssues(
+      {
+        name: 'test-plugin',
+        package: '@codapult/plugin-test',
+        version: '0.1.0',
+        description: 'A test plugin',
+        install: { schemaTables: 'schema/tables.ts' },
+      },
+      '/plugin',
+    );
+
+    expect(issues.map((issue) => issue.code)).toEqual(['missing-install-file']);
   });
 });

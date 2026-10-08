@@ -13,6 +13,7 @@ import {
   pluginsRemoveCommand,
   pluginsListCommand,
   pluginsMigrateCommand,
+  pluginsCheckCommand,
 } from './commands/plugins.js';
 import {
   generatePageCommand,
@@ -139,6 +140,11 @@ plugins
   .action(pluginsMigrateCommand);
 
 plugins.command('list').description('list installed plugins').action(pluginsListCommand);
+
+plugins
+  .command('check [name]')
+  .description('check plugin install compatibility without changing files')
+  .action(pluginsCheckCommand);
 
 const generate = program
   .commandsGroup('Code Generation')

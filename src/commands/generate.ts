@@ -342,6 +342,7 @@ export default ${camel}Plugin;
         name: kebab,
         package: `@codapult/plugin-${kebab}`,
         version: '0.1.0',
+        apiVersion: 1,
         description: `${pascal} plugin for Codapult`,
         install: {
           transpilePackages: [`@codapult/plugin-${kebab}`],

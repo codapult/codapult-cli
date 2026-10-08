@@ -7,7 +7,7 @@ import {
   getProjectEnvSource,
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
-import { resolveManifest } from '../utils/manifest.js';
+import { getPluginCompatibilityIssues, resolveManifest } from '../utils/manifest.js';
 import { clonePlugin } from '../utils/git.js';
 import {
   patchSchemaImports,
@@ -78,6 +78,12 @@ export async function pluginsAddCommand(
   }
 
   const { manifest, pluginDir } = result;
+  const compatibilityIssues = getPluginCompatibilityIssues(manifest, pluginDir);
+  if (compatibilityIssues.length > 0) {
+    fail(`Plugin "${manifest.name}" is not compatible with this Codapult project.`);
+    for (const issue of compatibilityIssues) dim(`  ${issue.message}`);
+    process.exit(1);
+  }
   info(`Found: ${manifest.package}@${manifest.version}`);
   dim(`  ${manifest.description}`);
   dim(`  ${pluginDir}`);
@@ -564,5 +570,44 @@ export function pluginsListCommand(): void {
     if (version) dim(`    version: ${version}`);
   }
 
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// codapult plugins check [name]
+// ---------------------------------------------------------------------------
+
+export function pluginsCheckCommand(name?: string): void {
+  const root = checkProjectRoot('exit');
+  const pluginNames = name ? [name] : getInstalledPluginNames(root);
+
+  if (pluginNames.length === 0) {
+    info('No installed plugins found.');
+    return;
+  }
+
+  heading(name ? `Checking plugin: ${name}` : 'Checking installed plugins');
+  let hasErrors = false;
+
+  for (const pluginName of pluginNames) {
+    const result = resolveManifest(root, pluginName);
+    if (!result) {
+      fail(`${pluginName}: manifest not found`);
+      hasErrors = true;
+      continue;
+    }
+
+    const issues = getPluginCompatibilityIssues(result.manifest, result.pluginDir);
+    if (issues.length === 0) {
+      success(`${result.manifest.name}: compatible`);
+      continue;
+    }
+
+    hasErrors = true;
+    fail(`${result.manifest.name}: incompatible`);
+    for (const issue of issues) dim(`    ${issue.message}`);
+  }
+
+  if (hasErrors) process.exitCode = 1;
   console.log();
 }

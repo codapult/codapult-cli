@@ -14,6 +14,8 @@ export interface PluginManifest {
   package: string;
   version: string;
   description: string;
+  /** Version of the Codapult plugin contract, independent of the app version. */
+  apiVersion?: number;
 
   install: {
     schemaImports?: string[];
@@ -31,6 +33,7 @@ export interface PluginManifest {
 }
 
 const MANIFEST_FILENAME = 'codapult-plugin.json';
+export const CURRENT_PLUGIN_API_VERSION = 1;
 
 const nonEmptyString = z.string().trim().min(1);
 const packageName = z.string().regex(/^@?[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)?$/);
@@ -44,6 +47,7 @@ const pluginManifestSchema = z.object({
   package: packageName,
   version: nonEmptyString,
   description: z.string(),
+  apiVersion: z.number().int().positive().default(CURRENT_PLUGIN_API_VERSION),
   install: z
     .object({
       schemaImports: z.array(nonEmptyString).optional(),
@@ -70,6 +74,47 @@ const pluginManifestSchema = z.object({
     })
     .default({}),
 });
+
+export interface PluginCompatibilityIssue {
+  code: 'unsupported-api-version' | 'missing-install-file';
+  message: string;
+}
+
+/** Check the stable install contract before the CLI mutates the host project. */
+export function getPluginCompatibilityIssues(
+  manifest: PluginManifest,
+  pluginDir: string,
+): PluginCompatibilityIssue[] {
+  const issues: PluginCompatibilityIssue[] = [];
+  const apiVersion = manifest.apiVersion ?? CURRENT_PLUGIN_API_VERSION;
+
+  if (apiVersion !== CURRENT_PLUGIN_API_VERSION) {
+    issues.push({
+      code: 'unsupported-api-version',
+      message:
+        'Plugin "' +
+        manifest.name +
+        '" uses plugin API v' +
+        String(apiVersion) +
+        '; this CLI supports v' +
+        String(CURRENT_PLUGIN_API_VERSION) +
+        '.',
+    });
+  }
+
+  for (const relativeFile of [manifest.install.schemaTables, manifest.install.schemaTablesPg]) {
+    if (relativeFile == null) continue;
+    if (!existsSync(resolve(pluginDir, relativeFile))) {
+      issues.push({
+        code: 'missing-install-file',
+        message:
+          'Plugin "' + manifest.name + '" references a missing install file: ' + relativeFile,
+      });
+    }
+  }
+
+  return issues;
+}
 
 function realPathOrOriginal(path: string): string {
   try {
