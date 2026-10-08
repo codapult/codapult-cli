@@ -77,7 +77,9 @@ async function waitForHealth(url, timeoutMs = 10_000) {
     } catch {
       // The server may still be starting.
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
   }
   throw new Error(`Project did not become healthy at ${url}`);
 }
