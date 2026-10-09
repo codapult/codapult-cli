@@ -70,8 +70,10 @@ function patchSchemaImportsAtPath(
       const idx = existing.indexOf(imp);
       if (idx === -1) continue;
       // Check if the symbol is used outside the import line itself
-      const usagePattern = new RegExp(`\\b${imp}\\b`);
-      const contentAfterImport = contentWithoutThisPlugin.replace(importLine[0], '');
+      const usagePattern = new RegExp(`(?<![.\\w])${imp}\\b`);
+      const contentAfterImport = contentWithoutThisPlugin
+        .replace(importLine[0], '')
+        .replace(/\/\*[\\s\\S]*?\*\/|\/\/.*$/gm, '');
       if (!usagePattern.test(contentAfterImport)) {
         existing.splice(idx, 1);
       }
@@ -124,7 +126,11 @@ function extractMarkedBlock(content: string, name: string): string | undefined {
   return content.slice(startIdx + start.length, endIdx);
 }
 
-function readPluginTables(pluginDir: string, tablesFile: string): string | undefined {
+function readPluginTables(
+  pluginDir: string,
+  pluginName: string,
+  tablesFile: string,
+): string | undefined {
   const resolvedPlugin = resolve(pluginDir);
   const tablesPath = resolve(pluginDir, tablesFile);
 
@@ -136,11 +142,19 @@ function readPluginTables(pluginDir: string, tablesFile: string): string | undef
   if (!existsSync(tablesPath)) return undefined;
 
   let tables = readFileSync(tablesPath, 'utf-8');
-  // Strip import lines — host schema already has them
-  tables = tables.replace(/^import\s+.*;\s*\n/gm, '');
-  // Strip type/interface declarations
-  tables = tables.replace(/^export\s+type\s+.*;\s*\n/gm, '');
-  tables = tables.replace(/^(?:export\s+)?interface\s+\w+\s*\{[\s\S]*?\}\s*\n/gm, '');
+  // Strip runtime imports — host schema already provides the Drizzle and DB
+  // imports. Keep type imports, but point them at the installed plugin's
+  // public entrypoints because relative paths no longer resolve from the host
+  // schema file.
+  tables = tables.replace(/^import(?!\s+type\b)\s+.*;\s*\n/gm, '');
+  const packageName = `@codapult/plugin-${pluginName}`;
+  tables = tables.replace(/from\s+['"](\.\.?\/[^'"]+)['"]/g, (_match, importPath: string) => {
+    const exportName = importPath === './tables' ? 'schema' : importPath.split('/')[1];
+    return exportName ? `from '${packageName}/${exportName}'` : _match;
+  });
+  // Keep type/interface declarations: table definitions may use them in
+  // `$type<...>()`, so removing them makes the generated host schema fail
+  // type-checking after plugin installation.
   return tables.trim();
 }
 
@@ -164,7 +178,7 @@ function patchSchemaTablesAtPath(
 
   if (action === 'add' && hasMarker(content, pluginName)) return false;
 
-  const tables = readPluginTables(pluginDir, tablesFile);
+  const tables = readPluginTables(pluginDir, pluginName, tablesFile);
   if (!tables) return false;
 
   if (action === 'update') {

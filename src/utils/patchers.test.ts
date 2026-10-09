@@ -178,10 +178,11 @@ describe('patchSchemaTables', () => {
     expect(written).toContain('// --- plugin:test-plugin:start ---');
     expect(written).toContain('// --- plugin:test-plugin:end ---');
     expect(written).toContain("export const widget = sqliteTable('widget', {});");
-    // The tables file's import and type export lines should be stripped from the injected block
+    // The tables file's import line is stripped, but type declarations remain
+    // available to table definitions that use them in `$type<...>()`.
     const markerBlock = written.slice(written.indexOf('// --- plugin:test-plugin:start ---'));
     expect(markerBlock).not.toMatch(/^import\s+/m);
-    expect(markerBlock).not.toMatch(/^export\s+type\s+Widget/m);
+    expect(markerBlock).toMatch(/^export\s+type\s+Widget/m);
     // The original schema import should still be present
     expect(written).toMatch(/^import\s+.*from\s+'drizzle-orm\/sqlite-core'/m);
   });
@@ -195,6 +196,29 @@ describe('patchSchemaTables', () => {
     patchSchemaTables(ROOT, 'test-plugin', '/plugins/test', 'tables.ts', 'add');
 
     expect(mockedWrite).not.toHaveBeenCalled();
+  });
+
+  it('rewrites plugin type imports to public package entrypoints', () => {
+    const schema = `import { sqliteTable, text } from 'drizzle-orm/sqlite-core';`;
+    const tables = `import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { Status } from '../status/types';
+
+export const widget = sqliteTable('widget', {
+  status: text('status').$type<Status>(),
+});`;
+
+    mockedExists.mockReturnValue(true);
+    mockedRead.mockImplementation((p) => {
+      const path = p as string;
+      if (path.includes('schema.ts')) return schema;
+      return tables;
+    });
+
+    patchSchemaTables(ROOT, 'test-plugin', '/plugins/test', 'tables.ts', 'add');
+
+    const written = mockedWrite.mock.calls[0][1] as string;
+    expect(written).toContain("import type { Status } from '@codapult/plugin-test-plugin/status';");
+    expect(written).toContain('$type<Status>()');
   });
 
   it('removes marked block on remove', () => {
