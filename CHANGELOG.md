@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.21.0](https://github.com/codapult/codapult-cli/compare/v0.20.0...v0.21.0) (2026-10-09)
+
+### Features
+
+* add plugin compatibility checks ([70a8c5c](https://github.com/codapult/codapult-cli/commit/70a8c5ce41e42e003b219bf61255060765cd0412))
+* add product starter recipes ([9e73079](https://github.com/codapult/codapult-cli/commit/9e730794b84e33ed27934deaf02da09c23b137bc))
+* add starter profiles and recipes ([8c00d1a](https://github.com/codapult/codapult-cli/commit/8c00d1a7098714089e431f0b65c87c710041108b))
+
+### Bug Fixes
+
+* keep CLI project generation aligned ([6f4ac4c](https://github.com/codapult/codapult-cli/commit/6f4ac4c0a524a0d7e23da37ee44a636a64c5088a))
+* make setup presets configure app mode ([4b954ae](https://github.com/codapult/codapult-cli/commit/4b954aec4960f67caf527e3a41b369398fd6ae38))
+* preserve plugin schema type imports ([c5dec73](https://github.com/codapult/codapult-cli/commit/c5dec73eee78b1f0f7b9a824c303321cd9ae0980))
+* satisfy golden path lint ([afeb33b](https://github.com/codapult/codapult-cli/commit/afeb33bee0c37c11e44741c69d65089086a94f0e))
+* simplify update conflict output ([bec476d](https://github.com/codapult/codapult-cli/commit/bec476d1e47bb6e27273d370cf2f40c2a41e1337))
+
 ## [0.20.0](https://github.com/codapult/codapult-cli/compare/v0.19.2...v0.20.0) (2026-09-25)
 
 ### Features
