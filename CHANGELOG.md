@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.21.1](https://github.com/codapult/codapult-cli/compare/v0.21.0...v0.21.1) (2026-10-19)
+
+### Bug Fixes
+
+* add new files to PRUNE_MARKER_FILES for improved cleanup ([a453e02](https://github.com/codapult/codapult-cli/commit/a453e02701f9f7d2f3b5fbe70443d47277f3eb3c))
+
 ## [0.21.0](https://github.com/codapult/codapult-cli/compare/v0.20.0...v0.21.0) (2026-10-09)
 
 ### Features
