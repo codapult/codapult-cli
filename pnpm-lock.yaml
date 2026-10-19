@@ -171,8 +171,8 @@ importers:
   .:
     dependencies:
       '@codapult/guard':
-        specifier: ^0.9.0
-        version: 0.9.0(supports-color@7.2.0)
+        specifier: ^0.10.0
+        version: 0.10.0(supports-color@7.2.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.1
         version: 1.32.1(supports-color@7.2.0)(zod@4.6.7)
@@ -264,8 +264,8 @@ packages:
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
-  '@codapult/guard@0.9.0':
-    resolution: {integrity: sha512-OXHkMFJCd/k33EU5WV1eHXRYiyTJ992GgmiSIIcwmbWmMurLy80TklxiW9eTLPdMTO7s35aetomkxB4w06eQAQ==}
+  '@codapult/guard@0.10.0':
+    resolution: {integrity: sha512-i8RbUQ18rqoOq2ZzzVuRoJMf3rV92C6ExqGSXO7fpFlVZKg0jcTf8JO6jbYgoluOkIbre80Vyvae3F3lmjLRQw==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -2386,7 +2386,7 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@codapult/guard@0.9.0(supports-color@7.2.0)':
+  '@codapult/guard@0.10.0(supports-color@7.2.0)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.1(supports-color@7.2.0)(zod@4.6.7)
       commander: 15.0.0
