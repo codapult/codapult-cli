@@ -3,7 +3,7 @@
   "version": "0.21.0",
   "description": "Next.js SaaS CLI and MCP server for Codapult boilerplate projects, with setup, plugins, database, deployment, and AI-agent architecture guardrails",
   "license": "MIT",
-  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
+  "packageManager": "pnpm@12.14.0+sha512.c18ba6d87993d3d164cb5e8948f32b2c06ee854487e06cd8d86781342fb3e5bb4634367034711e86802baa9c37bea906ce1929ad08d70884c97d801df13389a6",
   "engines": {
     "node": ">=20.19.0"
   },
@@ -77,13 +77,13 @@
     "@release-it/conventional-changelog": "^12.0.2",
     "@types/node": "^26.6.5",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "@vitest/coverage-v8": "^5.0.4",
-    "eslint": "^10.12.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.7",
     "prettier": "^3.9.10",
     "release-it": "^21.1.1",
     "typescript-eslint": "^8.71.2",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }
