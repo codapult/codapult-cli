@@ -14,14 +14,14 @@ The open-source CLI brings project setup, updates, plugins, database, deployment
 architecture-control workflows into one developer tool. It is designed for Codapult projects built
 with the Next.js SaaS boilerplate; it is not a general-purpose Next.js app generator.
 
-For a non-Codapult JavaScript or TypeScript project, install
+For architecture guardrails for AI coding agents in a non-Codapult JavaScript or TypeScript project, install
 [`@codapult/guard`](https://github.com/codapult/codapult-guard) directly. The CLI does not make
 Guard universal by adding Codapult assumptions to it; within Codapult projects, the CLI includes the
 same published Guard package through a thin adapter.
 
 | Package                                                         | Use it when                                                                                                     |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| [`@codapult/guard`](https://github.com/codapult/codapult-guard) | You need architecture guardrails, project memory, MCP, and AI-agent verification in any JS/TS project.          |
+| [`@codapult/guard`](https://github.com/codapult/codapult-guard) | You need AI coding agent guardrails, software architecture checks, project memory, MCP, and verification in any JS/TS project. |
 | `@codapult/cli`                                                 | You are building a Codapult SaaS and also need setup, plugins, database, environment, and deployment workflows. |
 
 ## Installation
