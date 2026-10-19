@@ -19,10 +19,10 @@ For architecture guardrails for AI coding agents in a non-Codapult JavaScript or
 Guard universal by adding Codapult assumptions to it; within Codapult projects, the CLI includes the
 same published Guard package through a thin adapter.
 
-| Package                                                         | Use it when                                                                                                     |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Package                                                         | Use it when                                                                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | [`@codapult/guard`](https://github.com/codapult/codapult-guard) | You need AI coding agent guardrails, software architecture checks, project memory, MCP, and verification in any JS/TS project. |
-| `@codapult/cli`                                                 | You are building a Codapult SaaS and also need setup, plugins, database, environment, and deployment workflows. |
+| `@codapult/cli`                                                 | You are building a Codapult SaaS and also need setup, plugins, database, environment, and deployment workflows.                |
 
 ## Installation
 
