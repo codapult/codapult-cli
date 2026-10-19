@@ -690,6 +690,7 @@ const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
   'src/app/sitemap.test.ts',
   'src/app/(marketing)/llms.txt/route.ts',
+  'src/app/api/checkout/route.ts',
   'src/components/marketing/Footer.tsx',
   'src/lib/auth/index.ts',
   'src/lib/auth/client-adapter.ts',
@@ -699,9 +700,11 @@ const PRUNE_MARKER_FILES = [
   'src/lib/scheduled-reports/index.ts',
   'src/lib/guards.ts',
   'src/lib/guards.test.ts',
+  'src/lib/auth/adapters/better-auth.ts',
   'src/config/marketing.test.ts',
   'src/config/env-schema.ts',
   'src/instrumentation.ts',
+  'src/proxy.ts',
 ] as const;
 
 export function buildEnvContent(content: string, config: ProjectConfig): string {
