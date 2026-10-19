@@ -1,16 +1,18 @@
-# @codapult/cli
+# Next.js SaaS CLI and MCP Server for Codapult | @codapult/cli
 
 [![CI](https://github.com/codapult/codapult-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/codapult/codapult-cli/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@codapult/cli?logo=npm)](https://www.npmjs.com/package/@codapult/cli)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js >=20.19](https://img.shields.io/badge/node-%3E%3D20.19-339933.svg?logo=node.js&logoColor=white)](package.json)
 
-CLI tool for managing [Codapult](https://codapult.dev) SaaS projects, including architecture-control
-workflows powered by `@codapult/guard`.
+`@codapult/cli` is the Next.js SaaS CLI for managing projects built with
+[Codapult](https://codapult.dev), a full-source Next.js SaaS boilerplate and starter kit. Use it to
+set up and update a SaaS codebase, configure plugins and databases, check deployment readiness,
+and connect AI coding agents through its Model Context Protocol (MCP) server.
 
-`@codapult/cli` is the open-source developer CLI and MCP server for Codapult-based SaaS projects.
-It provides project setup, updates, plugins, database, deployment, MCP, and architecture-control
-workflows.
+The open-source CLI brings project setup, updates, plugins, database, deployment, MCP, and
+architecture-control workflows into one developer tool. It is designed for Codapult projects built
+with the Next.js SaaS boilerplate; it is not a general-purpose Next.js app generator.
 
 For a non-Codapult JavaScript or TypeScript project, install
 [`@codapult/guard`](https://github.com/codapult/codapult-guard) directly. The CLI does not make
