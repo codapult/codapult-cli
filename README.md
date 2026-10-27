@@ -6,7 +6,7 @@
 [![Node.js >=20.19](https://img.shields.io/badge/node-%3E%3D20.19-339933.svg?logo=node.js&logoColor=white)](package.json)
 
 `@codapult/cli` is the Next.js SaaS CLI for managing projects built with
-[Codapult](https://codapult.dev), a full-source Next.js SaaS boilerplate and starter kit. Use it to
+[Codapult](https://codapult.dev), a Next.js SaaS Boilerplate & Starter Kit for MVPs, team-based B2B products and AI-powered applications, with connected product workflows, modular architecture, built-in AI platform, billing and infrastructure. Use it to
 set up and update a SaaS codebase, configure plugins and databases, check deployment readiness,
 and connect AI coding agents through its Model Context Protocol (MCP) server.
 
