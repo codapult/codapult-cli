@@ -32,7 +32,7 @@ function parseToolText(result) {
 function createSourceFixture() {
   mkdirSync(join(source, 'src/config'), { recursive: true });
   mkdirSync(join(source, 'test'), { recursive: true });
-  writeFileSync(join(source, '.env.example'), 'APP_MODE="app"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
+  writeFileSync(join(source, '.env.example'), 'APP_MODE="full"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
   writeFileSync(
     join(source, 'src/config/app.ts'),
     "export const appConfig = { appName: 'Codapult', appUrl: 'http://localhost:3000' } as const;\n",

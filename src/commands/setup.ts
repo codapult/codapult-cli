@@ -29,7 +29,7 @@ function emptyLine(): boolean {
 export interface ProjectConfig {
   appName: string;
   appUrl: string;
-  appMode: 'app' | 'landing' | 'demo';
+  appMode: 'app' | 'landing' | 'full' | 'demo';
   authProvider: 'better-auth' | 'kinde' | 'none';
   paymentProvider: 'stripe' | 'lemonsqueezy' | 'polar';
   ssoProvider: 'jackson' | 'none';
@@ -196,7 +196,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
 const DEFAULT_CONFIG: ProjectConfig = {
   appName: 'Codapult',
   appUrl: 'http://localhost:3000',
-  appMode: 'app',
+  appMode: 'full',
   authProvider: 'better-auth',
   ssoProvider: 'none',
   paymentProvider: 'stripe',
@@ -941,7 +941,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
   const config: ProjectConfig = {
     appName,
     appUrl,
-    appMode: 'app',
+    appMode: 'full',
     authProvider,
     ssoProvider,
     paymentProvider: await selectPrompt<ProjectConfig['paymentProvider']>(

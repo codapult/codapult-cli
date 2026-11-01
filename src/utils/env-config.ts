@@ -216,7 +216,7 @@ export interface Adapters {
 
 /** Resolve all adapters from .env content, applying the same defaults as `env.*`. */
 export function getAdapters(envContent: string): Adapters {
-  const landingMode = readEnv<string>(envContent, 'APP_MODE', 'app') === 'landing';
+  const landingMode = readEnv<string>(envContent, 'APP_MODE', 'full') === 'landing';
   const authProvider = readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth');
   return {
     database: readEnv<DbProvider>(envContent, 'DB_PROVIDER', 'turso'),
@@ -241,7 +241,7 @@ export function getAdapters(envContent: string): Adapters {
  * - auth-gated features forced off when AUTH_PROVIDER=none.
  */
 export function getFeatures(envContent: string): Record<string, boolean> {
-  const appMode = readEnv<string>(envContent, 'APP_MODE', 'app');
+  const appMode = readEnv<string>(envContent, 'APP_MODE', 'full');
   const authProvider = getAdapters(envContent).auth;
   const authEnabled = authProvider !== 'none';
 

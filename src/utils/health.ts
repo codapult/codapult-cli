@@ -105,7 +105,7 @@ export function collectProjectHealth(
     message: 'Effective providers and feature configuration resolved',
     details: {
       adapters,
-      appMode: readEnvVar(env.content, 'APP_MODE') ?? 'app',
+      appMode: readEnvVar(env.content, 'APP_MODE') ?? 'full',
     },
   });
   const schemaPath =

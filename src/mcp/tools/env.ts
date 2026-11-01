@@ -76,7 +76,7 @@ function getEffectiveConfig(content: string): {
   features: Record<string, boolean>;
 } {
   return {
-    appMode: readEnv<string>(content, 'APP_MODE', 'app'),
+    appMode: readEnv<string>(content, 'APP_MODE', 'full'),
     adapters: getAdapters(content),
     authMethods: getAuthMethods(content),
     oauthProviders: getOauthProviders(content),

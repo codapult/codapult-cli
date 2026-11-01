@@ -75,8 +75,8 @@ describe('setup presets', () => {
     expect(config.authProvider).toBe('better-auth');
   });
 
-  it('keeps app mode for custom presets by default', () => {
-    expect(resolvePreset('enableAI=false').appMode).toBe('app');
+  it('keeps full mode for custom presets by default', () => {
+    expect(resolvePreset('enableAI=false').appMode).toBe('full');
   });
 
   it('writes the selected app mode into generated env content', () => {
@@ -96,7 +96,7 @@ describe('setup presets', () => {
     mkdirSync(reportsDir, { recursive: true });
     writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'codapult' }));
     writeFileSync(join(root, 'src/config/app.ts'), 'export const appConfig = {} as const;\n');
-    writeFileSync(join(root, '.env.example'), 'APP_MODE="app"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
+    writeFileSync(join(root, '.env.example'), 'APP_MODE="full"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
     writeFileSync(
       join(reportsDir, 'page.tsx'),
       'export default function Reports() { return null; }\n',
