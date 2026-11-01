@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.22.0](https://github.com/codapult/codapult-cli/compare/v0.21.1...v0.22.0) (2026-11-01)
+
+### Features
+
+* default CLI setup to full site mode ([c559112](https://github.com/codapult/codapult-cli/commit/c5591129a1e4680052c85bad09a59322fc696356))
+
 ## [0.21.1](https://github.com/codapult/codapult-cli/compare/v0.21.0...v0.21.1) (2026-10-19)
 
 ### Bug Fixes
