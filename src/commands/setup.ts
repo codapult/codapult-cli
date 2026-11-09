@@ -501,8 +501,8 @@ const MODULE_REMOVALS: {
     key: 'enableCompare',
     paths: [
       `${APP}/(public)/(marketing)/compare`,
+      'src/components/marketing/compare',
       'src/config/competitor-comparison.ts',
-      'src/components/marketing/ComparisonTable.tsx',
     ],
     label: 'Compare',
   },
@@ -699,6 +699,7 @@ const PRUNE_MARKER_FILES = [
   'src/app/api/webhooks/polar/route.ts',
   'src/app/api/webhooks/lemonsqueezy/route.ts',
   'src/components/marketing/Footer.tsx',
+  'src/components/MdxContent.tsx',
   'src/components/dashboard/sidebar/Sidebar.tsx',
   'src/components/dashboard/sidebar/SidebarContent.tsx',
   'src/lib/auth/index.ts',
