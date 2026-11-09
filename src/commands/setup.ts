@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { checkProjectRoot } from '../utils/project.js';
 import {
@@ -7,7 +8,7 @@ import {
   ENV_FILE_NAME,
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
-import { heading, success, fail, info, dim, ask, confirm } from '../utils/ui.js';
+import { heading, success, fail, info, dim, ask, confirm, warn } from '../utils/ui.js';
 
 async function selectPrompt<T extends string>(
   iface: ReturnType<typeof createInterface>,
@@ -927,6 +928,22 @@ function removeModules(root: string, config: ProjectConfig): void {
   }
 }
 
+function format(root: string): void {
+  const prettierPath = resolve(root, 'node_modules/.bin/prettier');
+  if (existsSync(prettierPath)) {
+    const formatCode = spawnSync(
+      'pnpm',
+      ['exec', 'prettier', '--write', '.', '--log-level', 'warn'],
+      { cwd: root, stdio: 'inherit' },
+    ).status;
+    if (formatCode !== 0) {
+      warn(`Formatting failed (exit ${formatCode})`);
+    }
+  } else {
+    dim('Prettier is unavailable; skipping formatting');
+  }
+}
+
 async function interactiveSetup(): Promise<ProjectConfig> {
   const iface = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -1045,6 +1062,9 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
 
   heading('Setting up MCP integration');
   generateMcpConfig(root);
+
+  heading('Formatting');
+  format(root);
 
   heading('Done!');
   if (presetRaw) {
