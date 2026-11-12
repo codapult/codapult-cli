@@ -49,7 +49,7 @@ export interface ProjectConfig {
   enableGraphQL: boolean;
   enableSSO: boolean;
   enableApiDocs: boolean;
-  enableHelpCenter: boolean;
+  enableDocs: boolean;
   enableExperiments: boolean;
   enableFeatureRequests: boolean;
   enableCompare: boolean;
@@ -182,7 +182,7 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableBranding: false,
     enableTwoFactor: false,
     enableGraphQL: false,
-    enableHelpCenter: true,
+    enableDocs: true,
     enableBlog: true,
     enablePlugins: true,
     enableCompare: true,
@@ -216,7 +216,7 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableGraphQL: true,
   enableSSO: false,
   enableApiDocs: true,
-  enableHelpCenter: true,
+  enableDocs: true,
   enableExperiments: true,
   enableFeatureRequests: true,
   enableCompare: false,
@@ -458,7 +458,7 @@ const MODULE_REMOVALS: {
     label: 'API Docs',
   },
   {
-    key: 'enableHelpCenter',
+    key: 'enableDocs',
     paths: [
       `${APP}/(public)/(marketing)/docs`,
       'src/lib/docs',
@@ -659,7 +659,7 @@ const MODULE_REMOVALS: {
 // at build-time, so they don't expose a user-facing env toggle.
 const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableApiDocs: 'ENABLE_API_DOCS',
-  enableHelpCenter: 'ENABLE_HELP_CENTER',
+  enableDocs: 'ENABLE_DOCS',
   enableChangelog: 'ENABLE_CHANGELOG',
   enableBlog: 'ENABLE_BLOG',
   enableWaitlist: 'ENABLE_WAITLIST',
@@ -1003,7 +1003,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableWaitlist: await confirm(iface, 'Enable Waitlist page?'),
     enableGraphQL: await confirm(iface, 'Enable GraphQL API layer?'),
     enableApiDocs: await confirm(iface, 'Enable interactive API docs?'),
-    enableHelpCenter: await confirm(iface, 'Enable Documentation module?'),
+    enableDocs: await confirm(iface, 'Enable Documentation module?'),
     enableExperiments: await confirm(iface, 'Enable A/B Testing?'),
     enableFeatureRequests: await confirm(iface, 'Enable Feature Request board?'),
     enableCompare: await confirm(iface, 'Enable competitor comparison pages (/compare)?', false),

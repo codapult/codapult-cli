@@ -23,7 +23,7 @@ export type SupportProvider = 'crisp' | 'intercom' | 'none';
 /** Feature toggle key → ENABLE_* env var. Order = display order. */
 export const FEATURE_ENV = {
   apiDocs: 'ENABLE_API_DOCS',
-  helpCenter: 'ENABLE_HELP_CENTER',
+  docs: 'ENABLE_DOCS',
   blog: 'ENABLE_BLOG',
   waitlist: 'ENABLE_WAITLIST',
   featureRequests: 'ENABLE_FEATURE_REQUESTS',
