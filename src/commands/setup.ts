@@ -287,6 +287,9 @@ export function resolvePreset(raw: string): ProjectConfig {
     config.enableBatch = false;
     config.enablePlayground = false;
   }
+  if (!config.enableTeams) {
+    config.enableBranding = false;
+  }
 
   return config;
 }
@@ -414,8 +417,12 @@ const MODULE_REMOVALS: {
       'src/lib/db/organizations.ts',
       'src/lib/actions/organizations.ts',
       'src/lib/actions/organizations.test.ts',
+      'src/lib/organizations/quotas.ts',
+      'src/lib/organizations/quotas.test.ts',
+      'src/lib/organizations/active-org-cookie.ts',
       'src/lib/payments/seats.ts',
       'src/lib/payments/seats.test.ts',
+      'src/lib/scim',
       'src/app/api/scim',
     ],
     label: 'Teams',
@@ -425,8 +432,10 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(public)/(marketing)/waitlist`,
       `${APP}/(protected)/(admin)/admin/waitlist`,
-      'src/components/marketing/WaitlistForm.tsx',
+      'src/components/waitlist',
+      'src/components/admin/WaitlistTable.tsx',
       'src/lib/actions/waitlist.ts',
+      'src/app/api/admin/export/waitlist',
     ],
     label: 'Waitlist',
   },
@@ -558,11 +567,12 @@ const MODULE_REMOVALS: {
     key: 'enableReferrals',
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/referrals`,
+      'src/components/dashboard/ReferralDashboard.tsx',
       'src/lib/referrals',
       'src/lib/payments/referral-webhook.ts',
       'src/lib/payments/referral-webhook.test.ts',
+      'src/lib/usage.test.ts',
       'src/app/api/referrals',
-      'src/components/dashboard/ReferralDashboard.tsx',
     ],
     label: 'Referral Program',
   },
@@ -580,12 +590,10 @@ const MODULE_REMOVALS: {
     key: 'enableWebhooks',
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/webhooks`,
-      `${APP}/(protected)/(admin)/admin/webhooks`,
-      'src/app/api/webhooks',
-      'src/lib/outgoing-webhooks',
-      'src/lib/webhook-log.ts',
-      'src/lib/webhook-log.test.ts',
       'src/components/dashboard/OutgoingWebhooks.tsx',
+      'src/app/api/webhooks/outgoing',
+      'src/lib/webhooks/outgoing.ts',
+      'src/lib/webhooks/outgoing.test.ts',
     ],
     label: 'Outgoing Webhooks',
   },
@@ -639,10 +647,10 @@ const MODULE_REMOVALS: {
     paths: [
       // `${APP}/(public)/(marketing)/plugins`,
       `${APP}/(protected)/(dashboard)/dashboard/plugins`,
-      'src/lib/plugins/marketplace.ts',
-      // 'src/components/marketing/PluginsShowcase.tsx',
-      // 'src/components/marketing/PluginDetail.tsx',
+      // 'src/components/marketing/plugins/PluginsShowcase.tsx',
+      // 'src/components/marketing/plugins/PluginDetail.tsx',
       'src/components/dashboard/PluginMarketplace.tsx',
+      'src/lib/plugins/marketplace.ts',
       'plugins/example-analytics',
     ],
     label: 'Plugin Marketplace',
@@ -686,40 +694,74 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enablePlugins: 'ENABLE_PLUGINS',
 };
 
-// codapult:prune:start {key}
+// codapult:prune:start {key[,key...]}
 // codapult:prune:replace
-// codapult:prune:end {key}
+// codapult:prune:end {key[,key...]}
 const PRUNE_MARKER_FILES = [
   'src/app/sitemap.ts',
   'src/app/sitemap.test.ts',
   'src/app/(marketing)/llms.txt/route.ts',
+  'src/app/(marketing)/llms.txt/route.test.ts',
   'src/app/api/checkout/route.ts',
+  'src/app/api/checkout/route.test.ts',
   'src/app/api/auth/sso/callback/route.ts',
+  'src/app/api/auth/sso/callback/route.test.ts',
   'src/app/api/webhooks/stripe/route.ts',
+  'src/app/api/webhooks/stripe/route.test.ts',
   'src/app/api/webhooks/polar/route.ts',
   'src/app/api/webhooks/lemonsqueezy/route.ts',
+  'src/app/api/analytics/route.ts',
+  'src/app/api/analytics/route.test.ts',
+  'src/app/api/reports/route.ts',
+  'src/app/api/ai/chat/route.ts',
+  'src/app/api/ai/index/route.ts',
+  'src/app/api/ai/search/route.ts',
   'src/components/marketing/Footer.tsx',
   'src/components/MdxContent.tsx',
   'src/components/dashboard/sidebar/Sidebar.tsx',
   'src/components/dashboard/sidebar/SidebarContent.tsx',
+  'src/components/ai/ChatUI.tsx',
+  'src/components/ai/index.ts',
+  `${APP}/(public)/(auth)/layout.tsx`,
+  `${APP}/(protected)/(dashboard)/layout.tsx`,
+  `${APP}/(protected)/(dashboard)/dashboard/reports/page.tsx`,
+  `${APP}/(protected)/(dashboard)/dashboard/analytics/page.tsx`,
+  `${APP}/(protected)/(dashboard)/dashboard/settings/page.tsx`,
+  `${APP}/(protected)/(admin)/layout.tsx`,
+  'src/lib/validation.ts',
+  'src/lib/ai/api.ts',
+  'src/lib/ai/gateway/pipeline.ts',
+  'src/lib/ai/tools/executor.ts',
   'src/lib/auth/index.ts',
   'src/lib/auth/client-adapter.ts',
   'src/lib/auth/adapters/better-auth.ts',
+  'src/lib/auth/adapters/better-auth.test.ts',
   'src/lib/auth/adapters/kinde.ts',
+  'src/lib/auth/adapters/kinde.test.ts',
   'src/lib/jobs/definitions.ts',
+  'src/lib/jobs/definitions.test.ts',
   'src/lib/actions/admin.ts',
+  'src/lib/actions/admin.test.ts',
   'src/lib/actions/billing.ts',
   'src/lib/actions/impersonation.ts',
+  'src/lib/actions/impersonation.test.ts',
   'src/lib/scheduled-reports/index.ts',
   'src/lib/usage.ts',
+  'src/lib/gdpr/index.ts',
   'src/lib/guards.ts',
   'src/lib/guards.test.ts',
   'src/lib/db/schema.ts',
   'src/lib/db/schema-pg.ts',
+  'src/lib/db/admin.ts',
+  'src/lib/onboarding/checks.ts',
+  'src/lib/organizations/context.ts',
+  'src/config/env.ts',
+  'src/config/navigation.ts',
   'src/config/marketing.test.ts',
   'src/config/env-schema.ts',
   'src/instrumentation.ts',
   'src/proxy.ts',
+  'src/proxy.test.ts',
 ] as const;
 
 export function buildEnvContent(content: string, config: ProjectConfig): string {
@@ -808,68 +850,111 @@ function pruneMarkedBlocks(
   disabledKeys: readonly (keyof ProjectConfig)[],
 ): string {
   const keySet = new Set(disabledKeys.map(String));
-  const lines = content.split('\n');
-  const out: string[] = [];
+  const keyList = '([A-Za-z][A-Za-z0-9]*(?:,[A-Za-z][A-Za-z0-9]*)*)';
+  const startRe = new RegExp(`^[ \\t]*\\/\\/\\s*codapult:prune:start\\s+${keyList}[ \\t]*$`);
+  const jsxStartRe = new RegExp(
+    `^[ \\t]*\\{\\/\\*\\s*codapult:prune:start\\s+${keyList}\\s*\\*\\/\\}[ \\t]*$`,
+  );
+  const replaceRe =
+    /^[ \t]*(?:\/\/\s*codapult:prune:replace|\{\/\*\s*codapult:prune:replace\s*\*\/\})[ \t]*$/;
+  const endRe = new RegExp(`^[ \\t]*\\/\\/\\s*codapult:prune:end\\s+${keyList}[ \\t]*$`);
+  const jsxEndRe = new RegExp(
+    `^[ \\t]*\\{\\/\\*\\s*codapult:prune:end\\s+${keyList}\\s*\\*\\/\\}[ \\t]*$`,
+  );
+  const commentRe = /^([ \t]*)(?:\/\/ ?(.*)|\{\/\*\s?(.*?)\s?\*\/\})$/;
 
-  const startRe = /^[ \t]*\/\/\s*codapult:prune:start\s+(\S+)\s*$/;
-  const replaceRe = /^[ \t]*\/\/\s*codapult:prune:replace\s*$/;
-  const endRe = /^[ \t]*\/\/\s*codapult:prune:end\s+(\S+)[ \t]*$/;
-  const commentRe = /^([ \t]*)\/\/ ?(.*)$/;
+  const parseKeys = (value: string): string[] => [...new Set(value.split(','))].sort();
+  const matchStart = (line: string): RegExpExecArray | null =>
+    startRe.exec(line) ?? jsxStartRe.exec(line);
+  const matchEnd = (line: string): RegExpExecArray | null =>
+    endRe.exec(line) ?? jsxEndRe.exec(line);
+  const hasSameKeys = (left: string[], right: string[]): boolean =>
+    left.length === right.length && left.every((key, index) => key === right[index]);
 
-  // Ищет ближайший terminator (replace или end с нужным key) начиная с индекса i.
-  // Бросает при вложенном start того же формата. Возвращает индекс ПОСЛЕ terminator-строки.
-  const seekTo = (i: number, key: string): { i: number; kind: 'replace' | 'end' } => {
-    for (let j = i; j < lines.length; j += 1) {
-      if (replaceRe.test(lines[j])) return { i: j + 1, kind: 'replace' };
-      const end = endRe.exec(lines[j]);
-      if (end?.[1] === key) return { i: j + 1, kind: 'end' };
-      if (startRe.test(lines[j])) {
-        throw new Error(`Nested "codapult:prune:start" before closing "${key}" (line ${j + 1}).`);
-      }
-    }
-    throw new Error(`Unclosed "codapult:prune:start ${key}" — no matching end found.`);
-  };
+  const findBlockEnd = (
+    lines: string[],
+    startIndex: number,
+    rootKeys: string[],
+  ): { endIndex: number; replaceIndex: number | undefined } => {
+    const stack = [rootKeys];
+    let replaceIndex: number | undefined;
 
-  for (let i = 0; i < lines.length;) {
-    const start = startRe.exec(lines[i]);
-    if (!start || !keySet.has(start[1])) {
-      out.push(lines[i]);
-      i += 1;
-      continue;
-    }
-
-    const key = start[1];
-    const body = seekTo(i + 1, key);
-    if (body.kind === 'end') {
-      i = body.i; // тело отбрасываем целиком
-      continue;
-    }
-
-    // body.kind === 'replace': строки от body.i до end — это закомментированный replacement
-    const replEnd = seekTo(body.i, key);
-    if (replEnd.kind !== 'end') {
-      throw new Error(`Expected "end" after "replace" for key "${key}".`);
-    }
-
-    for (let r = body.i; r < replEnd.i - 1; r++) {
-      const line = lines[r];
-      if (line.trim() === '') {
-        out.push('');
+    for (let i = startIndex + 1; i < lines.length; i += 1) {
+      const nestedStart = matchStart(lines[i]);
+      if (nestedStart) {
+        stack.push(parseKeys(nestedStart[1]));
         continue;
       }
-      const m = commentRe.exec(line);
-      if (!m) {
-        throw new Error(
-          `Line ${r + 1} in "replace" section for "${key}" is not commented out: ${JSON.stringify(line)}`,
-        );
+
+      const end = matchEnd(lines[i]);
+      if (end && hasSameKeys(parseKeys(end[1]), stack[stack.length - 1])) {
+        stack.pop();
+        if (stack.length === 0) return { endIndex: i, replaceIndex };
+        continue;
       }
-      out.push(m[1] + m[2]);
+
+      if (stack.length === 1 && replaceRe.test(lines[i]) && replaceIndex === undefined) {
+        replaceIndex = i;
+      }
     }
 
-    i = replEnd.i;
-  }
+    throw new Error(
+      `Unclosed "codapult:prune:start ${rootKeys.join(',')}" — no matching end found.`,
+    );
+  };
 
-  return out.join('\n');
+  const processLines = (lines: string[]): string[] => {
+    const out: string[] = [];
+
+    for (let i = 0; i < lines.length;) {
+      const start = matchStart(lines[i]);
+      if (!start) {
+        out.push(lines[i]);
+        i += 1;
+        continue;
+      }
+
+      const keys = parseKeys(start[1]);
+      const { endIndex, replaceIndex } = findBlockEnd(lines, i, keys);
+      const shouldPrune = keys.every((key) => keySet.has(key));
+
+      if (shouldPrune) {
+        if (replaceIndex !== undefined) {
+          const replacement: string[] = [];
+          for (let r = replaceIndex + 1; r < endIndex; r += 1) {
+            const line = lines[r];
+            if (line.trim() === '') {
+              replacement.push('');
+              continue;
+            }
+            const match = commentRe.exec(line);
+            if (!match) {
+              throw new Error(
+                `Line ${r + 1} in "replace" section for "${keys.join(',')}" is not commented out: ${JSON.stringify(line)}`,
+              );
+            }
+            replacement.push(match[1] + (match[2] ?? match[3]));
+          }
+          out.push(...processLines(replacement));
+        }
+      } else {
+        out.push(lines[i]);
+        const bodyEnd = replaceIndex ?? endIndex;
+        out.push(...processLines(lines.slice(i + 1, bodyEnd)));
+        if (replaceIndex !== undefined) {
+          out.push(lines[replaceIndex]);
+          out.push(...processLines(lines.slice(replaceIndex + 1, endIndex)));
+        }
+        out.push(lines[endIndex]);
+      }
+
+      i = endIndex + 1;
+    }
+
+    return out;
+  };
+
+  return processLines(content.split('\n')).join('\n');
 }
 
 function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
@@ -937,9 +1022,8 @@ function format(root: string): void {
       ['exec', 'prettier', '--write', '.', '--log-level', 'warn'],
       { cwd: root, stdio: 'inherit' },
     ).status;
-    if (formatCode !== 0) {
-      warn(`Formatting failed (exit ${formatCode})`);
-    }
+    if (formatCode === 0) dim('Formatted successfully.');
+    else warn(`Formatting failed (exit ${formatCode}).`);
   } else {
     dim('Prettier is unavailable; skipping formatting');
   }
@@ -1026,6 +1110,11 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     removeUnusedCode: emptyLine() && (await confirm(iface, 'Remove unused module code?', false)),
   };
 
+  if (!config.enableTeams && config.enableBranding) {
+    info('Per-org branding and custom domains require Teams; disabling them.');
+    config.enableBranding = false;
+  }
+
   iface.close();
   return config;
 }
@@ -1043,7 +1132,7 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
 
   if (presetRaw) {
     heading('Codapult Setup (preset mode)');
-    info(`Applying preset: ${presetRaw}\n`);
+    info(`Applying preset: ${presetRaw}`);
     config = resolvePreset(presetRaw);
   } else {
     config = await interactiveSetup();
@@ -1059,13 +1148,13 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   if (config.removeUnusedCode) {
     heading('Removing unused modules');
     removeModules(root, config);
+
+    heading('Formatting after removing unused code');
+    format(root);
   }
 
   heading('Setting up MCP integration');
   generateMcpConfig(root);
-
-  heading('Formatting');
-  format(root);
 
   heading('Done!');
   if (presetRaw) {

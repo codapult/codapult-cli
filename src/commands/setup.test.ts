@@ -56,7 +56,15 @@ describe('setup presets', () => {
     const contentSaas = resolvePreset('content-saas');
     expect(contentSaas.enableBlog).toBe(true);
     expect(contentSaas.enableTeams).toBe(false);
+    expect(contentSaas.enableBranding).toBe(false);
     expect(contentSaas.enableWorkflows).toBe(true);
+  });
+
+  it('disables organization branding when Teams are disabled', () => {
+    const config = resolvePreset('enableTeams=false;enableBranding=true');
+
+    expect(config.enableTeams).toBe(false);
+    expect(config.enableBranding).toBe(false);
   });
 
   it('sets marketing mode for the marketing preset', () => {
