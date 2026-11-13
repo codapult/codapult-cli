@@ -28,7 +28,7 @@ export const FEATURE_ENV = {
   waitlist: 'ENABLE_WAITLIST',
   featureRequests: 'ENABLE_FEATURE_REQUESTS',
   changelog: 'ENABLE_CHANGELOG',
-  aiCore: 'ENABLE_AI_CORE',
+  aiCore: 'ENABLE_AI',
   aiChat: 'ENABLE_AI_CHAT',
   aiRag: 'ENABLE_AI_RAG',
   aiAgents: 'ENABLE_AI_AGENTS',
@@ -48,7 +48,32 @@ export const FEATURE_ENV = {
   dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
   plugins: 'ENABLE_PLUGINS',
   compare: 'ENABLE_COMPARE',
+  seo: 'ENABLE_SEO',
 } as const;
+
+/** Feature keys whose env-schema defaults use `disableOnLandingMode`. */
+const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<string> = new Set([
+  'apiDocs',
+  'waitlist',
+  'featureRequests',
+  'changelog',
+  'aiCore',
+  'aiChat',
+  'aiAgents',
+  'aiBatch',
+  'aiPlayground',
+  'teams',
+  'referrals',
+  'analytics',
+  'workflows',
+  'webhooks',
+  'auditLog',
+  'reports',
+  'onboarding',
+  'branding',
+  'experiments',
+  'dripCampaigns',
+]);
 
 /**
  * Snapshot of the host env-schema contract. The compatibility check compares
@@ -164,21 +189,6 @@ export const ENV_SCHEMA_KEYS = [
   ...Object.values(FEATURE_ENV),
 ] as const;
 
-/** Auth-gated features: when AUTH_PROVIDER=none, these are forced off. */
-export const AUTH_GATED_FEATURES: ReadonlySet<string> = new Set([
-  'apiDocs',
-  'featureRequests',
-  'changelog',
-  'aiChat',
-  'aiCore',
-  'aiRag',
-  'aiAgents',
-  'aiBatch',
-  'aiPlayground',
-  'teams',
-  'referrals',
-]);
-
 /** OAuth provider → [client id env, client secret env]. Mirrors oauth-providers.ts. */
 export const OAUTH_CREDENTIAL_KEYS: Readonly<Record<string, [string, string]>> = {
   google: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
@@ -235,10 +245,10 @@ export function getAdapters(envContent: string): Adapters {
 /**
  * Compute the effective set of feature toggles from .env content.
  * Mirrors `env.features` in `codapult/src/config/env.ts`:
- * - default `true` for every ENABLE_* (unset → enabled);
+ * - defaults follow `env-schema.ts` and APP_MODE;
  * - explicit "false" disables;
- * - `auth` derived from AUTH_PROVIDER !== 'none';
- * - auth-gated features forced off when AUTH_PROVIDER=none.
+ * - RAG is opt-in and enabled only by explicit "true";
+ * - `auth` is derived from AUTH_PROVIDER !== 'none'.
  */
 export function getFeatures(envContent: string): Record<string, boolean> {
   const appMode = readEnv<string>(envContent, 'APP_MODE', 'full');
@@ -250,9 +260,15 @@ export function getFeatures(envContent: string): Record<string, boolean> {
   for (const [key, envVar] of Object.entries(FEATURE_ENV)) {
     const raw = readEnvVar(envContent, envVar);
     const defaultEnabled =
-      key === 'compare' ? appMode === 'landing' : key === 'aiRag' ? false : true;
-    const enabled = raw == null ? defaultEnabled : raw !== 'false';
-    features[key] = enabled && (!AUTH_GATED_FEATURES.has(key) || authEnabled);
+      key === 'aiRag'
+        ? false
+        : key === 'compare' || key === 'seo'
+          ? appMode === 'landing'
+          : LANDING_MODE_DEFAULT_OFF_FEATURES.has(key)
+            ? appMode !== 'landing'
+            : true;
+    features[key] =
+      key === 'aiRag' ? raw === 'true' : raw == null ? defaultEnabled : raw !== 'false';
   }
 
   if (!features.aiCore) {
