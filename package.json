@@ -62,7 +62,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@codapult/guard": "^0.13.2",
+    "@codapult/guard": "^0.14.1",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1",
