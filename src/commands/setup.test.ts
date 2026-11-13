@@ -95,16 +95,84 @@ describe('setup presets', () => {
     expect(demo).toContain('APP_MODE=demo');
   });
 
+  it('writes promotion and SEO feature flags when setup disables them', () => {
+    const env = buildEnvContent(
+      '# APP_MODE="full"\n# ENABLE_PROMOTIONS="true"\n# ENABLE_SEO="true"\n',
+      resolvePreset('enablePromotions=false;enableSeo=false'),
+    );
+
+    expect(env).toContain('ENABLE_PROMOTIONS=false');
+    expect(env).toContain('ENABLE_SEO=false');
+  });
+
+  it('writes enabled SEO explicitly for modes where its schema default is off', () => {
+    const env = buildEnvContent(
+      '# APP_MODE="full"\n# ENABLE_SEO="false"\n',
+      resolvePreset('enableSeo=true'),
+    );
+
+    expect(env).toContain('ENABLE_SEO=true');
+  });
+
   it('applies the marketing preset to a project fixture', async () => {
     const previousCwd = process.cwd();
     const root = mkdtempSync(join(tmpdir(), 'codapult-setup-'));
     const reportsDir = join(root, 'src/app/[locale]/(protected)/(dashboard)/dashboard/reports');
 
     mkdirSync(join(root, 'src/config'), { recursive: true });
+    mkdirSync(join(root, 'src/lib/db'), { recursive: true });
     mkdirSync(reportsDir, { recursive: true });
     writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'codapult' }));
     writeFileSync(join(root, 'src/config/app.ts'), 'export const appConfig = {} as const;\n');
     writeFileSync(join(root, '.env.example'), 'APP_MODE="full"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
+    writeFileSync(
+      join(root, 'src/lib/db/schema.ts'),
+      [
+        '// codapult:prune:start enableFeatureRequests',
+        'export const featureRequest = true;',
+        '// codapult:prune:end enableFeatureRequests',
+        '// codapult:prune:start enableExperiments',
+        'export const experiment = true;',
+        '// codapult:prune:end enableExperiments',
+        '// codapult:prune:start enableAI',
+        'export const aiPrompt = true;',
+        '// codapult:prune:end enableAI',
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(root, 'src/lib/db/schema-pg.ts'),
+      [
+        '// codapult:prune:start enableAI',
+        'export const aiPrompt = true;',
+        '// codapult:prune:start enableAgents',
+        'export const agentId = true;',
+        '// codapult:prune:end enableAgents',
+        '// codapult:prune:end enableAI',
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(root, 'src/config/navigation.ts'),
+      [
+        'export const navigation = [',
+        '  // codapult:prune:start enableAI',
+        "  { href: '/dashboard/ai' },",
+        '  // codapult:prune:end enableAI',
+        "  { href: '/dashboard' },",
+        '];',
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(root, 'src/proxy.ts'),
+      [
+        '// codapult:prune:start enableAI',
+        "if (path === '/api/ai') return true;",
+        '// codapult:prune:end enableAI',
+        '',
+      ].join('\n'),
+    );
     writeFileSync(
       join(reportsDir, 'page.tsx'),
       'export default function Reports() { return null; }\n',
@@ -115,13 +183,25 @@ describe('setup presets', () => {
       await setupCommand({ preset: 'marketing', envFile: true });
 
       const env = readFileSync(join(root, '.env.local'), 'utf8');
+      const schema = readFileSync(join(root, 'src/lib/db/schema.ts'), 'utf8');
+      const schemaPg = readFileSync(join(root, 'src/lib/db/schema-pg.ts'), 'utf8');
+      const navigation = readFileSync(join(root, 'src/config/navigation.ts'), 'utf8');
+      const proxy = readFileSync(join(root, 'src/proxy.ts'), 'utf8');
       const mcp = JSON.parse(readFileSync(join(root, '.cursor/mcp.json'), 'utf8')) as {
         mcpServers: { codapult: { args: string[] } };
       };
 
       expect(env).toContain('APP_MODE=landing');
       expect(env).toContain('AUTH_PROVIDER=none');
-      expect(env).toContain('ENABLE_AI_CORE=false');
+      expect(env).toContain('ENABLE_AI=false');
+      expect(schema).not.toContain('featureRequest');
+      expect(schema).not.toContain('experiment');
+      expect(schema).not.toContain('aiPrompt');
+      expect(schemaPg).not.toContain('aiPrompt');
+      expect(schemaPg).not.toContain('agentId');
+      expect(navigation).not.toContain('/dashboard/ai');
+      expect(navigation).toContain('/dashboard');
+      expect(proxy).not.toContain('/api/ai');
       expect(existsSync(reportsDir)).toBe(false);
       expect(mcp.mcpServers.codapult.args).toEqual(['-y', '@codapult/cli@latest', 'mcp-server']);
     } finally {

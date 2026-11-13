@@ -8,6 +8,7 @@ import {
   ENV_FILE_NAME,
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
+import { ENV_SCHEMA_KEYS } from '../utils/env-config.js';
 import { heading, success, fail, info, dim, ask, confirm, warn } from '../utils/ui.js';
 
 async function selectPrompt<T extends string>(
@@ -68,7 +69,10 @@ export interface ProjectConfig {
   enableBranding: boolean;
   enableTwoFactor: boolean;
   enablePlugins: boolean;
+  enablePromotions: boolean;
+  enableSeo: boolean;
   removeUnusedCode: boolean;
+  cleanPruneMarkers: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,9 +186,11 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     enableBranding: false,
     enableTwoFactor: false,
     enableGraphQL: false,
+    enablePlugins: false,
     enableDocs: true,
     enableBlog: true,
-    enablePlugins: true,
+    enablePromotions: true,
+    enableSeo: true,
     enableCompare: true,
     removeUnusedCode: true,
   },
@@ -235,7 +241,10 @@ const DEFAULT_CONFIG: ProjectConfig = {
   enableBranding: true,
   enableTwoFactor: true,
   enablePlugins: true,
+  enablePromotions: true,
+  enableSeo: true,
   removeUnusedCode: false,
+  cleanPruneMarkers: true,
 };
 
 function parsePresetValue(raw: string): Partial<ProjectConfig> {
@@ -245,14 +254,14 @@ function parsePresetValue(raw: string): Partial<ProjectConfig> {
     .filter(Boolean);
   const result: Record<string, unknown> = {};
 
-  if (parts.length === 1 && !parts[0].includes('=')) {
-    const name = parts[0];
-    if (!(name in BUILT_IN_PRESETS)) {
-      fail(`Unknown preset: "${name}". Available: ${Object.keys(BUILT_IN_PRESETS).join(', ')}`);
-      process.exit(1);
-    }
-    return BUILT_IN_PRESETS[name];
-  }
+  // if (parts.length === 1 && !parts[0].includes('=')) {
+  //   const name = parts[0];
+  //   if (!(name in BUILT_IN_PRESETS)) {
+  //     fail(`Unknown preset: "${name}". Available: ${Object.keys(BUILT_IN_PRESETS).join(', ')}`);
+  //     process.exit(1);
+  //   }
+  //   return BUILT_IN_PRESETS[name];
+  // }
 
   let base: Partial<ProjectConfig> = {};
   for (const part of parts) {
@@ -304,7 +313,7 @@ export function getPresetNames(): string[] {
 const APP = 'src/app/[locale]';
 
 const MODULE_REMOVALS: {
-  key: keyof ProjectConfig;
+  key: keyof ProjectConfig | (keyof ProjectConfig)[];
   paths: string[];
   label: string;
 }[] = [
@@ -348,6 +357,7 @@ const MODULE_REMOVALS: {
       `${APP}/(protected)/(dashboard)/dashboard/ai/chat`,
       'src/components/ai/ChatUI.tsx',
       'src/app/api/ai/chat',
+      'src/lib/ai/conversations.ts',
     ],
     label: 'AI Chat',
   },
@@ -359,6 +369,7 @@ const MODULE_REMOVALS: {
       'src/lib/ai/embeddings',
       'src/lib/ai/vector-store',
       'src/lib/ai/rag.ts',
+      'src/lib/ai/rag.test.ts',
       'src/app/api/ai/index',
       'src/app/api/ai/search',
     ],
@@ -370,6 +381,9 @@ const MODULE_REMOVALS: {
       `${APP}/(protected)/(dashboard)/dashboard/ai/agents`,
       'src/components/ai/AgentBuilder.tsx',
       'src/components/ai/AgentSelector.tsx',
+      'src/lib/ai/tools/agent-runner.ts',
+      'src/lib/ai/tools/agent-runner.test.ts',
+      'src/hooks/ai/useAgents.ts',
     ],
     label: 'AI Agents',
   },
@@ -378,6 +392,7 @@ const MODULE_REMOVALS: {
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/ai/batch`,
       'src/components/ai/BatchJobManager.tsx',
+      'src/lib/ai/batch',
     ],
     label: 'AI Batch',
   },
@@ -387,6 +402,7 @@ const MODULE_REMOVALS: {
       `${APP}/(protected)/(dashboard)/dashboard/ai/playground`,
       'src/components/ai/AIPlayground.tsx',
       'src/components/ai/PlaygroundComparison.tsx',
+      'src/lib/ai/playground',
     ],
     label: 'AI Playground',
   },
@@ -564,6 +580,16 @@ const MODULE_REMOVALS: {
     label: 'Workflow Automation',
   },
   {
+    key: 'enablePromotions',
+    paths: [
+      `${APP}/(protected)/(admin)/admin/promotions`,
+      'src/components/admin/PromotionDurationFields.tsx',
+      'src/lib/actions/promotions.ts',
+      'src/lib/actions/promotions.test.ts',
+    ],
+    label: 'Promotions',
+  },
+  {
     key: 'enableReferrals',
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/referrals`,
@@ -575,6 +601,17 @@ const MODULE_REMOVALS: {
       'src/app/api/referrals',
     ],
     label: 'Referral Program',
+  },
+  {
+    key: ['enablePromotions', 'enableReferrals'],
+    paths: [
+      'src/components/marketing/PromotionErrorToast.tsx',
+      'src/lib/promotions',
+      'src/lib/payments/promotion-checkout.ts',
+      'src/lib/payments/promotion-webhook.ts',
+      'src/lib/payments/promotion-webhook-data.ts',
+    ],
+    label: 'Promotions & Referral Program',
   },
   {
     key: 'enableAnalytics',
@@ -636,11 +673,11 @@ const MODULE_REMOVALS: {
   },
   {
     key: 'enableTwoFactor',
-    // 2FA is implemented as a Better Auth plugin — only the UI control needs
-    // to be removed; auth route handlers stay since the plugin is loaded at
-    // runtime when ENABLE_TWO_FACTOR is set.
-    paths: ['src/components/dashboard/TwoFactorSettings.tsx'],
-    label: 'Two-factor Authentication (UI)',
+    paths: [
+      'src/components/dashboard/TwoFactorSettings.tsx',
+      'src/lib/email/templates/TwoFactorOtpEmail.tsx',
+    ],
+    label: 'Two-factor Authentication',
   },
   {
     key: 'enablePlugins',
@@ -655,6 +692,16 @@ const MODULE_REMOVALS: {
     ],
     label: 'Plugin Marketplace',
   },
+  {
+    key: 'enableSeo',
+    paths: [
+      'src/app/robots.ts',
+      'src/app/robots.test.ts',
+      'src/app/sitemap.ts',
+      'src/app/sitemap.test.ts',
+    ],
+    label: 'SEO robots route',
+  },
 ];
 
 // Maps CLI enable* flags → server-side ENABLE_* env var names.
@@ -665,7 +712,7 @@ const MODULE_REMOVALS: {
 //   enableGraphQL, enableEventStore, enableOtel, enableConnect.
 // These are infrastructure-flavoured and either always-on or only meaningful
 // at build-time, so they don't expose a user-facing env toggle.
-const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
+const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, (typeof ENV_SCHEMA_KEYS)[number]>> = {
   enableApiDocs: 'ENABLE_API_DOCS',
   enableDocs: 'ENABLE_DOCS',
   enableChangelog: 'ENABLE_CHANGELOG',
@@ -673,7 +720,7 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enableWaitlist: 'ENABLE_WAITLIST',
   enableFeatureRequests: 'ENABLE_FEATURE_REQUESTS',
   enableCompare: 'ENABLE_COMPARE',
-  enableAI: 'ENABLE_AI_CORE',
+  enableAI: 'ENABLE_AI',
   enableAiChat: 'ENABLE_AI_CHAT',
   enableRAG: 'ENABLE_AI_RAG',
   enableAgents: 'ENABLE_AI_AGENTS',
@@ -681,6 +728,8 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, string>> = {
   enablePlayground: 'ENABLE_AI_PLAYGROUND',
   enableTeams: 'ENABLE_TEAMS',
   enableReferrals: 'ENABLE_REFERRALS',
+  enablePromotions: 'ENABLE_PROMOTIONS',
+  enableSeo: 'ENABLE_SEO',
   enableAnalytics: 'ENABLE_ANALYTICS',
   enableWorkflows: 'ENABLE_WORKFLOWS',
   enableExperiments: 'ENABLE_EXPERIMENTS',
@@ -716,38 +765,65 @@ const PRUNE_MARKER_FILES = [
   'src/app/api/ai/chat/route.ts',
   'src/app/api/ai/index/route.ts',
   'src/app/api/ai/search/route.ts',
+  'src/components/auth/AuthForm.tsx',
   'src/components/marketing/Footer.tsx',
+  'src/components/marketing/landing/PricingSection.tsx',
   'src/components/MdxContent.tsx',
   'src/components/dashboard/sidebar/Sidebar.tsx',
   'src/components/dashboard/sidebar/SidebarContent.tsx',
   'src/components/ai/ChatUI.tsx',
   'src/components/ai/index.ts',
+  `${APP}/(public)/layout.tsx`,
   `${APP}/(public)/(auth)/layout.tsx`,
+  `${APP}/(public)/(auth)/sign-in/page.tsx`,
+  `${APP}/(public)/(auth)/sign-up/page.tsx`,
+  `${APP}/(public)/(marketing)/page.tsx`,
   `${APP}/(protected)/(dashboard)/layout.tsx`,
-  `${APP}/(protected)/(dashboard)/dashboard/reports/page.tsx`,
   `${APP}/(protected)/(dashboard)/dashboard/analytics/page.tsx`,
+  `${APP}/(protected)/(dashboard)/dashboard/billing/page.tsx`,
+  `${APP}/(protected)/(dashboard)/dashboard/reports/page.tsx`,
   `${APP}/(protected)/(dashboard)/dashboard/settings/page.tsx`,
   `${APP}/(protected)/(admin)/layout.tsx`,
   'src/lib/validation.ts',
   'src/lib/ai/api.ts',
+  'src/lib/ai/api-schemas.ts',
+  'src/lib/ai/tools/index.ts',
+  'src/lib/ai/tools/manager.ts',
+  'src/lib/ai/tools/types.ts',
+  'src/hooks/ai/useGateway.ts',
+  'src/lib/ai/metering/logger.ts',
+  'src/lib/ai/metering/types.ts',
+  'src/lib/ai/rag.ts',
   'src/lib/ai/gateway/pipeline.ts',
   'src/lib/ai/tools/executor.ts',
   'src/lib/auth/index.ts',
   'src/lib/auth/client-adapter.ts',
+  'src/lib/auth/client-adapter.test.ts',
   'src/lib/auth/adapters/better-auth.ts',
   'src/lib/auth/adapters/better-auth.test.ts',
+  'src/lib/auth/adapters/better-auth-client.ts',
+  'src/lib/auth/adapters/better-auth-client.test.ts',
   'src/lib/auth/adapters/kinde.ts',
   'src/lib/auth/adapters/kinde.test.ts',
+  'src/lib/auth/adapters/kinde-client.ts',
   'src/lib/jobs/definitions.ts',
   'src/lib/jobs/definitions.test.ts',
   'src/lib/actions/admin.ts',
   'src/lib/actions/admin.test.ts',
   'src/lib/actions/billing.ts',
+  'src/lib/payments/adapter.ts',
+  'src/lib/payments/adapters/stripe.ts',
+  'src/lib/payments/adapters/stripe.test.ts',
+  'src/lib/payments/adapters/polar.ts',
+  'src/lib/payments/adapters/polar.test.ts',
+  'src/lib/payments/adapters/lemonsqueezy.ts',
   'src/lib/actions/impersonation.ts',
   'src/lib/actions/impersonation.test.ts',
   'src/lib/scheduled-reports/index.ts',
-  'src/lib/usage.ts',
   'src/lib/gdpr/index.ts',
+  'src/lib/gdpr/gdpr.test.ts',
+  'src/lib/email/index.ts',
+  'src/lib/usage.ts',
   'src/lib/guards.ts',
   'src/lib/guards.test.ts',
   'src/lib/db/schema.ts',
@@ -762,23 +838,26 @@ const PRUNE_MARKER_FILES = [
   'src/instrumentation.ts',
   'src/proxy.ts',
   'src/proxy.test.ts',
+  'scripts/seed.ts',
 ] as const;
 
 export function buildEnvContent(content: string, config: ProjectConfig): string {
   let result = content;
-  const replacements: Record<string, string> = {
+  const replacements: Partial<Record<(typeof ENV_SCHEMA_KEYS)[number], string>> = {
     NEXT_PUBLIC_APP_NAME: config.appName,
     NEXT_PUBLIC_APP_URL: config.appUrl,
     APP_MODE: config.appMode,
     AUTH_PROVIDER: config.authProvider,
+    SSO_PROVIDER: config.ssoProvider,
     PAYMENT_PROVIDER: config.paymentProvider,
     STORAGE_PROVIDER: config.storageProvider,
     JOB_PROVIDER: config.jobProvider,
   };
 
   for (const [cliKey, envVar] of Object.entries(FEATURE_ENV_VARS)) {
-    if (config[cliKey as keyof ProjectConfig] === false) {
-      replacements[envVar] = 'false';
+    const enabled = config[cliKey as keyof ProjectConfig];
+    if (typeof enabled === 'boolean') {
+      replacements[envVar] = String(enabled);
     }
   }
 
@@ -848,6 +927,7 @@ function generateMcpConfig(root: string): void {
 function pruneMarkedBlocks(
   content: string,
   disabledKeys: readonly (keyof ProjectConfig)[],
+  cleanMarkers: boolean,
 ): string {
   const keySet = new Set(disabledKeys.map(String));
   const keyList = '([A-Za-z][A-Za-z0-9]*(?:,[A-Za-z][A-Za-z0-9]*)*)';
@@ -857,7 +937,7 @@ function pruneMarkedBlocks(
   );
   const replaceRe =
     /^[ \t]*(?:\/\/\s*codapult:prune:replace|\{\/\*\s*codapult:prune:replace\s*\*\/\})[ \t]*$/;
-  const endRe = new RegExp(`^[ \\t]*\\/\\/\\s*codapult:prune:end\\s+${keyList}[ \\t]*$`);
+  const endRe = new RegExp(`^[ \\t]*.*?\\/\\/\\s*codapult:prune:end\\s+${keyList}[ \\t]*$`);
   const jsxEndRe = new RegExp(
     `^[ \\t]*\\{\\/\\*\\s*codapult:prune:end\\s+${keyList}\\s*\\*\\/\\}[ \\t]*$`,
   );
@@ -954,15 +1034,39 @@ function pruneMarkedBlocks(
     return out;
   };
 
-  return processLines(content.split('\n')).join('\n');
+  const result = processLines(content.split('\n'));
+  return (
+    cleanMarkers
+      ? result.flatMap((line) => {
+          if (endRe.test(line)) {
+            const markerIndex = line.indexOf('// codapult:prune:end');
+            const prefix = line.slice(0, markerIndex);
+            return prefix.trim() ? [prefix.trimEnd()] : [];
+          }
+          if (
+            startRe.test(line) ||
+            jsxStartRe.test(line) ||
+            replaceRe.test(line) ||
+            jsxEndRe.test(line)
+          ) {
+            return [];
+          }
+          return [line];
+        })
+      : result
+  ).join('\n');
 }
 
-function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
+function pruneMarkedBlocksInFiles(
+  root: string,
+  config: ProjectConfig,
+  cleanMarkers: boolean,
+): void {
   const disabledKeys = (Object.keys(config) as (keyof ProjectConfig)[]).filter(
     (key) => key.startsWith('enable') && config[key] === false,
   );
 
-  if (disabledKeys.length === 0) return;
+  if (disabledKeys.length === 0 && !cleanMarkers) return;
 
   dim(`Pruning files...`);
 
@@ -971,7 +1075,7 @@ function pruneMarkedBlocksInFiles(root: string, config: ProjectConfig): void {
     if (!existsSync(fullPath)) continue;
 
     const original = readFileSync(fullPath, 'utf-8');
-    const pruned = pruneMarkedBlocks(original, disabledKeys);
+    const pruned = pruneMarkedBlocks(original, disabledKeys, cleanMarkers);
 
     if (pruned !== original) {
       writeFileSync(fullPath, pruned, 'utf-8');
@@ -984,30 +1088,29 @@ function removeModules(root: string, config: ProjectConfig): void {
   let totalRemoved = 0;
 
   for (const removal of MODULE_REMOVALS) {
-    if (config[removal.key]) continue;
-
-    dim(`Removing ${removal.label}...`);
-    let removed = 0;
-    const missing: string[] = [];
-    for (const p of removal.paths) {
-      const fullPath = resolve(root, p);
-      if (existsSync(fullPath)) {
-        rmSync(fullPath, { recursive: true });
-        dim(`  deleted ${p}`);
-        removed += 1;
-      } else {
-        missing.push(p);
+    const keys = Array.isArray(removal.key) ? removal.key : [removal.key];
+    if (keys.every((key) => !config[key])) {
+      dim(`Removing ${removal.label}...`);
+      let removed = 0;
+      const missing: string[] = [];
+      for (const p of removal.paths) {
+        const fullPath = resolve(root, p);
+        if (existsSync(fullPath)) {
+          rmSync(fullPath, { recursive: true });
+          dim(`  deleted ${p}`);
+          removed += 1;
+        } else {
+          missing.push(p);
+        }
+      }
+      totalRemoved += removed;
+      // Surface stale paths so removals don't silently no-op when the host
+      // project's file layout changes (e.g. moving routes under [locale]).
+      if (removed === 0 && missing.length > 0) {
+        dim(`  no matching files found (expected ${missing.length} path(s))`);
       }
     }
-    totalRemoved += removed;
-    // Surface stale paths so removals don't silently no-op when the host
-    // project's file layout changes (e.g. moving routes under [locale]).
-    if (removed === 0 && missing.length > 0) {
-      dim(`  no matching files found (expected ${missing.length} path(s))`);
-    }
   }
-
-  pruneMarkedBlocksInFiles(root, config);
 
   if (totalRemoved > 0) {
     dim(`Total removed: ${totalRemoved}`);
@@ -1107,7 +1210,10 @@ async function interactiveSetup(): Promise<ProjectConfig> {
     enableTwoFactor:
       authEnabled && (await confirm(iface, 'Enable two-factor authentication (TOTP)?')),
     enablePlugins: await confirm(iface, 'Enable plugin marketplace (/dashboard/plugins)?'),
+    enablePromotions: await confirm(iface, 'Enable promotion codes and pricing overrides?', true),
+    enableSeo: await confirm(iface, 'Enable SEO robots directives?', true),
     removeUnusedCode: emptyLine() && (await confirm(iface, 'Remove unused module code?', false)),
+    cleanPruneMarkers: await confirm(iface, 'Remove prune markers from code?', true),
   };
 
   if (!config.enableTeams && config.enableBranding) {
@@ -1121,6 +1227,7 @@ async function interactiveSetup(): Promise<ProjectConfig> {
 
 interface SetupOptions extends Pick<ProjectEnvOptions, 'envFile'> {
   preset?: string;
+  // cleanPruneMarkers?: boolean;
 }
 
 export async function setupCommand(options: SetupOptions): Promise<void> {
@@ -1148,7 +1255,10 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
   if (config.removeUnusedCode) {
     heading('Removing unused modules');
     removeModules(root, config);
+  }
 
+  if (config.removeUnusedCode || config.cleanPruneMarkers) {
+    pruneMarkedBlocksInFiles(root, config, config.cleanPruneMarkers);
     heading('Formatting after removing unused code');
     format(root);
   }

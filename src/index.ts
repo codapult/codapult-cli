@@ -84,6 +84,7 @@ program
   .description('interactive project setup wizard (or non-interactive with --preset)')
   .option('--preset <value>', 'apply a preset non-interactively (name, key=value pairs, or both)')
   .option('--no-env-file', `do not create ${ENV_FILE_NAME}; read env vars from process.env instead`)
+  // .option('--clean-prune-markers', 'remove prune marker comments after processing them')
   .action(setupCommand);
 
 const recipe = program
