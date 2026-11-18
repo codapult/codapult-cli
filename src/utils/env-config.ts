@@ -1,73 +1,49 @@
-/**
- * Shared, read-only mirror of `src/config/env.ts` from the host project.
- *
- * Keep this file in sync with the host's `env.features`, `env.auth`,
- * provider enums, and the `superRefine` validation in
- * `codapult/src/config/env.ts` and `codapult/src/config/env-schema.ts`.
- * The CLI cannot import from the host project, so this module centralises
- * the provider/feature shape that several commands share regardless of whether
- * env values come from `.env.local` or `process.env`.
- */
+/** CLI projections of the environment schema and values owned by the project. */
+import {
+  getProjectEnvSchema,
+  getProjectEnvSchemaKeys,
+  loadProjectAppConfig,
+  loadProjectEnvSchema,
+  loadProjectOAuthProviders,
+  parseProjectEnv,
+} from './project-env-schema.js';
 
-export type DbProvider = 'turso' | 'postgres';
-export type AuthProvider = 'better-auth' | 'kinde' | 'none';
-export type PaymentProvider = 'stripe' | 'lemonsqueezy' | 'polar';
-export type SSOProvider = 'jackson' | 'none';
-export type StorageProvider = 'local' | 's3' | 'r2';
-export type JobProvider = 'memory' | 'bullmq' | 'none';
-export type NotificationTransport = 'poll' | 'sse' | 'ws';
-export type EmbeddingProvider = 'openai' | 'ollama';
-export type VectorStoreProvider = 'sqlite' | 'memory';
-export type SupportProvider = 'crisp' | 'intercom' | 'none';
+type ProjectEnvSchema = ReturnType<typeof getProjectEnvSchema>;
+interface ProjectEnvField {
+  parse(value: unknown): unknown;
+}
 
-/** Feature toggle key → ENABLE_* env var. Order = display order. */
-export const FEATURE_ENV = {
-  apiDocs: 'ENABLE_API_DOCS',
-  docs: 'ENABLE_DOCS',
-  blog: 'ENABLE_BLOG',
-  waitlist: 'ENABLE_WAITLIST',
-  featureRequests: 'ENABLE_FEATURE_REQUESTS',
-  changelog: 'ENABLE_CHANGELOG',
-  ai: 'ENABLE_AI',
-  aiChat: 'ENABLE_AI_CHAT',
-  aiRag: 'ENABLE_AI_RAG',
-  aiAgents: 'ENABLE_AI_AGENTS',
-  aiBatch: 'ENABLE_AI_BATCH',
-  aiPlayground: 'ENABLE_AI_PLAYGROUND',
-  teams: 'ENABLE_TEAMS',
-  referrals: 'ENABLE_REFERRALS',
-  promotions: 'ENABLE_PROMOTIONS',
-  analytics: 'ENABLE_ANALYTICS',
-  workflows: 'ENABLE_WORKFLOWS',
-  webhooks: 'ENABLE_WEBHOOKS',
-  auditLog: 'ENABLE_AUDIT_LOG',
-  reports: 'ENABLE_REPORTS',
-  onboarding: 'ENABLE_ONBOARDING',
-  branding: 'ENABLE_BRANDING',
-  experiments: 'ENABLE_EXPERIMENTS',
-  dripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
-  plugins: 'ENABLE_PLUGINS',
-  compare: 'ENABLE_COMPARE',
-  seo: 'ENABLE_SEO',
-  graphql: 'ENABLE_GRAPHQL',
-  connect: 'ENABLE_CONNECT',
-  eventStore: 'ENABLE_EVENT_STORE',
-  otel: 'ENABLE_OTEL',
-} as const;
+function getSchemaFieldValue(
+  schema: ProjectEnvSchema,
+  source: NodeJS.ProcessEnv,
+  key: string,
+): string {
+  const field = schema.shape[key] as unknown as ProjectEnvField | undefined;
+  if (field === undefined) throw new Error(`Environment schema does not define ${key}`);
+  try {
+    return String(field.parse(source[key]));
+  } catch {
+    return source[key] ?? '';
+  }
+}
 
-/** Feature keys whose env-schema defaults use `disableOnLandingMode`. */
-const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<keyof typeof FEATURE_ENV> = new Set([
+/** Stable CLI presentation order; env variable names still come from the app schema. */
+const FEATURE_DISPLAY_ORDER = [
   'apiDocs',
+  'docs',
+  'blog',
   'waitlist',
   'featureRequests',
   'changelog',
   'ai',
   'aiChat',
+  'aiRag',
   'aiAgents',
   'aiBatch',
   'aiPlayground',
   'teams',
   'referrals',
+  'promotions',
   'analytics',
   'workflows',
   'webhooks',
@@ -77,219 +53,113 @@ const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<keyof typeof FEATURE_ENV> =
   'branding',
   'experiments',
   'dripCampaigns',
+  'plugins',
+  'compare',
+  'seo',
   'graphql',
   'connect',
   'eventStore',
   'otel',
-]);
-
-/**
- * Snapshot of the host env-schema contract. The compatibility check compares
- * this explicit contract with `src/config/env-schema.ts`; adding a variable to
- * the template therefore produces an actionable doctor warning until the CLI
- * mirror is reviewed.
- */
-export const ENV_SCHEMA_KEYS = [
-  'NEXT_PUBLIC_APP_URL',
-  'NEXT_PUBLIC_APP_NAME',
-  'NEXT_PUBLIC_APP_CURRENCY',
-  'APP_MODE',
-  'DEMO_URL',
-  'LOG_LEVEL',
-  'CHANGELOG_FILE',
-  'DB_PROVIDER',
-  'AUTH_PROVIDER',
-  'PAYMENT_PROVIDER',
-  'STORAGE_PROVIDER',
-  'JOB_PROVIDER',
-  'SSO_PROVIDER',
-  'NOTIFICATION_TRANSPORT',
-  'EMBEDDING_PROVIDER',
-  'VECTOR_STORE_PROVIDER',
-  'SUPPORT_PROVIDER',
-  'TURSO_DATABASE_URL',
-  'TURSO_AUTH_TOKEN',
-  'DATABASE_URL',
-  'ENABLE_TWO_FACTOR',
-  'AUTH_MAGIC_LINK',
-  'AUTH_PASSKEYS',
-  'BETTER_AUTH_SECRET',
-  'BETTER_AUTH_URL',
-  'KINDE_CLIENT_ID',
-  'KINDE_CLIENT_SECRET',
-  'KINDE_ISSUER_URL',
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'GITHUB_CLIENT_ID',
-  'GITHUB_CLIENT_SECRET',
-  'APPLE_CLIENT_ID',
-  'APPLE_CLIENT_SECRET',
-  'DISCORD_CLIENT_ID',
-  'DISCORD_CLIENT_SECRET',
-  'TWITTER_CLIENT_ID',
-  'TWITTER_CLIENT_SECRET',
-  'MICROSOFT_CLIENT_ID',
-  'MICROSOFT_CLIENT_SECRET',
-  'STRIPE_SECRET_KEY',
-  'STRIPE_WEBHOOK_SECRET',
-  'STRIPE_CONNECT_FEE_PERCENT',
-  'STRIPE_CONNECT_ONBOARDING_RETURN_URL',
-  'STRIPE_CONNECT_ONBOARDING_REFRESH_URL',
-  'LEMONSQUEEZY_API_KEY',
-  'LEMONSQUEEZY_STORE_ID',
-  'LEMONSQUEEZY_WEBHOOK_SECRET',
-  'POLAR_ACCESS_TOKEN',
-  'POLAR_WEBHOOK_SECRET',
-  'S3_BUCKET',
-  'S3_REGION',
-  'S3_ENDPOINT',
-  'S3_ACCESS_KEY_ID',
-  'S3_SECRET_ACCESS_KEY',
-  'S3_PUBLIC_URL',
-  'JOB_QUEUE_NAME',
-  'REDIS_URL',
-  'CODAPULT_WORKER_MODE',
-  'CODAPULT_DISABLE_IN_PROCESS_JOBS',
-  'CUSTOM_DOMAIN_CNAME_TARGET',
-  'REFERRAL_REWARD_AMOUNT',
-  'REFERRAL_REWARD_TYPE',
-  'SSO_PRODUCT',
-  'SSO_DB_ENGINE',
-  'SSO_DB_TYPE',
-  'SSO_DB_URL',
-  'NOTIFICATION_WS_URL',
-  'NOTIFICATION_WS_PORT',
-  'OPENAI_API_KEY',
-  'ANTHROPIC_API_KEY',
-  'GOOGLE_GENERATIVE_AI_API_KEY',
-  'GROQ_API_KEY',
-  'TOGETHER_AI_API_KEY',
-  'CUSTOM_AI_BASE_URL',
-  'CUSTOM_AI_API_KEY',
-  'SERPER_API_KEY',
-  'TAVILY_API_KEY',
-  'AI_DEFAULT_MODEL',
-  'AI_ALLOWED_MODELS',
-  'AI_FALLBACK_CHAIN',
-  'AI_MAX_RETRIES',
-  'AI_DEFAULT_TEMPERATURE',
-  'AI_DEFAULT_MAX_TOKENS',
-  'AI_DEFAULT_TOP_P',
-  'AI_DAILY_BUDGET_USD',
-  'AI_MONTHLY_BUDGET_USD',
-  'AI_HTTP_ALLOWLIST',
-  'AI_RAG_MAX_DOCUMENT_SIZE',
-  'AI_RAG_MAX_BATCH_DOCUMENTS',
-  'AI_RAG_MAX_CHUNKS_PER_QUERY',
-  'AI_RAG_MIN_SCORE',
-  'OLLAMA_BASE_URL',
-  'OLLAMA_EMBEDDING_MODEL',
-  'RESEND_API_KEY',
-  'EMAIL_FROM',
-  'CRISP_WEBSITE_ID',
-  'INTERCOM_APP_ID',
-  'DEFAULT_MONTHLY_CREDITS',
-  'OTEL_EXPORTER_OTLP_ENDPOINT',
-  'OTEL_SERVICE_NAME',
-  'OTEL_TRACES_SAMPLE_RATE',
-  'OTEL_EXPORTER_OTLP_HEADERS',
-  'POSTHOG_TOKEN',
-  'POSTHOG_HOST',
-  'POSTHOG_UI_HOST',
-  ...Object.values(FEATURE_ENV),
 ] as const;
 
-/** OAuth provider → [client id env, client secret env]. Mirrors oauth-providers.ts. */
-export const OAUTH_CREDENTIAL_KEYS: Readonly<Record<string, [string, string]>> = {
-  google: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
-  github: ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'],
-  apple: ['APPLE_CLIENT_ID', 'APPLE_CLIENT_SECRET'],
-  discord: ['DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'],
-  twitter: ['TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET'],
-  microsoft: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET'],
-};
+/** Feature identifiers exposed by the app's ENABLE_* environment variables. */
+export type FeatureKey = (typeof FEATURE_DISPLAY_ORDER)[number] | 'twoFactor';
+
+export function getFeatureEnv(
+  root: string,
+  options: { includeAuthMethods?: boolean } = {},
+): Record<string, string> {
+  const discovered = getProjectEnvSchemaKeys(root)
+    .filter((key) => key.startsWith('ENABLE_'))
+    .map((envKey): [string, string] => [
+      envKey
+        .slice('ENABLE_'.length)
+        .toLowerCase()
+        .replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase()),
+      envKey,
+    ]);
+  const features = options.includeAuthMethods
+    ? discovered
+    : discovered.filter(([feature]) => feature !== 'twoFactor');
+  const order = new Map<string, number>(
+    FEATURE_DISPLAY_ORDER.map((feature, index) => [feature, index]),
+  );
+  return Object.fromEntries(
+    features.sort(
+      ([a], [b]) =>
+        (order.get(a) ?? Number.MAX_SAFE_INTEGER) - (order.get(b) ?? Number.MAX_SAFE_INTEGER),
+    ),
+  );
+}
 
 /** Read a single var from raw .env content. Returns undefined if missing or empty. */
 export function readEnvVar(envContent: string, key: string): string | undefined {
-  const match = new RegExp(`^${key}\\s*=\\s*"?([^"\\n\\r]*)"?\\s*$`, 'm').exec(envContent);
-  const value = match?.[1]?.trim();
+  const value = parseProjectEnv(envContent)[key]?.trim();
   return value && value.length > 0 ? value : undefined;
 }
 
-/** Same as `readEnvVar` but with a typed fallback. */
-export function readEnv<T extends string>(envContent: string, key: string, fallback: T): T {
-  return (readEnvVar(envContent, key) as T | undefined) ?? fallback;
+/** Read a value after applying the project schema's transforms and defaults. */
+export function getProjectEnvValue(envContent: string, root: string, key: string): string {
+  const source = parseProjectEnv(envContent);
+  return getSchemaFieldValue(getProjectEnvSchema(root, source), source, key);
 }
 
 export interface Adapters {
-  database: DbProvider;
-  auth: AuthProvider;
-  sso: SSOProvider;
-  payments: PaymentProvider;
-  storage: StorageProvider;
-  jobs: JobProvider;
-  notifications: NotificationTransport;
-  embedding: EmbeddingProvider;
-  vectorStore: VectorStoreProvider;
-  support: SupportProvider;
+  database: string;
+  auth: string;
+  sso: string;
+  payments: string;
+  storage: string;
+  jobs: string;
+  notifications: string;
+  embedding: string;
+  vectorStore: string;
+  support: string;
 }
 
-/** Resolve all adapters from .env content, applying the same defaults as `env.*`. */
-export function getAdapters(envContent: string): Adapters {
-  const landingMode = readEnv<string>(envContent, 'APP_MODE', 'full') === 'landing';
-  const authProvider = readEnv<AuthProvider>(envContent, 'AUTH_PROVIDER', 'better-auth');
+/** Resolve provider values and defaults through the project's own schema. */
+function getAdaptersFromSchema(schema: ProjectEnvSchema, source: NodeJS.ProcessEnv): Adapters {
+  const value = (key: string): string => getSchemaFieldValue(schema, source, key);
   return {
-    database: readEnv<DbProvider>(envContent, 'DB_PROVIDER', 'turso'),
-    auth: landingMode ? 'none' : authProvider,
-    sso: readEnv<SSOProvider>(envContent, 'SSO_PROVIDER', 'none'),
-    payments: readEnv<PaymentProvider>(envContent, 'PAYMENT_PROVIDER', 'stripe'),
-    storage: readEnv<StorageProvider>(envContent, 'STORAGE_PROVIDER', 'local'),
-    jobs: landingMode ? 'none' : readEnv<JobProvider>(envContent, 'JOB_PROVIDER', 'memory'),
-    notifications: readEnv<NotificationTransport>(envContent, 'NOTIFICATION_TRANSPORT', 'poll'),
-    embedding: readEnv<EmbeddingProvider>(envContent, 'EMBEDDING_PROVIDER', 'openai'),
-    vectorStore: readEnv<VectorStoreProvider>(envContent, 'VECTOR_STORE_PROVIDER', 'sqlite'),
-    support: readEnv<SupportProvider>(envContent, 'SUPPORT_PROVIDER', 'none'),
+    database: value('DB_PROVIDER'),
+    auth: value('AUTH_PROVIDER'),
+    sso: value('SSO_PROVIDER'),
+    payments: value('PAYMENT_PROVIDER'),
+    storage: value('STORAGE_PROVIDER'),
+    jobs: value('JOB_PROVIDER'),
+    notifications: value('NOTIFICATION_TRANSPORT'),
+    embedding: value('EMBEDDING_PROVIDER'),
+    vectorStore: value('VECTOR_STORE_PROVIDER'),
+    support: value('SUPPORT_PROVIDER'),
   };
 }
 
-type Features = keyof typeof FEATURE_ENV | 'auth' | 'sso' | 'jobs';
-/**
- * Compute the effective set of feature toggles from .env content.
- * Mirrors `env.features` in `codapult/src/config/env.ts`:
- * - defaults follow `env-schema.ts` and APP_MODE;
- * - explicit "false" disables;
- * - RAG is opt-in and enabled only by explicit "true";
- * - `auth`, `sso`, and `jobs` are derived from their provider settings;
- * - dependent features are disabled when their parent feature is disabled.
- */
-export function getFeatures(envContent: string): Record<Features, boolean> {
-  const appMode = readEnv<string>(envContent, 'APP_MODE', 'full');
-  const adapters = getAdapters(envContent);
+export function getAdapters(envContent: string, root: string): Adapters {
+  const source = parseProjectEnv(envContent);
+  const schema = getProjectEnvSchema(root, source);
+  return getAdaptersFromSchema(schema, source);
+}
 
-  const features = Object.entries(FEATURE_ENV).reduce(
-    (acc, [key, envVar]) => {
-      const feature = key as keyof typeof FEATURE_ENV;
-      const raw = readEnvVar(envContent, envVar);
-      const defaultEnabled =
-        feature === 'aiRag'
-          ? false
-          : feature === 'compare' || feature === 'seo'
-            ? appMode === 'landing'
-            : LANDING_MODE_DEFAULT_OFF_FEATURES.has(feature)
-              ? appMode !== 'landing'
-              : true;
-      acc[feature] =
-        feature === 'aiRag' ? raw === 'true' : raw == null ? defaultEnabled : raw !== 'false';
-      return acc;
-    },
-    {
-      auth: adapters.auth !== 'none',
-      sso: adapters.sso !== 'none',
-      jobs: adapters.jobs !== 'none',
-    } as Record<Features, boolean>,
-  );
+type Features = Record<string, boolean>;
 
-  const parentFeature: Partial<Record<keyof typeof FEATURE_ENV, keyof typeof FEATURE_ENV>> = {
+/** Resolve feature toggles with schema defaults and CLI-specific dependencies. */
+export function getFeatures(envContent: string, root: string): Features {
+  const source = parseProjectEnv(envContent);
+  const schema = getProjectEnvSchema(root, source);
+  const featureEnv = getFeatureEnv(root);
+  const features: Features = {};
+
+  for (const [feature, envKey] of Object.entries(featureEnv)) {
+    const value = getSchemaFieldValue(schema, source, envKey);
+    features[feature] = value !== 'false';
+  }
+
+  const adapters = getAdaptersFromSchema(schema, source);
+  features.auth = adapters.auth !== 'none';
+  features.sso = adapters.sso !== 'none';
+  features.jobs = adapters.jobs !== 'none';
+
+  const parentFeature: Partial<Record<FeatureKey, FeatureKey>> = {
     aiChat: 'ai',
     aiRag: 'ai',
     aiAgents: 'ai',
@@ -297,147 +167,63 @@ export function getFeatures(envContent: string): Record<Features, boolean> {
     aiPlayground: 'ai',
     branding: 'teams',
   };
-  for (const [feature, parent] of Object.entries(parentFeature) as [
-    keyof typeof FEATURE_ENV,
-    keyof typeof FEATURE_ENV,
-  ][]) {
+  for (const [feature, parent] of Object.entries(parentFeature)) {
     if (!features[parent]) features[feature] = false;
   }
-
   return features;
 }
 
-/** Auth-method toggles that live in env (not in app.ts). */
+/** Auth-method toggles that live in the environment schema. */
 export interface AuthMethods {
   twoFactor: boolean;
   magicLink: boolean;
   passkeys: boolean;
 }
 
-export function getAuthMethods(envContent: string): AuthMethods {
+export function getAuthMethods(envContent: string, root: string): AuthMethods {
+  const source = parseProjectEnv(envContent);
+  const schema = getProjectEnvSchema(root, source);
+  const value = (key: string): boolean => getSchemaFieldValue(schema, source, key) === 'true';
   return {
-    twoFactor: readEnvVar(envContent, 'ENABLE_TWO_FACTOR') !== 'false',
-    magicLink: (readEnvVar(envContent, 'AUTH_MAGIC_LINK') ?? 'true') === 'true',
-    passkeys: (readEnvVar(envContent, 'AUTH_PASSKEYS') ?? 'true') === 'true',
+    twoFactor: value('ENABLE_TWO_FACTOR'),
+    magicLink: value('AUTH_MAGIC_LINK'),
+    passkeys: value('AUTH_PASSKEYS'),
   };
 }
 
-/** OAuth providers that have both client id + secret configured in .env. */
-export function getOauthProviders(envContent: string): string[] {
-  return Object.entries(OAUTH_CREDENTIAL_KEYS)
-    .filter(([, [id, secret]]) => !!readEnvVar(envContent, id) && !!readEnvVar(envContent, secret))
+/** OAuth providers are derived from matching credential keys in the schema. */
+export function getOauthProviders(envContent: string, root: string): string[] {
+  const source = parseProjectEnv(envContent);
+  const { oauthCredentialKeys: credentials } = loadProjectOAuthProviders(root);
+  return Object.entries(credentials)
+    .filter(([, [idKey, secretKey]]) => !!source[idKey] && !!source[secretKey])
     .map(([provider]) => provider);
 }
 
-/** Provider-conditional env var requirements (mirrors `superRefine`). */
+/** Schema validation issues exposed by env check and project health. */
 export interface EnvIssue {
   key: string;
   message: string;
   severity: 'error' | 'warn';
 }
 
-export function findProviderIssues(envContent: string): EnvIssue[] {
-  const issues: EnvIssue[] = [];
-  const adapters = getAdapters(envContent);
-  const has = (k: (typeof ENV_SCHEMA_KEYS)[number]): boolean => readEnvVar(envContent, k) != null;
-
-  if (adapters.database === 'turso' && !has('TURSO_DATABASE_URL')) {
-    issues.push({
-      key: 'TURSO_DATABASE_URL',
-      message: 'Required when DB_PROVIDER="turso"',
-      severity: 'error',
+export function findEnvIssues(envContent: string, projectRoot: string): EnvIssue[] {
+  try {
+    const source = parseProjectEnv(envContent);
+    const defaults = loadProjectAppConfig(projectRoot).createAppConfig(source);
+    const schema = loadProjectEnvSchema(projectRoot).createEnvSchema(source, {
+      skipRuntimeChecks: false,
+      defaults,
     });
-  }
-  if (adapters.database === 'postgres' && !has('DATABASE_URL')) {
-    issues.push({
-      key: 'DATABASE_URL',
-      message: 'Required when DB_PROVIDER="postgres"',
-      severity: 'error',
-    });
-  }
+    const result = schema.safeParse(source);
+    if (result.success) return [];
 
-  if (adapters.auth === 'better-auth') {
-    const secret = readEnvVar(envContent, 'BETTER_AUTH_SECRET');
-    if (!secret) {
-      issues.push({
-        key: 'BETTER_AUTH_SECRET',
-        message: 'Required when AUTH_PROVIDER="better-auth" (openssl rand -base64 32)',
-        severity: 'error',
-      });
-    } else if (secret.length < 32) {
-      issues.push({
-        key: 'BETTER_AUTH_SECRET',
-        message: 'Must be at least 32 characters',
-        severity: 'error',
-      });
-    }
-  }
-  if (adapters.auth === 'kinde') {
-    for (const k of ['KINDE_CLIENT_ID', 'KINDE_CLIENT_SECRET', 'KINDE_ISSUER_URL'] as const) {
-      if (!has(k)) {
-        issues.push({ key: k, message: 'Required when AUTH_PROVIDER="kinde"', severity: 'error' });
-      }
-    }
-  }
-
-  if (adapters.payments === 'stripe' && !has('STRIPE_SECRET_KEY')) {
-    issues.push({
-      key: 'STRIPE_SECRET_KEY',
-      message: 'Required when PAYMENT_PROVIDER="stripe"',
+    return result.error.issues.map((issue) => ({
+      key: typeof issue.path[0] === 'string' ? issue.path[0] : 'ENV',
+      message: issue.message,
       severity: 'error',
-    });
+    }));
+  } catch (error) {
+    return [{ key: 'ENV_SCHEMA', message: String(error), severity: 'error' }];
   }
-  if (adapters.payments === 'lemonsqueezy') {
-    const label = `Required when PAYMENT_PROVIDER="${adapters.payments}"`;
-    for (const k of ['LEMONSQUEEZY_API_KEY', 'LEMONSQUEEZY_STORE_ID'] as const) {
-      if (!has(k)) issues.push({ key: k, message: label, severity: 'error' });
-    }
-  }
-  if (adapters.payments === 'polar' && !has('POLAR_ACCESS_TOKEN')) {
-    issues.push({
-      key: 'POLAR_ACCESS_TOKEN',
-      message: 'Required when PAYMENT_PROVIDER="polar"',
-      severity: 'error',
-    });
-  }
-
-  if (adapters.storage === 's3' || adapters.storage === 'r2') {
-    const label = `Required when STORAGE_PROVIDER="${adapters.storage}"`;
-    for (const k of ['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const) {
-      if (!has(k)) issues.push({ key: k, message: label, severity: 'error' });
-    }
-  }
-
-  if (adapters.jobs === 'bullmq' && !has('REDIS_URL')) {
-    issues.push({
-      key: 'REDIS_URL',
-      message: 'Required when JOB_PROVIDER="bullmq"',
-      severity: 'error',
-    });
-  }
-
-  if (adapters.notifications === 'ws' && !has('NOTIFICATION_WS_URL')) {
-    issues.push({
-      key: 'NOTIFICATION_WS_URL',
-      message: 'Required when NOTIFICATION_TRANSPORT="ws"',
-      severity: 'error',
-    });
-  }
-
-  if (adapters.support === 'crisp' && !has('CRISP_WEBSITE_ID')) {
-    issues.push({
-      key: 'CRISP_WEBSITE_ID',
-      message: 'Required when SUPPORT_PROVIDER="crisp"',
-      severity: 'error',
-    });
-  }
-  if (adapters.support === 'intercom' && !has('INTERCOM_APP_ID')) {
-    issues.push({
-      key: 'INTERCOM_APP_ID',
-      message: 'Required when SUPPORT_PROVIDER="intercom"',
-      severity: 'error',
-    });
-  }
-
-  return issues;
 }

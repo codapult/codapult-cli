@@ -20,7 +20,10 @@ function getDatabaseContext(
   schemaPath: string;
 } {
   const envContent = loadProjectEnv(root, getProjectEnvOptions(envSource)).content;
-  const provider = getAdapters(envContent).database;
+  const provider = getAdapters(envContent, root).database;
+  if (provider !== 'turso' && provider !== 'postgres') {
+    throw new Error(`Unsupported database provider: ${provider}`);
+  }
   return {
     provider,
     schemaPath: provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts',
@@ -221,10 +224,7 @@ export function registerDbTools(server: McpServer): void {
     ({ env_source }) => {
       const root = checkProjectRoot('throw');
 
-      const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
-      const provider = getAdapters(envContent).database;
-      const schemaPath =
-        provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
+      const { provider, schemaPath } = getDatabaseContext(root, env_source);
 
       const schemaContent = readProjectFile(root, schemaPath) ?? '';
       const tables = parseSchema(schemaContent);

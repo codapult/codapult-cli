@@ -6,7 +6,7 @@ import { ENV_EXAMPLE_FILE_NAME, loadProjectEnv } from '../utils/project-env.js';
 import { getAdapters } from '../utils/env-config.js';
 
 function getSchemaPath(root: string): string {
-  const provider = getAdapters(loadProjectEnv(root).content).database;
+  const provider = getAdapters(loadProjectEnv(root).content, root).database;
   return provider === 'postgres' ? 'src/lib/db/schema-pg.ts' : 'src/lib/db/schema.ts';
 }
 

@@ -3,12 +3,12 @@ import { resolve, relative, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { checkProjectRoot } from '../utils/project.js';
+import { getFeatureEnv, type FeatureKey } from '../utils/env-config.js';
 import {
   ENV_EXAMPLE_FILE_NAME,
   ENV_FILE_NAME,
   type ProjectEnvOptions,
 } from '../utils/project-env.js';
-import { ENV_SCHEMA_KEYS } from '../utils/env-config.js';
 import { heading, success, fail, info, dim, ask, confirm, warn } from '../utils/ui.js';
 
 async function selectPrompt<T extends string>(
@@ -79,7 +79,7 @@ export interface ProjectConfig {
 // Built-in presets for non-interactive (CI/CD) setup via --preset flag.
 // ---------------------------------------------------------------------------
 
-const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
+const BUILT_IN_PRESETS = {
   saas: {},
   'ai-saas': {
     enableAI: true,
@@ -198,7 +198,13 @@ const BUILT_IN_PRESETS: Record<string, Partial<ProjectConfig>> = {
     appMode: 'demo',
     authProvider: 'better-auth',
   },
-};
+} satisfies Record<string, Partial<ProjectConfig>>;
+
+type BuiltInPresetName = keyof typeof BUILT_IN_PRESETS;
+
+function isBuiltInPresetName(value: string): value is BuiltInPresetName {
+  return Object.hasOwn(BUILT_IN_PRESETS, value);
+}
 
 const DEFAULT_CONFIG: ProjectConfig = {
   appName: 'Codapult',
@@ -266,7 +272,7 @@ function parsePresetValue(raw: string): Partial<ProjectConfig> {
   let base: Partial<ProjectConfig> = {};
   for (const part of parts) {
     if (!part.includes('=')) {
-      if (part in BUILT_IN_PRESETS) {
+      if (isBuiltInPresetName(part)) {
         base = { ...base, ...BUILT_IN_PRESETS[part] };
         continue;
       }
@@ -303,8 +309,8 @@ export function resolvePreset(raw: string): ProjectConfig {
   return config;
 }
 
-export function getPresetNames(): string[] {
-  return Object.keys(BUILT_IN_PRESETS);
+export function getPresetNames(): BuiltInPresetName[] {
+  return Object.keys(BUILT_IN_PRESETS).filter(isBuiltInPresetName);
 }
 
 // All app-router paths are under `src/app/[locale]/...` (next-intl).
@@ -704,45 +710,43 @@ const MODULE_REMOVALS: {
   },
 ];
 
-// Maps CLI enable* flags → server-side ENABLE_* env var names.
-// Only flags that actually toggle runtime behavior via env.features belong here;
-// everything else is removed from disk by `removeModules`.
-//
-// Runtime switches are kept in sync with env.features and env-schema.ts.
-const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, (typeof ENV_SCHEMA_KEYS)[number]>> = {
-  enableApiDocs: 'ENABLE_API_DOCS',
-  enableDocs: 'ENABLE_DOCS',
-  enableChangelog: 'ENABLE_CHANGELOG',
-  enableBlog: 'ENABLE_BLOG',
-  enableWaitlist: 'ENABLE_WAITLIST',
-  enableFeatureRequests: 'ENABLE_FEATURE_REQUESTS',
-  enableCompare: 'ENABLE_COMPARE',
-  enableAI: 'ENABLE_AI',
-  enableAiChat: 'ENABLE_AI_CHAT',
-  enableRAG: 'ENABLE_AI_RAG',
-  enableAgents: 'ENABLE_AI_AGENTS',
-  enableBatch: 'ENABLE_AI_BATCH',
-  enablePlayground: 'ENABLE_AI_PLAYGROUND',
-  enableTeams: 'ENABLE_TEAMS',
-  enableReferrals: 'ENABLE_REFERRALS',
-  enablePromotions: 'ENABLE_PROMOTIONS',
-  enableSeo: 'ENABLE_SEO',
-  enableGraphQL: 'ENABLE_GRAPHQL',
-  enableConnect: 'ENABLE_CONNECT',
-  enableEventStore: 'ENABLE_EVENT_STORE',
-  enableOtel: 'ENABLE_OTEL',
-  enableAnalytics: 'ENABLE_ANALYTICS',
-  enableWorkflows: 'ENABLE_WORKFLOWS',
-  enableExperiments: 'ENABLE_EXPERIMENTS',
-  enableDripCampaigns: 'ENABLE_DRIP_CAMPAIGNS',
-  enableOnboarding: 'ENABLE_ONBOARDING',
-  enableWebhooks: 'ENABLE_WEBHOOKS',
-  enableAuditLog: 'ENABLE_AUDIT_LOG',
-  enableReports: 'ENABLE_REPORTS',
-  enableBranding: 'ENABLE_BRANDING',
-  enableTwoFactor: 'ENABLE_TWO_FACTOR',
-  enablePlugins: 'ENABLE_PLUGINS',
-};
+// Whitelist CLI options that write runtime feature toggles to the env file.
+// Other enable* options only control code pruning and must not write env flags.
+// Feature keys are resolved to actual env variable names from the project schema below.
+const CONFIG_FEATURE_KEYS = {
+  enableApiDocs: 'apiDocs',
+  enableDocs: 'docs',
+  enableChangelog: 'changelog',
+  enableBlog: 'blog',
+  enableWaitlist: 'waitlist',
+  enableFeatureRequests: 'featureRequests',
+  enableCompare: 'compare',
+  enableAI: 'ai',
+  enableAiChat: 'aiChat',
+  enableRAG: 'aiRag',
+  enableAgents: 'aiAgents',
+  enableBatch: 'aiBatch',
+  enablePlayground: 'aiPlayground',
+  enableTeams: 'teams',
+  enableReferrals: 'referrals',
+  enablePromotions: 'promotions',
+  enableSeo: 'seo',
+  enableGraphQL: 'graphql',
+  enableConnect: 'connect',
+  enableEventStore: 'eventStore',
+  enableOtel: 'otel',
+  enableAnalytics: 'analytics',
+  enableWorkflows: 'workflows',
+  enableExperiments: 'experiments',
+  enableDripCampaigns: 'dripCampaigns',
+  enableOnboarding: 'onboarding',
+  enableWebhooks: 'webhooks',
+  enableAuditLog: 'auditLog',
+  enableReports: 'reports',
+  enableBranding: 'branding',
+  enableTwoFactor: 'twoFactor',
+  enablePlugins: 'plugins',
+} satisfies Partial<Record<keyof ProjectConfig, FeatureKey>>;
 
 // codapult:prune:start {key[,key...]}
 // codapult:prune:replace
@@ -844,9 +848,9 @@ const PRUNE_MARKER_FILES = [
   'scripts/seed.ts',
 ] as const;
 
-export function buildEnvContent(content: string, config: ProjectConfig): string {
+export function buildEnvContent(content: string, config: ProjectConfig, root: string): string {
   let result = content;
-  const replacements: Partial<Record<(typeof ENV_SCHEMA_KEYS)[number], string>> = {
+  const replacements: Record<string, string | undefined> = {
     NEXT_PUBLIC_APP_NAME: config.appName,
     NEXT_PUBLIC_APP_URL: config.appUrl,
     APP_MODE: config.appMode,
@@ -857,9 +861,12 @@ export function buildEnvContent(content: string, config: ProjectConfig): string 
     JOB_PROVIDER: config.jobProvider,
   };
 
-  for (const [cliKey, envVar] of Object.entries(FEATURE_ENV_VARS)) {
+  const featureEnv = getFeatureEnv(root, { includeAuthMethods: true });
+  for (const [cliKey, feature] of Object.entries(CONFIG_FEATURE_KEYS)) {
     const enabled = config[cliKey as keyof ProjectConfig];
     if (typeof enabled === 'boolean') {
+      const envVar = featureEnv[feature];
+      if (!envVar) continue;
       replacements[envVar] = String(enabled);
     }
   }
@@ -885,7 +892,7 @@ function generateEnvFile(root: string, config: ProjectConfig): void {
   }
 
   const exampleContent = existsSync(envExamplePath) ? readFileSync(envExamplePath, 'utf-8') : '';
-  const content = buildEnvContent(exampleContent, config);
+  const content = buildEnvContent(exampleContent, config, root);
 
   const outputPath = existsSync(envLocalPath) ? `${envLocalPath}.new` : envLocalPath;
   writeFileSync(outputPath, content, 'utf-8');

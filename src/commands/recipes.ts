@@ -96,8 +96,12 @@ export const RECIPES = {
 
 type RecipeName = keyof typeof RECIPES;
 
+function isRecipeName(name: string): name is RecipeName {
+  return Object.hasOwn(RECIPES, name);
+}
+
 function getRecipe(name: string): (typeof RECIPES)[RecipeName] {
-  if (name in RECIPES) return RECIPES[name as RecipeName];
+  if (isRecipeName(name)) return RECIPES[name];
   fail(`Unknown recipe: "${name}". Available: ${Object.keys(RECIPES).join(', ')}`);
   process.exit(1);
 }

@@ -7,6 +7,12 @@ vi.mock('../../utils/project.js', () => ({
   checkProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
 }));
+vi.mock('../../utils/env-config.js', () => ({
+  getAdapters: (content = '') => ({
+    database:
+      /(?:^|\n)DB_PROVIDER=([^\n]+)/.exec(content)?.[1] ?? process.env.DB_PROVIDER ?? 'turso',
+  }),
+}));
 
 const { existsSync, readdirSync } = await import('node:fs');
 const { checkProjectRoot, readProjectFile } = await import('../../utils/project.js');

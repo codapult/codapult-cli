@@ -6,6 +6,15 @@ vi.mock('../../utils/project.js', () => ({
   checkProjectRoot: vi.fn(),
   readProjectFile: vi.fn(),
 }));
+vi.mock('../../utils/env-config.js', () => ({
+  findEnvIssues: () => [],
+  getAdapters: () => ({ database: 'turso', auth: 'better-auth' }),
+  getAuthMethods: () => ({ twoFactor: true, magicLink: true, passkeys: true }),
+  getFeatures: () => ({ ai: true, aiChat: true, blog: true }),
+  getOauthProviders: () => [],
+  getProjectEnvValue: (content: string, _root: string, key: string) =>
+    new RegExp(`(?:^|\\n)${key}=([^\\n]+)`).exec(content)?.[1] ?? 'full',
+}));
 
 const { existsSync, readFileSync, writeFileSync } = await import('node:fs');
 const { checkProjectRoot, readProjectFile } = await import('../../utils/project.js');

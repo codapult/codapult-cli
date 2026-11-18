@@ -78,8 +78,8 @@ if (provider === 'turso') {
 }
 `;
 
-function databaseEnv(envContent: string): NodeJS.ProcessEnv {
-  const adapters = getAdapters(envContent);
+function databaseEnv(envContent: string, root: string): NodeJS.ProcessEnv {
+  const adapters = getAdapters(envContent, root);
   return {
     CODAPULT_DB_PROVIDER: adapters.database,
     TURSO_DATABASE_URL: readEnvVar(envContent, 'TURSO_DATABASE_URL'),
@@ -89,7 +89,7 @@ function databaseEnv(envContent: string): NodeJS.ProcessEnv {
 }
 
 export function inspectLiveDatabase(root: string, envContent: string): LiveDatabaseTable[] {
-  const env = databaseEnv(envContent);
+  const env = databaseEnv(envContent, root);
   const requiredKey =
     env.CODAPULT_DB_PROVIDER === 'postgres' ? 'DATABASE_URL' : 'TURSO_DATABASE_URL';
   if (!env[requiredKey]) throw new Error(`${requiredKey} is required to inspect the live database`);

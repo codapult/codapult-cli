@@ -16,6 +16,32 @@ vi.mock('../../utils/project-env.js', () => ({
   ),
   loadProjectEnv: vi.fn(),
 }));
+vi.mock('../../utils/env-config.js', () => ({
+  findEnvIssues: () => [],
+  readEnvVar: (content: string, key: string) =>
+    new RegExp(`(?:^|\\n)${key}=([^\\n]+)`).exec(content)?.[1],
+  getAdapters: (content: string) => {
+    const value = (key: string, fallback: string): string =>
+      new RegExp(`(?:^|\\n)${key}=([^\\n]+)`).exec(content)?.[1] ?? fallback;
+    return {
+      database: value('DB_PROVIDER', 'turso'),
+      auth: value('AUTH_PROVIDER', 'none'),
+      payments: value('PAYMENT_PROVIDER', 'stripe'),
+      storage: value('STORAGE_PROVIDER', 'local'),
+      embedding: value('EMBEDDING_PROVIDER', 'openai'),
+      vectorStore: value('VECTOR_STORE_PROVIDER', 'sqlite'),
+    };
+  },
+  getAuthMethods: () => ({ twoFactor: true, magicLink: true, passkeys: true }),
+  getFeatures: (content: string) => ({
+    aiChat: !content.includes('ENABLE_AI_CHAT=false'),
+    blog: !content.includes('ENABLE_BLOG=false'),
+    teams: !content.includes('ENABLE_TEAMS=false'),
+  }),
+  getOauthProviders: (content: string) => (content.includes('GOOGLE_CLIENT_ID=') ? ['google'] : []),
+  getProjectEnvValue: (content: string, _root: string, key: string) =>
+    new RegExp(`(?:^|\\n)${key}=([^\\n]+)`).exec(content)?.[1] ?? 'full',
+}));
 
 const { existsSync, readFileSync, readdirSync } = await import('node:fs');
 const { execSync } = await import('node:child_process');

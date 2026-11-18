@@ -1,8 +1,12 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { writeProjectEnvSources } from '../utils/test-project-env.js';
 import { buildEnvContent, getPresetNames, resolvePreset, setupCommand } from './setup.js';
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../codapult');
 
 describe('setup presets', () => {
   it('exposes the starter profiles', () => {
@@ -88,8 +92,12 @@ describe('setup presets', () => {
   });
 
   it('writes the selected app mode into generated env content', () => {
-    const marketing = buildEnvContent('# APP_MODE="demo"\n', resolvePreset('marketing'));
-    const demo = buildEnvContent('# APP_MODE="demo"\n', resolvePreset('demo'));
+    const marketing = buildEnvContent(
+      '# APP_MODE="demo"\n',
+      resolvePreset('marketing'),
+      projectRoot,
+    );
+    const demo = buildEnvContent('# APP_MODE="demo"\n', resolvePreset('demo'), projectRoot);
 
     expect(marketing).toContain('APP_MODE=landing');
     expect(demo).toContain('APP_MODE=demo');
@@ -99,6 +107,7 @@ describe('setup presets', () => {
     const env = buildEnvContent(
       '# APP_MODE="full"\n# ENABLE_PROMOTIONS="true"\n# ENABLE_SEO="true"\n',
       resolvePreset('enablePromotions=false;enableSeo=false'),
+      projectRoot,
     );
 
     expect(env).toContain('ENABLE_PROMOTIONS=false');
@@ -109,6 +118,7 @@ describe('setup presets', () => {
     const env = buildEnvContent(
       '# APP_MODE="full"\n# ENABLE_SEO="false"\n',
       resolvePreset('enableSeo=true'),
+      projectRoot,
     );
 
     expect(env).toContain('ENABLE_SEO=true');
@@ -123,7 +133,7 @@ describe('setup presets', () => {
     mkdirSync(join(root, 'src/lib/db'), { recursive: true });
     mkdirSync(reportsDir, { recursive: true });
     writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'codapult' }));
-    writeFileSync(join(root, 'src/config/app.ts'), 'export const appConfig = {} as const;\n');
+    writeProjectEnvSources(root);
     writeFileSync(join(root, '.env.example'), 'APP_MODE="full"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
     writeFileSync(
       join(root, 'src/lib/db/schema.ts'),

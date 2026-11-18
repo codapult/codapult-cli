@@ -58,18 +58,22 @@ export function registerProjectTools(server: McpServer): void {
         /* not a git repo */
       }
 
-      const features = getFeatures(envContent);
+      const features = getFeatures(envContent, root);
 
       const result = {
-        name: pkg.name as string,
-        version: pkg.version as string,
-        adapters: getAdapters(envContent),
-        authMethods: getAuthMethods(envContent),
-        oauthProviders: getOauthProviders(envContent),
+        name: pkg.name,
+        version: pkg.version,
+        adapters: getAdapters(envContent, root),
+        authMethods: getAuthMethods(envContent, root),
+        oauthProviders: getOauthProviders(envContent, root),
         plugins,
         features: {
-          enabled: Object.keys(features).filter((k) => features[k as keyof typeof features]),
-          disabled: Object.keys(features).filter((k) => !features[k as keyof typeof features]),
+          enabled: Object.entries(features)
+            .filter(([, enabled]) => enabled)
+            .map(([key]) => key),
+          disabled: Object.entries(features)
+            .filter(([, enabled]) => !enabled)
+            .map(([key]) => key),
         },
         git: { branch: gitBranch, dirty: gitDirty },
       };
@@ -147,8 +151,8 @@ export function registerProjectTools(server: McpServer): void {
       const files = ['AGENTS.md', '.env.example', 'src/config/app.ts', 'src/config/env.ts'];
       const existingFiles = files.filter((file) => existsSync(resolve(root, file)));
       const envContent = loadProjectEnv(root).content;
-      const adapters = getAdapters(envContent);
-      const features = getFeatures(envContent);
+      const adapters = getAdapters(envContent, root);
+      const features = getFeatures(envContent, root);
       const configDir = resolve(root, 'src/config');
       const configFiles = existsSync(configDir)
         ? readdirSync(configDir)
@@ -175,9 +179,9 @@ export function registerProjectTools(server: McpServer): void {
                 existingFiles,
                 configFiles,
                 adapters,
-                enabledFeatures: Object.keys(features).filter(
-                  (key) => features[key as keyof typeof features],
-                ),
+                enabledFeatures: Object.entries(features)
+                  .filter(([, enabled]) => enabled)
+                  .map(([key]) => key),
                 appConfig: collectAppConfigSummary(root),
               },
               null,

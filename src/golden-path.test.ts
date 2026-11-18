@@ -6,6 +6,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { setupCommand } from './commands/setup.js';
 import { createMcpServer } from './mcp/server-factory.js';
+import { writeProjectEnvSources } from './utils/test-project-env.js';
 
 const originalCwd = process.cwd();
 
@@ -35,10 +36,7 @@ function createProjectFixture(): string {
   mkdirSync(join(root, 'src/config'), { recursive: true });
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'codapult', version: '0.1.0' }));
   writeFileSync(join(root, '.env.example'), 'APP_MODE="full"\nNEXT_PUBLIC_APP_NAME="Codapult"\n');
-  writeFileSync(
-    join(root, 'src/config/app.ts'),
-    "export const appConfig = { appName: 'Codapult', appUrl: 'http://localhost:3000' } as const;\n",
-  );
+  writeProjectEnvSources(root);
   return root;
 }
 

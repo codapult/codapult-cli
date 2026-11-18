@@ -6,7 +6,7 @@ import {
   getAuthMethods,
   getFeatures,
   getOauthProviders,
-  FEATURE_ENV,
+  getFeatureEnv,
 } from '../utils/env-config.js';
 import { heading, success, info, dim, label } from '../utils/ui.js';
 import { collectAppConfigSummary } from '../utils/config-report.js';
@@ -62,7 +62,7 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
 
   // --- Adapters (from project env source) ---
   info('Adapters');
-  const adapters = getAdapters(envContent);
+  const adapters = getAdapters(envContent, root);
   label('  Database', adapters.database);
   label('  Auth', adapters.auth);
   label('  Payments', adapters.payments);
@@ -75,20 +75,20 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
 
   // --- Auth methods (from project env source) ---
   info('Auth methods');
-  const authMethods = getAuthMethods(envContent);
+  const authMethods = getAuthMethods(envContent, root);
   label('  Magic Link', authMethods.magicLink ? 'enabled' : 'disabled');
   label('  Passkeys', authMethods.passkeys ? 'enabled' : 'disabled');
   label('  2FA (TOTP)', authMethods.twoFactor ? 'enabled' : 'disabled');
-  const oauth = getOauthProviders(envContent);
+  const oauth = getOauthProviders(envContent, root);
   label('  OAuth providers', oauth.length > 0 ? oauth.join(', ') : 'none');
   console.log();
 
   // --- Feature toggles (from project env source + ENABLE_* defaults) ---
   info('Features');
-  const features = getFeatures(envContent);
-  const featureKeys = Object.keys(FEATURE_ENV);
-  const enabled = featureKeys.filter((k) => features[k as keyof typeof features]);
-  const disabled = featureKeys.filter((k) => !features[k as keyof typeof features]);
+  const features = getFeatures(envContent, root);
+  const featureKeys = Object.keys(getFeatureEnv(root));
+  const enabled = featureKeys.filter((key) => features[key]);
+  const disabled = featureKeys.filter((key) => !features[key]);
   for (const f of enabled) success(f);
   for (const f of disabled) dim(`  ○ ${f}`);
   console.log();

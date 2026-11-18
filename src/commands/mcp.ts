@@ -86,13 +86,13 @@ export function mcpContractCheckCommand(): void {
     return;
   }
   fail(result.message);
-  if (result.schemaOnly.length > 0) {
-    info('Variables present in env-schema.ts but missing from the CLI contract:');
-    for (const key of result.schemaOnly) dim(`  + ${key}`);
+  if (result.missingFromExample.length > 0) {
+    info('Variables present in env-schema.ts but missing from .env.example:');
+    for (const key of result.missingFromExample) dim(`  + ${key}`);
   }
-  if (result.mirrorOnly.length > 0) {
-    info('Variables present in the CLI contract but missing from env-schema.ts:');
-    for (const key of result.mirrorOnly) dim(`  - ${key}`);
+  if (result.missingFromSchema.length > 0) {
+    info('Variables present in .env.example but missing from env-schema.ts:');
+    for (const key of result.missingFromSchema) dim(`  - ${key}`);
   }
   process.exitCode = 1;
 }

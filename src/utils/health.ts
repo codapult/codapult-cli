@@ -4,7 +4,7 @@ import { findPageBackups, findPageConflicts } from './patchers.js';
 import { resolveManifest } from './manifest.js';
 import { findProjectRoot, readJsonFile } from './project.js';
 import { getProjectEnvOptions, loadProjectEnv, type ProjectEnvSource } from './project-env.js';
-import { findProviderIssues, getAdapters, readEnvVar } from './env-config.js';
+import { findEnvIssues, getAdapters, getProjectEnvValue, readEnvVar } from './env-config.js';
 import { runProjectCommand, type CommandResult } from './command.js';
 import { checkEnvSchemaCompatibility } from './env-compatibility.js';
 import { compareSchemaFiles } from './schema-parity.js';
@@ -98,14 +98,14 @@ export function collectProjectHealth(
     path: env.filePath,
   });
 
-  const adapters = getAdapters(env.content);
+  const adapters = getAdapters(env.content, root);
   add({
     id: 'effective-config',
     status: 'ok',
     message: 'Effective providers and feature configuration resolved',
     details: {
       adapters,
-      appMode: readEnvVar(env.content, 'APP_MODE') ?? 'full',
+      appMode: getProjectEnvValue(env.content, root, 'APP_MODE'),
     },
   });
   const schemaPath =
@@ -148,7 +148,7 @@ export function collectProjectHealth(
   file('payments-module', 'src/lib/payments/index.ts', 'Payments module');
   file('plugin-registry', 'codapult.plugins.ts', 'Plugin registry', false);
 
-  for (const issue of findProviderIssues(env.content)) {
+  for (const issue of findEnvIssues(env.content, root)) {
     add({
       id: `env-${issue.key.toLowerCase()}`,
       status: issue.severity === 'error' ? 'fail' : 'warn',

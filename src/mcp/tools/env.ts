@@ -10,12 +10,12 @@ import {
   loadProjectEnv,
 } from '../../utils/project-env.js';
 import {
-  findProviderIssues,
+  findEnvIssues,
   getAdapters,
   getAuthMethods,
   getFeatures,
   getOauthProviders,
-  readEnv,
+  getProjectEnvValue,
 } from '../../utils/env-config.js';
 import { envSourceSchema } from './schemas.js';
 
@@ -68,7 +68,10 @@ function maskValue(value: string): string {
 
 const ENV_KEY_REGEX = /^[A-Z][A-Z0-9_]*$/;
 
-function getEffectiveConfig(content: string): {
+function getEffectiveConfig(
+  content: string,
+  root: string,
+): {
   appMode: string;
   adapters: ReturnType<typeof getAdapters>;
   authMethods: ReturnType<typeof getAuthMethods>;
@@ -76,11 +79,11 @@ function getEffectiveConfig(content: string): {
   features: Record<string, boolean>;
 } {
   return {
-    appMode: readEnv<string>(content, 'APP_MODE', 'full'),
-    adapters: getAdapters(content),
-    authMethods: getAuthMethods(content),
-    oauthProviders: getOauthProviders(content),
-    features: getFeatures(content),
+    appMode: getProjectEnvValue(content, root, 'APP_MODE'),
+    adapters: getAdapters(content, root),
+    authMethods: getAuthMethods(content, root),
+    oauthProviders: getOauthProviders(content, root),
+    features: getFeatures(content, root),
   };
 }
 
@@ -89,7 +92,7 @@ export function registerEnvTools(server: McpServer): void {
     'codapult_env_check',
     {
       title: 'Check Environment',
-      description: `Validate ${ENV_FILE_NAME} against ${ENV_EXAMPLE_FILE_NAME} without exposing secret values`,
+      description: `Validate ${ENV_FILE_NAME} against the Codapult project schema and ${ENV_EXAMPLE_FILE_NAME} without exposing secret values`,
       inputSchema: { env_source: envSourceSchema.optional() },
     },
     ({ env_source }) => {
@@ -109,19 +112,22 @@ export function registerEnvTools(server: McpServer): void {
         .filter((entry) => !example.some((candidate) => candidate.key === entry.key))
         .map((entry) => entry.key);
       const envContent = loadProjectEnv(root, getProjectEnvOptions(env_source)).content;
-      const providerIssues = findProviderIssues(envContent);
+      const validationIssues = findEnvIssues(envContent, root);
       return {
         content: [
           {
             type: 'text' as const,
             text: JSON.stringify(
               {
-                valid: providerIssues.every((issue) => issue.severity !== 'error'),
+                valid:
+                  validationIssues.every((issue) => issue.severity !== 'error') &&
+                  missing.length === 0 &&
+                  unconfigured.length === 0,
                 missing,
                 unconfigured,
                 extra,
-                providerIssues,
-                effective: getEffectiveConfig(envContent),
+                validationIssues,
+                effective: getEffectiveConfig(envContent, root),
               },
               null,
               2,
@@ -253,7 +259,7 @@ export function registerEnvTools(server: McpServer): void {
         variables,
         missing,
         unconfigured,
-        effective: getEffectiveConfig(localContent),
+        effective: getEffectiveConfig(localContent, root),
         ...(show_secrets
           ? {
               warning:

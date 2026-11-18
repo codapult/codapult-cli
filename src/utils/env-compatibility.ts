@@ -1,64 +1,56 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { readProjectFile } from './project.js';
-import { extractEnvSchemaKeys } from './env-schema-parser.js';
-import { ENV_SCHEMA_KEYS } from './env-config.js';
+import { getProjectEnvSchemaKeys } from './project-env-schema.js';
 
 export interface EnvSchemaCompatibility {
   status: 'ok' | 'warn' | 'fail';
   schemaPath: string;
   schemaKeys: string[];
-  expectedKeys: string[];
-  schemaOnly: string[];
-  mirrorOnly: string[];
+  exampleKeys: string[];
+  missingFromExample: string[];
+  missingFromSchema: string[];
   message: string;
 }
 
 export function checkEnvSchemaCompatibility(root: string): EnvSchemaCompatibility {
   const schemaPath = 'src/config/env-schema.ts';
-  const absolutePath = resolve(root, schemaPath);
-  if (!existsSync(absolutePath)) {
-    return {
-      status: 'fail',
-      schemaPath,
-      schemaKeys: [],
-      expectedKeys: [...ENV_SCHEMA_KEYS],
-      schemaOnly: [],
-      mirrorOnly: [...ENV_SCHEMA_KEYS],
-      message: 'Environment schema is missing',
-    };
-  }
-
-  const content = readProjectFile(root, schemaPath) ?? '';
   let schemaKeys: string[];
   try {
-    schemaKeys = extractEnvSchemaKeys(content);
+    schemaKeys = getProjectEnvSchemaKeys(root);
   } catch (error) {
     return {
       status: 'fail',
       schemaPath,
       schemaKeys: [],
-      expectedKeys: [...ENV_SCHEMA_KEYS],
-      schemaOnly: [],
-      mirrorOnly: [...ENV_SCHEMA_KEYS],
-      message: `Could not parse environment schema: ${String(error)}`,
+      exampleKeys: [],
+      missingFromExample: [],
+      missingFromSchema: [],
+      message: `Could not load environment schema: ${String(error)}`,
     };
   }
 
-  const actual = new Set(schemaKeys);
-  const expected = new Set<string>(ENV_SCHEMA_KEYS);
-  const schemaOnly = schemaKeys.filter((key) => !expected.has(key));
-  const mirrorOnly = ENV_SCHEMA_KEYS.filter((key) => !actual.has(key));
-  const drift = schemaOnly.length > 0 || mirrorOnly.length > 0;
+  const exampleContent = readProjectFile(root, '.env.example') ?? '';
+  const expectedKeys = [
+    ...new Set(
+      exampleContent
+        .split(/\r?\n/)
+        .map((line) => /^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/.exec(line)?.[1])
+        .filter((key): key is string => key !== undefined),
+    ),
+  ];
+  const schema = new Set(schemaKeys);
+  const expected = new Set(expectedKeys);
+  const missingFromExample = schemaKeys.filter((key) => !expected.has(key));
+  const missingFromSchema = expectedKeys.filter((key) => !schema.has(key));
+  const drift = missingFromExample.length > 0 || missingFromSchema.length > 0;
   return {
     status: drift ? 'warn' : 'ok',
     schemaPath,
     schemaKeys,
-    expectedKeys: [...ENV_SCHEMA_KEYS],
-    schemaOnly,
-    mirrorOnly,
+    exampleKeys: expectedKeys,
+    missingFromExample,
+    missingFromSchema,
     message: drift
-      ? `Environment schema drift detected (${schemaOnly.length} added, ${mirrorOnly.length} missing)`
-      : `Environment schema is compatible (${schemaKeys.length} variables)`,
+      ? `Environment schema and .env.example differ (${missingFromExample.length} missing from the example, ${missingFromSchema.length} missing from the schema)`
+      : `Environment schema matches .env.example (${schemaKeys.length} variables)`,
   };
 }
