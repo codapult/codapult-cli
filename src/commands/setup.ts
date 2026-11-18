@@ -659,14 +659,14 @@ const MODULE_REMOVALS: {
     key: 'enableBranding',
     paths: [
       `${APP}/(protected)/(dashboard)/dashboard/branding`,
+      `${APP}/(protected)/(dashboard)/dashboard/custom-domain`,
       'src/components/dashboard/BrandingSettings.tsx',
       'src/components/dashboard/BrandingProvider.tsx',
       'src/components/dashboard/sidebar/SidebarBrandLink.tsx',
-      'src/app/api/branding',
-      'src/lib/branding',
-      `${APP}/(protected)/(dashboard)/dashboard/custom-domain`,
       'src/components/dashboard/CustomDomainSettings.tsx',
+      'src/app/api/branding',
       'src/app/api/custom-domain',
+      'src/lib/branding',
       'src/lib/custom-domains',
     ],
     label: 'White-label Branding',
@@ -708,10 +708,7 @@ const MODULE_REMOVALS: {
 // Only flags that actually toggle runtime behavior via env.features belong here;
 // everything else is removed from disk by `removeModules`.
 //
-// Install-time-only features (no runtime ENABLE_* — file removal only):
-//   enableGraphQL, enableEventStore, enableOtel, enableConnect.
-// These are infrastructure-flavoured and either always-on or only meaningful
-// at build-time, so they don't expose a user-facing env toggle.
+// Runtime switches are kept in sync with env.features and env-schema.ts.
 const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, (typeof ENV_SCHEMA_KEYS)[number]>> = {
   enableApiDocs: 'ENABLE_API_DOCS',
   enableDocs: 'ENABLE_DOCS',
@@ -730,6 +727,10 @@ const FEATURE_ENV_VARS: Partial<Record<keyof ProjectConfig, (typeof ENV_SCHEMA_K
   enableReferrals: 'ENABLE_REFERRALS',
   enablePromotions: 'ENABLE_PROMOTIONS',
   enableSeo: 'ENABLE_SEO',
+  enableGraphQL: 'ENABLE_GRAPHQL',
+  enableConnect: 'ENABLE_CONNECT',
+  enableEventStore: 'ENABLE_EVENT_STORE',
+  enableOtel: 'ENABLE_OTEL',
   enableAnalytics: 'ENABLE_ANALYTICS',
   enableWorkflows: 'ENABLE_WORKFLOWS',
   enableExperiments: 'ENABLE_EXPERIMENTS',
@@ -773,6 +774,8 @@ const PRUNE_MARKER_FILES = [
   'src/components/dashboard/sidebar/SidebarContent.tsx',
   'src/components/ai/ChatUI.tsx',
   'src/components/ai/index.ts',
+  'src/proxy.ts',
+  'src/proxy.test.ts',
   `${APP}/(public)/layout.tsx`,
   `${APP}/(public)/(auth)/layout.tsx`,
   `${APP}/(public)/(auth)/sign-in/page.tsx`,
@@ -824,8 +827,8 @@ const PRUNE_MARKER_FILES = [
   'src/lib/gdpr/gdpr.test.ts',
   'src/lib/email/index.ts',
   'src/lib/usage.ts',
-  'src/lib/guards.ts',
-  'src/lib/guards.test.ts',
+  'src/lib/access-control.ts',
+  'src/lib/access-control.test.ts',
   'src/lib/db/schema.ts',
   'src/lib/db/schema-pg.ts',
   'src/lib/db/admin.ts',
