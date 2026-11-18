@@ -28,7 +28,7 @@ export const FEATURE_ENV = {
   waitlist: 'ENABLE_WAITLIST',
   featureRequests: 'ENABLE_FEATURE_REQUESTS',
   changelog: 'ENABLE_CHANGELOG',
-  aiCore: 'ENABLE_AI',
+  ai: 'ENABLE_AI',
   aiChat: 'ENABLE_AI_CHAT',
   aiRag: 'ENABLE_AI_RAG',
   aiAgents: 'ENABLE_AI_AGENTS',
@@ -49,15 +49,19 @@ export const FEATURE_ENV = {
   plugins: 'ENABLE_PLUGINS',
   compare: 'ENABLE_COMPARE',
   seo: 'ENABLE_SEO',
+  graphql: 'ENABLE_GRAPHQL',
+  connect: 'ENABLE_CONNECT',
+  eventStore: 'ENABLE_EVENT_STORE',
+  otel: 'ENABLE_OTEL',
 } as const;
 
 /** Feature keys whose env-schema defaults use `disableOnLandingMode`. */
-const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<string> = new Set([
+const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<keyof typeof FEATURE_ENV> = new Set([
   'apiDocs',
   'waitlist',
   'featureRequests',
   'changelog',
-  'aiCore',
+  'ai',
   'aiChat',
   'aiAgents',
   'aiBatch',
@@ -73,6 +77,10 @@ const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<string> = new Set([
   'branding',
   'experiments',
   'dripCampaigns',
+  'graphql',
+  'connect',
+  'eventStore',
+  'otel',
 ]);
 
 /**
@@ -84,9 +92,11 @@ const LANDING_MODE_DEFAULT_OFF_FEATURES: ReadonlySet<string> = new Set([
 export const ENV_SCHEMA_KEYS = [
   'NEXT_PUBLIC_APP_URL',
   'NEXT_PUBLIC_APP_NAME',
+  'NEXT_PUBLIC_APP_CURRENCY',
   'APP_MODE',
   'DEMO_URL',
   'LOG_LEVEL',
+  'CHANGELOG_FILE',
   'DB_PROVIDER',
   'AUTH_PROVIDER',
   'PAYMENT_PROVIDER',
@@ -234,7 +244,7 @@ export function getAdapters(envContent: string): Adapters {
     sso: readEnv<SSOProvider>(envContent, 'SSO_PROVIDER', 'none'),
     payments: readEnv<PaymentProvider>(envContent, 'PAYMENT_PROVIDER', 'stripe'),
     storage: readEnv<StorageProvider>(envContent, 'STORAGE_PROVIDER', 'local'),
-    jobs: readEnv<JobProvider>(envContent, 'JOB_PROVIDER', 'memory'),
+    jobs: landingMode ? 'none' : readEnv<JobProvider>(envContent, 'JOB_PROVIDER', 'memory'),
     notifications: readEnv<NotificationTransport>(envContent, 'NOTIFICATION_TRANSPORT', 'poll'),
     embedding: readEnv<EmbeddingProvider>(envContent, 'EMBEDDING_PROVIDER', 'openai'),
     vectorStore: readEnv<VectorStoreProvider>(envContent, 'VECTOR_STORE_PROVIDER', 'sqlite'),
@@ -242,41 +252,56 @@ export function getAdapters(envContent: string): Adapters {
   };
 }
 
+type Features = keyof typeof FEATURE_ENV | 'auth' | 'sso' | 'jobs';
 /**
  * Compute the effective set of feature toggles from .env content.
  * Mirrors `env.features` in `codapult/src/config/env.ts`:
  * - defaults follow `env-schema.ts` and APP_MODE;
  * - explicit "false" disables;
  * - RAG is opt-in and enabled only by explicit "true";
- * - `auth` is derived from AUTH_PROVIDER !== 'none'.
+ * - `auth`, `sso`, and `jobs` are derived from their provider settings;
+ * - dependent features are disabled when their parent feature is disabled.
  */
-export function getFeatures(envContent: string): Record<string, boolean> {
+export function getFeatures(envContent: string): Record<Features, boolean> {
   const appMode = readEnv<string>(envContent, 'APP_MODE', 'full');
-  const authProvider = getAdapters(envContent).auth;
-  const authEnabled = authProvider !== 'none';
+  const adapters = getAdapters(envContent);
 
-  const features: Record<string, boolean> = { auth: authEnabled };
+  const features = Object.entries(FEATURE_ENV).reduce(
+    (acc, [key, envVar]) => {
+      const feature = key as keyof typeof FEATURE_ENV;
+      const raw = readEnvVar(envContent, envVar);
+      const defaultEnabled =
+        feature === 'aiRag'
+          ? false
+          : feature === 'compare' || feature === 'seo'
+            ? appMode === 'landing'
+            : LANDING_MODE_DEFAULT_OFF_FEATURES.has(feature)
+              ? appMode !== 'landing'
+              : true;
+      acc[feature] =
+        feature === 'aiRag' ? raw === 'true' : raw == null ? defaultEnabled : raw !== 'false';
+      return acc;
+    },
+    {
+      auth: adapters.auth !== 'none',
+      sso: adapters.sso !== 'none',
+      jobs: adapters.jobs !== 'none',
+    } as Record<Features, boolean>,
+  );
 
-  for (const [key, envVar] of Object.entries(FEATURE_ENV)) {
-    const raw = readEnvVar(envContent, envVar);
-    const defaultEnabled =
-      key === 'aiRag'
-        ? false
-        : key === 'compare' || key === 'seo'
-          ? appMode === 'landing'
-          : LANDING_MODE_DEFAULT_OFF_FEATURES.has(key)
-            ? appMode !== 'landing'
-            : true;
-    features[key] =
-      key === 'aiRag' ? raw === 'true' : raw == null ? defaultEnabled : raw !== 'false';
-  }
-
-  if (!features.aiCore) {
-    features.aiChat = false;
-    features.aiRag = false;
-    features.aiAgents = false;
-    features.aiBatch = false;
-    features.aiPlayground = false;
+  const parentFeature: Partial<Record<keyof typeof FEATURE_ENV, keyof typeof FEATURE_ENV>> = {
+    aiChat: 'ai',
+    aiRag: 'ai',
+    aiAgents: 'ai',
+    aiBatch: 'ai',
+    aiPlayground: 'ai',
+    branding: 'teams',
+  };
+  for (const [feature, parent] of Object.entries(parentFeature) as [
+    keyof typeof FEATURE_ENV,
+    keyof typeof FEATURE_ENV,
+  ][]) {
+    if (!features[parent]) features[feature] = false;
   }
 
   return features;
@@ -290,9 +315,8 @@ export interface AuthMethods {
 }
 
 export function getAuthMethods(envContent: string): AuthMethods {
-  const authEnabled = getAdapters(envContent).auth !== 'none';
   return {
-    twoFactor: authEnabled && readEnvVar(envContent, 'ENABLE_TWO_FACTOR') !== 'false',
+    twoFactor: readEnvVar(envContent, 'ENABLE_TWO_FACTOR') !== 'false',
     magicLink: (readEnvVar(envContent, 'AUTH_MAGIC_LINK') ?? 'true') === 'true',
     passkeys: (readEnvVar(envContent, 'AUTH_PASSKEYS') ?? 'true') === 'true',
   };

@@ -68,8 +68,8 @@ export function registerProjectTools(server: McpServer): void {
         oauthProviders: getOauthProviders(envContent),
         plugins,
         features: {
-          enabled: Object.keys(features).filter((k) => features[k]),
-          disabled: Object.keys(features).filter((k) => !features[k]),
+          enabled: Object.keys(features).filter((k) => features[k as keyof typeof features]),
+          disabled: Object.keys(features).filter((k) => !features[k as keyof typeof features]),
         },
         git: { branch: gitBranch, dirty: gitDirty },
       };
@@ -175,7 +175,9 @@ export function registerProjectTools(server: McpServer): void {
                 existingFiles,
                 configFiles,
                 adapters,
-                enabledFeatures: Object.keys(features).filter((key) => features[key]),
+                enabledFeatures: Object.keys(features).filter(
+                  (key) => features[key as keyof typeof features],
+                ),
                 appConfig: collectAppConfigSummary(root),
               },
               null,

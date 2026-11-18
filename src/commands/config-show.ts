@@ -87,8 +87,8 @@ export function configShowCommand(options: ProjectEnvOptions = {}): void {
   info('Features');
   const features = getFeatures(envContent);
   const featureKeys = Object.keys(FEATURE_ENV);
-  const enabled = featureKeys.filter((k) => features[k]);
-  const disabled = featureKeys.filter((k) => !features[k]);
+  const enabled = featureKeys.filter((k) => features[k as keyof typeof features]);
+  const disabled = featureKeys.filter((k) => !features[k as keyof typeof features]);
   for (const f of enabled) success(f);
   for (const f of disabled) dim(`  ○ ${f}`);
   console.log();
