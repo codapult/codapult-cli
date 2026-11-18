@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.23.1](https://github.com/codapult/codapult-cli/compare/v0.23.0...v0.23.1) (2026-11-18)
+
+### Bug Fixes
+
+* **test:** make env schema fixtures self-contained ([1995f0d](https://github.com/codapult/codapult-cli/commit/1995f0d4eb3ad9fef7de92a641e1c6fb561d740a))
+
 ## [0.23.0](https://github.com/codapult/codapult-cli/compare/v0.22.0...v0.23.0) (2026-11-18)
 
 ### Features
