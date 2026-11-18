@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { resolve } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
 import { getFeatures } from './env-config.js';
+import { writeProjectEnvSources } from './test-project-env.js';
 
-const projectRoot = resolve(new URL('../../../codapult', import.meta.url).pathname);
+const projectRoot = mkdtempSync(join(tmpdir(), 'codapult-env-config-'));
+writeProjectEnvSources(projectRoot);
+
+afterAll(() => rmSync(projectRoot, { recursive: true, force: true }));
 
 describe('getFeatures', () => {
   it('mirrors landing-mode feature defaults', () => {

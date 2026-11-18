@@ -1,12 +1,14 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
 import { writeProjectEnvSources } from '../utils/test-project-env.js';
 import { buildEnvContent, getPresetNames, resolvePreset, setupCommand } from './setup.js';
 
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../codapult');
+const projectRoot = mkdtempSync(join(tmpdir(), 'codapult-setup-env-schema-'));
+writeProjectEnvSources(projectRoot);
+
+afterAll(() => rmSync(projectRoot, { recursive: true, force: true }));
 
 describe('setup presets', () => {
   it('exposes the starter profiles', () => {
