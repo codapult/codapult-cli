@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.23.0](https://github.com/codapult/codapult-cli/compare/v0.22.0...v0.23.0) (2026-11-18)
+
+### Features
+
+* add code formatting step using Prettier in setup command ([73f6056](https://github.com/codapult/codapult-cli/commit/73f6056381b84d5ad8bb57984c72e28b8e1a3657))
+* enhance setup command with new configuration options; update module removals and pruning logic ([b628f50](https://github.com/codapult/codapult-cli/commit/b628f50e3672fee4d2413890f4d83b3224f462a2))
+
+### Bug Fixes
+
+* rename enableHelpCenter to enableDocs ([df0bfd4](https://github.com/codapult/codapult-cli/commit/df0bfd4e1500fb5d4d0df894448a741de89a7d34))
+* update aiCore feature key and add landing mode default off features ([a813d16](https://github.com/codapult/codapult-cli/commit/a813d16193086697d581f36c229f5e9d99443336))
+* update feature keys for consistency; rename aiCore to ai in feature toggles ([0cfef99](https://github.com/codapult/codapult-cli/commit/0cfef99f124543ee03f467549a9c67876a42d0cf))
+* update module removals and prune marker files ([de7d422](https://github.com/codapult/codapult-cli/commit/de7d4224ed7005bfb850c052d765911ce6d032ec))
+* update module removals and prune marker files; add custom domain and proxy files ([ce42d5a](https://github.com/codapult/codapult-cli/commit/ce42d5ad1cf823426d55cce8067abd8cfa81a6df))
+* update module removals and prune marker files; adjust branding logic for Teams ([a014801](https://github.com/codapult/codapult-cli/commit/a01480129a2f3c2c6eaa966c90233ec11d2a30d9))
+* update prune marker list to include additional files ([1da0999](https://github.com/codapult/codapult-cli/commit/1da0999af34bfbcda394a704533dd70e50f1ce03))
+
 ## [0.22.0](https://github.com/codapult/codapult-cli/compare/v0.21.1...v0.22.0) (2026-11-01)
 
 ### Features
