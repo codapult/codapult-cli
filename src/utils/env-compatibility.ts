@@ -33,7 +33,8 @@ export function checkEnvSchemaCompatibility(root: string): EnvSchemaCompatibilit
     ...new Set(
       exampleContent
         .split(/\r?\n/)
-        .map((line) => /^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/.exec(line)?.[1])
+        // A commented assignment still documents a supported variable in .env.example.
+        .map((line) => /^\s*(?:#\s*)?(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/.exec(line)?.[1])
         .filter((key): key is string => key !== undefined),
     ),
   ];
