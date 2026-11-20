@@ -171,14 +171,14 @@ importers:
   .:
     dependencies:
       '@codapult/guard':
-        specifier: ^0.13.2
-        version: 0.13.2(supports-color@7.2.0)
+        specifier: ^0.14.1
+        version: 0.14.1(supports-color@7.2.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.2
         version: 1.32.2(supports-color@7.2.0)(zod@4.6.7)
       commander:
         specifier: ^15.0.0
-        version: 15.0.0
+        version: 15.1.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -264,8 +264,8 @@ packages:
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
-  '@codapult/guard@0.13.2':
-    resolution: {integrity: sha512-Gdn6utLpff0q1KymZ8X8jMl2qtW7oB3MzLCFmDkabOjpAo8p+F5CvLieFHS3kTf3wjy7tUYrtba1iEZv4Hbt7w==}
+  '@codapult/guard@0.14.1':
+    resolution: {integrity: sha512-u7gSR22HhiXkd9bnrzuOqhXk18b2LLsyP5RCMb/Z9723F2Yt6QEXcH5FcZen3f7goRNcL2scCLQhMVwCMLp/pA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -1126,8 +1126,8 @@ packages:
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
-  commander@15.0.0:
-    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+  commander@15.1.0:
+    resolution: {integrity: sha512-cgnQ88TRrWcC7pVq46RzJVRMktu3W2RcbnoidnfBsl1bmDCBwJS/udcIZpKoCrbAYYaCqsz1yZCVIgbIaU3ddQ==}
     engines: {node: '>=22.12.0'}
 
   concat-stream@2.0.0:
@@ -2396,10 +2396,10 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@codapult/guard@0.13.2(supports-color@7.2.0)':
+  '@codapult/guard@0.14.1(supports-color@7.2.0)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.32.2(supports-color@7.2.0)(zod@4.6.7)
-      commander: 15.0.0
+      commander: 15.1.0
       picocolors: 1.1.1
       semver: 7.8.5
       ts-morph: 28.0.0
@@ -3192,7 +3192,7 @@ snapshots:
 
   code-block-writer@13.0.3: {}
 
-  commander@15.0.0: {}
+  commander@15.1.0: {}
 
   concat-stream@2.0.0:
     dependencies:
